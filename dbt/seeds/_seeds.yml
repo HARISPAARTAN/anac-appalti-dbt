@@ -25,7 +25,7 @@ seeds:
         description: "Denominazione ANAC al momento della revisione (2026-10-25)."
 
   - name: regioni_province
-    description: "Province ISTAT (codice a tre cifre usato in luogo_istat) con regione e NUTS 2 (classificazione 2021)."
+    description: "Province ISTAT (codice a tre cifre usato in luogo_istat) con regione e NUTS 2: la classificazione 2021 più gli otto codici sardi 112-119, con i nomi come pubblicati nei dati ANAC. Per 113 (Gallura Nord-Est Sardegna) e 119 (Sulcis Iglesiente) non c'è una sigla ufficiale e la sigla resta vuota; le altre sigle sono quelle del territorio corrispondente."
     config:
       column_types:
         codice_provincia: varchar
@@ -41,7 +41,7 @@ seeds:
           - unique
           - not_null
       - name: sigla_provincia
-        description: "Sigla automobilistica."
+        description: "Sigla automobilistica; vuota per i codici sardi 113 e 119, senza sigla ufficiale. Non è una chiave: alcune sigle compaiono su più codici (per esempio SS su 090 e 112)."
       - name: regione
         description: "Regione."
         data_tests:

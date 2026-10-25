@@ -37,6 +37,9 @@ packages = ["src/anac_appalti"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["integrazione: esegue DuckDB, dbt e Dagster sulla fixture (lento)"]
+# Solo il rumore di una dipendenza di terze parti: il pacchetto sqlglotrs (extra `rs` di sqlglot, richiesto da
+# dagster-dbt[rs]) dichiara di essere deprecato a ogni importazione. Nessun altro avviso è filtrato.
+filterwarnings = ["ignore:sqlglotrs is deprecated:DeprecationWarning"]
 
 [tool.ruff]
 line-length = 110
