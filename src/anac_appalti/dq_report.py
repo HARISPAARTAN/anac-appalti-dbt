@@ -58,7 +58,13 @@ QUERY: dict[str, str] = {
     "lotti_annullati": "select count(*) from core.fct_lotti where flag_annullato",
     "file_atterrati": "select count(*) from intermediate.int_riconciliazione",
     "file_riconciliati": "select count(*) from intermediate.int_riconciliazione where riconciliazione = 'ok'",
-    "file_con_differenza": "select count(*) from intermediate.int_riconciliazione where riconciliazione = 'differenza'",
+    "file_riconciliati_fisici": (
+        "select count(*) from intermediate.int_riconciliazione where riconciliazione = 'ok_fisico'"
+    ),
+    "file_con_differenza": (
+        "select count(*) from intermediate.int_riconciliazione"
+        " where riconciliazione in ('differenza', 'differenza_fisica')"
+    ),
     "file_non_verificabili": (
         "select count(*) from intermediate.int_riconciliazione where riconciliazione = 'non_disponibile'"
     ),
@@ -79,7 +85,7 @@ RIGHE_REPORT = (
     (
         "file_con_differenza",
         "Riconciliazione",
-        "Righe atterrate per file = numero_righe del logCsv ANAC",
+        "Righe atterrate per file = numero_righe del logCsv ANAC (o record contati nel CSV)",
         "errore",
         "file_atterrati",
     ),
@@ -225,8 +231,9 @@ def componi_report(
         f"| Lotti nei mart Radar | {_numero(i['lotti_radar'])} |",
         f"| Lotti derivati da accordo quadro (esclusi dalle somme) | {_numero(i['lotti_derivati_accordo_quadro'])} |",
         f"| Lotti cancellati (esclusi dal Radar) | {_numero(i['lotti_annullati'])} |",
-        f"| File atterrati / riconciliati / non verificabili | {_numero(i['file_atterrati'])} / "
-        f"{_numero(i['file_riconciliati'])} / {_numero(i['file_non_verificabili'])} |",
+        f"| File atterrati / riconciliati con il logCsv / riconciliati con i record contati / non verificabili | "
+        f"{_numero(i['file_atterrati'])} / {_numero(i['file_riconciliati'])} / "
+        f"{_numero(i['file_riconciliati_fisici'])} / {_numero(i['file_non_verificabili'])} |",
         "",
         "## Controlli",
         "",
@@ -262,9 +269,23 @@ def componi_report(
         "superate; il dettaglio per colonna è in `intermediate.int_perdite_parsing` e ogni colonna ha un test "
         "dbt `perdita_parsing` di livello avviso sulla source.",
         "",
-        "I file annuali `cig-AAAA` non hanno un conteggio CSV nel logCsv ANAC (solo TTL): la loro riconciliazione "
-        "è `non_disponibile`.",
+        "I file annuali `cig-AAAA` non hanno un conteggio CSV nel logCsv ANAC (solo TTL). Dalla 0.1.1 il landing li "
+        "riconcilia con i record contati nel CSV (stati `ok_fisico` e `differenza_fisica`, distinti da `ok` e "
+        "`differenza` del logCsv); i file atterrati prima restano `non_disponibile` finché non vengono rielaborati.",
         "",
+        *(
+            []
+            if fixtures
+            else [
+                "Misura del 25 ottobre 2026 sull'archivio raw (73 file, script esterno al lettore): i record fuori "
+                "dalle virgolette coincidono con le righe atterrate in tutti i 49 file con conteggio nel logCsv e "
+                "nei 24 file annuali `cig-2024` e `cig-2025` (2.704.490 righe), quindi nessuna riga è andata persa; "
+                "il semplice conteggio degli a capo sbaglia in 7 file dei delta CIG, che hanno a capo dentro i campi. "
+                "Il conteggio condivide con il lettore la regola del backslash e non garantisce di rilevare un backslash isolato "
+                "(nei 73 file ce ne sono 0; ANAC raddoppia i backslash letterali, 863 coppie `\\\\`).",
+                "",
+            ]
+        ),
         ATTRIBUZIONE,
         "",
     ]

@@ -26,8 +26,10 @@ gruppo "persona fisica / non identificata" e non si collegano a una dimensione d
 Integrità: lo SHA-256 dello zip si ricalcola a ogni atterraggio e deve coincidere con il manifest (altrimenti
 `ArchivioNonIntegro`, registrato come `errore`). Esiti da non ignorare: `letto_con_scarti` (righe illeggibili scartate,
 contate in `messaggio`) e la riconciliazione `differenza` finiscono negli `avvisi` del riepilogo e rendono
-`RiepilogoLanding.riuscito` falso (tolleranza: nessuna differenza); i file senza conteggio righe nel logCsv ANAC
-(per esempio i `cig-AAAA`) sono segnalati come "non riconciliabile". Il Parquet è per sha: `_caricato_il` cambia a
+`RiepilogoLanding.riuscito` falso (tolleranza: nessuna differenza). I file senza conteggio righe nel logCsv ANAC
+(per esempio i `cig-AAAA`) si riconciliano con il conteggio fisico dei record del CSV (`conta_record_csv`): stato
+`ok_fisico` o `differenza_fisica`, con `righe_attese` uguale al conteggio fisico e non a un valore dichiarato da
+ANAC. Il Parquet è per sha: `_caricato_il` cambia a
 ogni atterraggio, quindi un secondo atterraggio dello stesso file non è identico byte per byte.
 """
 
@@ -35,6 +37,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import re
 import shutil
 import zipfile
 from dataclasses import asdict, dataclass, field, fields, replace
@@ -59,14 +62,59 @@ log = logging.getLogger(__name__)
 ESITI_VALIDI = {"atterrato", "letto_con_scarti"}
 # Tolleranza della riconciliazione: nessun file può avere un numero di righe diverso da quello dichiarato da ANAC.
 TOLLERANZA_DIFFERENZE = 0
+# Stati di riconciliazione: `ok` e `differenza` confrontano con il logCsv ANAC; `ok_fisico` e `differenza_fisica`
+# con il conteggio fisico dei record, per i file il cui logCsv non dichiara il numero di righe.
+RICONCILIAZIONI_CON_DIFFERENZA = ("differenza", "differenza_fisica")
+RICONCILIAZIONI_FISICHE = ("ok_fisico", "differenza_fisica")
 # Gli spazi che `str.strip()` toglie nel classificatore Python (privacy.classifica_codice_fiscale).
 SPAZI_SQL = "' ' || chr(9) || chr(10) || chr(11) || chr(12) || chr(13)"
-# I file ANAC scrivono le virgolette dentro un valore con il backslash (`\"`), non raddoppiandole: con
-# `escape = '"'` una di queste righe fa assorbire le righe seguenti (verificato sui file reali 2026-10-25, 87 righe
-# perse in un solo file di aggiudicatari). Con il backslash le righe lette coincidono con quelle dichiarate nel logCsv.
+# I file ANAC scrivono le virgolette dentro un valore con il backslash (`\"`), non raddoppiandole, e un backslash
+# letterale raddoppiato (`\\`): con `escape = '"'` una riga con `\"` fa assorbire le righe seguenti (verificato sui
+# file reali 2026-10-25: da 19 a 1.335 righe perse in 13 file su 73). Con il backslash le righe lette coincidono con
+# quelle dichiarate nel logCsv. Un backslash isolato nel file verrebbe invece eliminato dal lettore (`A\B` diventa
+# `AB`) e uno prima della virgoletta di chiusura fa assorbire le righe seguenti: nei 73 file reali non ce ne sono
+# (vedi tests/unit/test_landing_escape.py).
 OPZIONI_CSV = (
     "delim = ';', quote = '\"', escape = '\\', header = true, all_varchar = true, strict_mode = false"
 )
+
+
+# Un backslash seguito da un altro backslash o da una virgoletta forma una coppia di escape; le altre virgolette
+# aprono o chiudono un campo.
+_ESCAPE_O_VIRGOLETTA = re.compile(rb'\\[\\"]|"')
+_BLOCCO_CONTEGGIO = 1 << 24
+
+
+def _campo_aperto_dopo(riga: bytes, aperto: bool) -> bool:
+    """Stato (dentro o fuori da un campo tra virgolette) alla fine di una riga fisica del CSV."""
+    if b"\\" in riga:
+        for m in _ESCAPE_O_VIRGOLETTA.finditer(riga):
+            if m.group() == b'"':
+                aperto = not aperto
+        return aperto
+    return aperto != bool(riga.count(b'"') & 1)
+
+
+def conta_record_csv(percorso: Path) -> int:
+    """Record di dati del CSV, intestazione esclusa: gli a capo fuori dai campi tra virgolette.
+
+    Conteggio indipendente dal lettore DuckDB (non usa `read_csv`): serve a riconciliare i file senza conteggio nel
+    logCsv. Gli a capo dentro un campo non contano (il conteggio semplice degli a capo sbaglia in 7 dei 49 file
+    verificati, tutti delta CIG) e un backslash davanti a `"` o `\\` è un escape, come per il lettore.
+    """
+    record = 0
+    aperto = False
+    coda = b""
+    with percorso.open("rb") as f:
+        while blocco := f.read(_BLOCCO_CONTEGGIO):
+            *righe, coda = (coda + blocco).split(b"\n")
+            for riga in righe:
+                aperto = _campo_aperto_dopo(riga, aperto)
+                record += not aperto
+    if coda:
+        aperto = _campo_aperto_dopo(coda, aperto)
+        record += not aperto
+    return max(record - 1, 0)
 
 
 class SchemaNonConforme(RuntimeError):
@@ -270,6 +318,8 @@ def atterra_file(
         caricato_il = datetime.now().replace(microsecond=0)
         esito = "atterrato"
         scartate = 0
+        attese = righe_attese.get(f"{stem}.csv")
+        fisiche: int | None = None
         con = _connetti(imp)
         try:
             try:
@@ -288,15 +338,24 @@ def atterra_file(
             ).fetchone()[0]
         finally:
             con.close()
+        if attese is None:
+            fisiche = conta_record_csv(csv_path)
     finally:
         csv_path.unlink(missing_ok=True)
-    attese = righe_attese.get(f"{stem}.csv")
-    riconciliazione = "non_disponibile" if attese is None else ("ok" if attese == righe else "differenza")
+    if attese is not None:
+        riconciliazione = "ok" if attese == righe else "differenza"
+    else:
+        attese = fisiche
+        riconciliazione = "ok_fisico" if fisiche == righe else "differenza_fisica"
     messaggi = []
     if esito == "letto_con_scarti":
         messaggi.append(f"{scartate} righe illeggibili scartate dalla lettura")
-    if riconciliazione == "differenza":
+    if riconciliazione in RICONCILIAZIONI_CON_DIFFERENZA:
         messaggi.append(f"righe attese {attese}, atterrate {righe} (differenza {righe - attese:+d})")
+    if riconciliazione in RICONCILIAZIONI_FISICHE:
+        messaggi.append(
+            "righe attese = record contati nel CSV, il logCsv ANAC non dichiara il numero di righe"
+        )
     return VoceRegistro(
         sha256=sha,
         tabella=contratto.tabella,
@@ -336,10 +395,11 @@ def _segnala(riepilogo: RiepilogoLanding, voce: VoceRegistro) -> None:
     if voce.esito == "letto_con_scarti":
         riepilogo.con_scarti += 1
         riepilogo.avvisi.append(f"{voce.risorsa}: letto con scarti ({voce.messaggio})")
-    if voce.riconciliazione == "differenza":
+    if voce.riconciliazione in RICONCILIAZIONI_CON_DIFFERENZA:
         riepilogo.differenze += 1
+        origine = "contate nel CSV" if voce.riconciliazione == "differenza_fisica" else "dichiarate da ANAC"
         riepilogo.avvisi.append(
-            f"{voce.risorsa}: righe atterrate {voce.righe} diverse da quelle dichiarate da ANAC {voce.righe_attese}"
+            f"{voce.risorsa}: righe atterrate {voce.righe} diverse da quelle {origine} {voce.righe_attese}"
         )
 
 
@@ -403,9 +463,10 @@ def atterra_pacchetto(imp: Impostazioni, pacchetto: Pacchetto, contratto: Contra
         if nuova.colonne_nuove:
             riepilogo.avvisi.append(f"{nuova.risorsa}: colonne nuove non atterrate: {nuova.colonne_nuove}")
         _segnala(riepilogo, nuova)
-        if nuova.riconciliazione == "non_disponibile":
+        if nuova.riconciliazione == "ok_fisico":
             riepilogo.avvisi.append(
-                f"{nuova.risorsa}: non riconciliabile (il logCsv ANAC non dichiara il numero di righe del file)"
+                f"{nuova.risorsa}: il logCsv ANAC non dichiara il numero di righe, riconciliato con i record "
+                "contati nel CSV"
             )
         scrivi_registro(imp.registro_file, registro)
     scrivi_registro(imp.registro_file, registro)

@@ -27,7 +27,8 @@ def test_estrazione_idempotente_e_delta(tmp_path):
     assert registro["aggiudicazioni_csv"].righe == "1200"
     assert registro["aggiudicazioni_csv"].riconciliazione == "ok"
     assert registro["cig_csv_2025_01"].righe == "828"
-    assert registro["cig_csv_2025_01"].riconciliazione == "non_disponibile"
+    assert registro["cig_csv_2025_01"].riconciliazione == "ok_fisico"
+    assert registro["cig_csv_2025_01"].righe_attese == "828"
     assert registro["cig_csv_2025_01"].data_snapshot == "2026-01-16"
 
     estratti, atterrati = esegui(imp1)

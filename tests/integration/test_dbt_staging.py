@@ -89,7 +89,7 @@ def test_riconciliazione_e_privacy(magazzino_mese1):
             "select riconciliazione, count(*) from intermediate.int_riconciliazione group by 1",
         )
     )
-    assert stati == {"ok": 7, "non_disponibile": 2}
+    assert stati == {"ok": 7, "ok_fisico": 2}
     tipi = interroga(
         magazzino_mese1, "select distinct tipo_soggetto_privacy from staging.stg_anac__partecipanti"
     )

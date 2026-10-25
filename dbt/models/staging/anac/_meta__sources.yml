@@ -18,8 +18,8 @@ sources:
           - name: righe
             description: "Righe atterrate."
           - name: righe_attese
-            description: "Righe dichiarate da ANAC nel logCsv (vuoto se non disponibile)."
+            description: "Righe dichiarate da ANAC nel logCsv; se il logCsv non le dichiara (cig-AAAA), i record contati nel CSV; vuoto se il file non è atterrato."
           - name: riconciliazione
-            description: "ok, differenza o non_disponibile."
+            description: "ok o differenza (confronto con il logCsv ANAC), ok_fisico o differenza_fisica (confronto con i record contati nel CSV), non_disponibile (landing in errore)."
           - name: esito
             description: "atterrato, letto_con_scarti, sostituito o errore."

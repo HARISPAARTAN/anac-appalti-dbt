@@ -106,7 +106,7 @@ def test_colonna_nuova_avvisa_e_non_atterra(tmp_path: Path):
     assert riepilogo.atterrati == 1
     assert "colonna_nuova" in riepilogo.avvisi[0]
     voce = leggi_registro(imp.registro_file)[0]
-    assert voce.riconciliazione == "non_disponibile"
+    assert voce.riconciliazione == "ok_fisico"
     con = duckdb.connect()
     colonne = [
         r[0]

@@ -61,16 +61,44 @@ def test_riconciliazione_ok_e_riuscita(tmp_path: Path):
     riepilogo, voce = atterra(imp, "aggiudicatari")
     assert voce.riconciliazione == "ok" and voce.messaggio == ""
     assert riepilogo.differenze == 0 and riepilogo.riuscito
-    assert not any("non riconciliabile" in a for a in riepilogo.avvisi)
+    assert not any("contati nel CSV" in a for a in riepilogo.avvisi)
 
 
-def test_file_senza_conteggio_righe_e_non_riconciliabile(tmp_path: Path):
+def test_file_senza_conteggio_righe_si_riconcilia_con_i_record_contati(tmp_path: Path):
     imp = carica_impostazioni(fixtures=True, area=tmp_path)
-    registra_csv(imp, "aggiudicatari", [agg(1)])
+    registra_csv(imp, "aggiudicatari", [agg(1), agg(2)])
     riepilogo, voce = atterra(imp, "aggiudicatari")
-    assert voce.riconciliazione == "non_disponibile"
-    assert any("non riconciliabile" in a and "aggiudicatari_csv" in a for a in riepilogo.avvisi)
-    assert riepilogo.riuscito  # non riconciliabile è un'informazione, non un errore
+    assert (voce.righe, voce.righe_attese, voce.riconciliazione) == ("2", "2", "ok_fisico")
+    assert "record contati nel CSV" in voce.messaggio
+    assert any("contati nel CSV" in a and "aggiudicatari_csv" in a for a in riepilogo.avvisi)
+    assert riepilogo.differenze == 0 and riepilogo.riuscito
+
+
+def test_record_con_a_capo_e_backslash_si_riconciliano_col_conteggio_fisico(tmp_path: Path):
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    registra_csv(
+        imp,
+        "aggiudicatari",
+        [
+            agg(1, denominazione='FONDAZIONE \\"CIRCOLO\\"\nSEDE DI PROVA'),
+            agg(2, denominazione="ASSOCIAZIONE \\\\ ESEMPIO"),
+            agg(3),
+        ],
+    )
+    riepilogo, voce = atterra(imp, "aggiudicatari")
+    assert (voce.righe, voce.righe_attese, voce.riconciliazione) == ("3", "3", "ok_fisico")
+    assert riepilogo.riuscito
+
+
+def test_differenza_fisica_e_un_avviso_e_un_fallimento(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    registra_csv(imp, "aggiudicatari", [agg(1), agg(2), agg(3)])
+    monkeypatch.setattr("anac_appalti.landing.conta_record_csv", lambda _percorso: 5)
+    riepilogo, voce = atterra(imp, "aggiudicatari")
+    assert (voce.righe, voce.righe_attese, voce.riconciliazione) == ("3", "5", "differenza_fisica")
+    assert "righe attese 5, atterrate 3" in voce.messaggio
+    assert riepilogo.differenze == 1 and not riepilogo.riuscito
+    assert any("contate nel CSV" in a for a in riepilogo.avvisi)
 
 
 def test_letto_con_scarti_e_un_avviso_e_la_privacy_vale_anche_nel_fallback(tmp_path: Path):

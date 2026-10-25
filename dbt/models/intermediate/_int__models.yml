@@ -148,7 +148,7 @@ models:
         description: "Importo o ribasso di un'aggiudicazione non vuoto nel file ma non leggibile; il testo originale è in importo_aggiudicazione_raw e ribasso_aggiudicazione_raw."
 
   - name: int_riconciliazione
-    description: "File atterrati validi con righe atterrate, righe dichiarate da ANAC e stato della riconciliazione."
+    description: "File atterrati validi con righe atterrate, righe attese (dichiarate da ANAC o contate nel CSV) e stato della riconciliazione."
     config:
       meta:
         chiave: sha256
@@ -159,11 +159,11 @@ models:
           - unique
           - not_null
       - name: riconciliazione
-        description: "ok, differenza o non_disponibile."
+        description: "ok o differenza (righe confrontate con il logCsv ANAC), ok_fisico o differenza_fisica (righe confrontate con i record contati nel CSV, quando il logCsv non dichiara il numero di righe), non_disponibile (landing in errore)."
         data_tests:
           - accepted_values:
               arguments:
-                values: ["ok", "differenza", "non_disponibile"]
+                values: ["ok", "differenza", "ok_fisico", "differenza_fisica", "non_disponibile"]
 
   - name: int_perdite_parsing
     description: "Perdite di tipizzazione per colonna: righe atterrate con un testo non vuoto che staging trasforma in NULL, per le date e i conteggi usati dai mart (data_pubblicazione, data_scadenza_offerta, data_aggiudicazione_definitiva, numero_offerte_ammesse, num_imprese_offerenti, date di varianti e subappalti). Conta tutte le righe atterrate, anche le versioni superate. Alimenta il report della qualità dei dati."
