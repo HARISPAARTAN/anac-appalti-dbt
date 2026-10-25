@@ -5,7 +5,7 @@ Stato: accettata (2026-10-25)
 ## Contesto
 
 Il progetto deve mostrare un livello di analytics engineering completo (modelli, test, documentazione, lineage)
-su alcuni milioni di righe, senza budget per un warehouse in cloud e senza segreti in CI. La stessa pipeline deve
+su alcuni milioni di righe (stima), senza budget per un warehouse in cloud e senza segreti in CI. La stessa pipeline deve
 girare sul portatile del proprietario e su un runner GitHub Actions.
 
 ## Decisione
@@ -27,7 +27,7 @@ target `locale` (dati reali) e `ci` (fixture).
 
 ## Conseguenze
 
-- Costo del warehouse 0 EUR; una esecuzione completa resta locale e riproducibile.
+- Costo del warehouse 0 EUR; un'esecuzione completa resta locale e riproducibile.
 - Il file DuckDB ammette un solo processo in scrittura: dbt gira come sottoprocesso e la pipeline non apre
   connessioni concorrenti durante `dbt build`. Per lo stesso motivo il job Dagster usa l'esecutore in processo
   (vedi ADR-002).

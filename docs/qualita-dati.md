@@ -35,7 +35,7 @@ Politica: si segnala, non si cancella. Ogni controllo è un test dbt (avviso o e
 | Stazione orfana | codice_ausa assente dall'anagrafe | avviso | 0 | 0,00 % |
 | Aggiudicazione orfana | CIG dell'aggiudicazione assente dai dati CIG in ambito (atteso per lotti pubblicati prima dell'anno minimo) | avviso | 0 | – |
 | Ribasso fuori intervallo | Ribasso fuori da 0–100 % | avviso | 1 | – |
-| Persone fisiche | Codice fiscale di 16 caratteri: identità annullata in staging, conteggio conservato | privacy | 0 | 0,00 % |
+| Persone fisiche | Codice fiscale di 16 caratteri: identità annullata al landing (e di nuovo in staging), conteggio conservato | privacy | 0 | 0,00 % |
 
 Dettaglio importi anomali: non positivi 1, oltre il totale di gara 1, oltre 5 miliardi 1, anomali per MAD 1, non leggibili 0 (un lotto può avere più flag).
 

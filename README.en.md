@@ -241,6 +241,8 @@ The ADRs are written in Italian.
   git-ignored.
 - ANAC's contract-modification and subcontract files contain no amounts: the marts report counts, not values.
 - Geography stops at region (NUTS 2) and province; there is no NUTS 3 mapping.
+- History: anything before the first local run comes only from ANAC's yearly full files, because superseded
+  monthly deltas disappear from the portal; from then on the raw archive keeps them.
 - The `cig-2026` package does not exist: 2026 lots come from the monthly deltas of the `cig` package.
 - The logCsv files of the yearly CIG files list only a total: those files show `non_disponibile` in the
   reconciliation.

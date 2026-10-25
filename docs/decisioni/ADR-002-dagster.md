@@ -10,7 +10,7 @@ verde quando fallisce.
 
 ## Decisione
 
-Dagster con `dagster-dbt`. Ogni pacchetto ANAC ha un asset raw (con tre tentativi a 60 secondi) e un asset di
+Dagster con `dagster-dbt`. Ogni pacchetto ANAC ha un asset raw (con tre ripetizioni a 60 secondi) e un asset di
 landing; ogni modello dbt è un asset; l'asset `riepilogo_qualita` dipende da tutti i modelli e porta il
 controllo `qualita_dati`. Il job `pipeline_completo` materializza tutto con l'esecutore in processo; il sensor
 `ckan_aggiornato` interroga `package_search` una volta al giorno e avvia il job solo se un pacchetto in ambito è

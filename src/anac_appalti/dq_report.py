@@ -162,7 +162,7 @@ RIGHE_REPORT = (
     (
         "righe_persone_fisiche",
         "Persone fisiche",
-        "Codice fiscale di 16 caratteri: identità annullata in staging, conteggio conservato",
+        "Codice fiscale di 16 caratteri: identità annullata al landing (e di nuovo in staging), conteggio conservato",
         "privacy",
         "righe_operatori",
     ),

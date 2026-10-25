@@ -71,7 +71,7 @@ flowchart LR
    l'asset, quindi anche lo stato dell'esecuzione Dagster; il job `pipeline_completo` usa l'esecutore in
    processo. Il sensor `ckan_aggiornato` interroga il portale una volta al giorno e la schedule `mensile_25` è
    la riserva del 25 di ogni mese: entrambi partono spenti e si accendono a mano nel daemon. `appalti run`
-   esegue gli stessi asset in processo, senza servizi, e esce con codice 1 se qualcosa è fallito.
+   esegue gli stessi asset in processo, senza servizi, ed esce con codice 1 se qualcosa è fallito.
 
 ## Fonti e licenze
 
@@ -193,7 +193,7 @@ uv run appalti report    # aggiorna docs/ e la tabella dei numeri qui sopra
 uv run appalti export    # nove mart in build/export/*.parquet
 ```
 
-Le cifre di questa sezione sono stime dalle dimensioni dichiarate da CKAN e dalle specifiche del progetto, non
+Le cifre di questa sezione sono stime ricavate dalle dimensioni dichiarate da CKAN e dalle specifiche del progetto, non
 misure: la prima esecuzione completa le sostituirà con i valori misurati (tabella dei numeri e
 `docs/ultima-esecuzione.md`).
 
@@ -245,6 +245,8 @@ misure: la prima esecuzione completa le sostituirà con i valori misurati (tabel
   (compresi i dati personali) ed è fuori da git.
 - I file ANAC di varianti e subappalti non contengono importi: i mart riportano conteggi, non valori.
 - Il territorio arriva a regione (NUTS 2) e provincia; non c'è una mappatura NUTS 3.
+- Storia: ciò che precede la prima esecuzione locale proviene solo dai file completi annuali di ANAC, perché i
+  delta mensili superati scompaiono dal portale; da allora l'archivio raw li conserva.
 - Il pacchetto `cig-2026` non esiste: i lotti 2026 arrivano dai delta mensili del pacchetto `cig`.
 - I logCsv dei file annuali CIG riportano solo il totale: quei file risultano `non_disponibile` nella
   riconciliazione.

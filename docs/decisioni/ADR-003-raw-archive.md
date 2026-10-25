@@ -12,7 +12,7 @@ Tre fatti verificati sul portale il 2026-10-25 condizionano la decisione:
 
 - La dimensione che CKAN dichiara per una risorsa è quella del CSV non compresso, non dello zip (per esempio
   `cig_csv_2024_01`: 30.163.236 byte dichiarati, 6.461.968 byte di zip). I file in ambito sommano circa 9 GB
-  dichiarati e circa 2 GB di zip reali.
+  dichiarati e circa 2 GB di zip (stima).
 - Il WAF del portale risponde HTTP 200 con una pagina HTML "Request Rejected … Your support ID is …". Lo stato
   HTTP non basta per riconoscere un rifiuto. Lo User-Agent del progetto
   (`anac-appalti-dbt/0.1 (+https://github.com/HARISPAARTAN/anac-appalti-dbt)`) è passato sui download e su
