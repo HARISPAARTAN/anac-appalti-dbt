@@ -2,10 +2,11 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [SemVer](https://semver.org/lang/it/).
 
-## [Non rilasciato]
+## [0.1.0] - 2026-10-25
 
-La v0.1.0 esce dopo la prima esecuzione completa sui dati reali 2024–2026, che non è ancora stata fatta: finora
-ogni misura viene dalla fixture sintetica.
+Prima versione, misurata sulla prima esecuzione completa sui dati reali 2024–2026 (run `20261025T125951-e7d029`):
+3.734.851 lotti, 3.508.850 aggiudicazioni collegate ai lotti, 4.828.798 partecipazioni. I nove mart aggregati sono
+negli asset della release.
 
 ### Aggiunto
 
@@ -26,7 +27,7 @@ ogni misura viene dalla fixture sintetica.
 - Esportazione dei mart in Parquet con attribuzione CC BY-SA 4.0 nei metadati.
 - CI su GitHub Actions con fixture sintetica (due mesi, idempotenza) e documentazione dbt e grafo Dagster su
   GitHub Pages.
-- README in italiano e in inglese con i segnaposto dei numeri (`<!-- numeri:inizio -->`), cinque ADR, glossario
+- README in italiano e in inglese con i numeri misurati (`<!-- numeri:inizio -->`), cinque ADR, glossario
   italiano, inglese e tedesco.
 
 ### Corretto
@@ -39,7 +40,16 @@ ogni misura viene dalla fixture sintetica.
 - Test dei percorsi di fallimento, del contenuto del log di esecuzione, dello stato spento di schedule e sensor,
   delle dipendenze degli asset e dei comandi `run`, `report`, `export` e `docs`.
 
-### Da confermare sul primo file reale
+- Il landing legge i CSV ANAC con il backslash come carattere di escape: le virgolette dentro un valore sono scritte
+  come `\"` e il lettore a virgolette raddoppiate perdeva da 19 a 1.335 righe in 13 file (trovato dalla
+  riconciliazione con i logCsv).
+- La denominazione che è un codice fiscale personale (ditte individuali con partita IVA) è annullata al landing e
+  in staging; il test sui mart non trova più codici personali.
+- Otto codici provincia della Sardegna (112–119) aggiunti al seed; il territorio `ND` scende all'1,6 % dei lotti.
 
-- L'assunzione `cod_esito = 1` per un'aggiudicazione (`flag_esito_aggiudicato`).
-- La regola del punto singolo come separatore decimale di importi e ribassi.
+### Verificato sul primo file reale
+
+- `cod_esito = 1` vale `AGGIUDICATA` (99,51 % delle aggiudicazioni correnti): l'assunzione resta.
+- La regola del punto singolo come separatore decimale di importi e ribassi regge su 3,7 milioni di importi.
+- Perdite di lettura zero; riconciliazione con i logCsv senza differenze; il WAF rifiuta lo User-Agent del progetto
+  e accetta quello da browser.

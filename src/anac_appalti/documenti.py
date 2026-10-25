@@ -341,6 +341,9 @@ def componi_pagina_dagster(nodi: list[tuple[str, str, list[str]]]) -> str:
         "<p>Asset definiti in <code>anac_appalti.definitions</code>: un asset raw e uno di landing per pacchetto "
         "ANAC, un asset per modello dbt, il riepilogo di qualità con il controllo <code>qualita_dati</code>. "
         "Job <code>pipeline_completo</code>, sensor <code>ckan_aggiornato</code>, schedule <code>mensile_25</code>.</p>\n"
+        "<p>Il grafo viene dalle definizioni del codice e non dipende dai dati. La pagina è generata dalla CI "
+        "sulla fixture sintetica, non da un'esecuzione sui dati reali: i numeri della prima esecuzione reale "
+        "(2024–2026) sono nel README e in <code>docs/qualita-dati.md</code>.</p>\n"
         f'<pre class="mermaid">\n{escape(chr(10).join(linee))}\n</pre>\n'
         f"<h2>Elenco</h2>\n<ul>\n{elenco}\n</ul>\n"
         "<p>Fonte: ANAC – Autorità Nazionale Anticorruzione, dati.anticorruzione.it, licenza CC BY-SA 4.0; "

@@ -16,17 +16,17 @@ in uno schema a stella e produce nove mart aggregati per il report Appalti Radar
 report di qualità dei dati e un log con tempi, righe e impronte dei modelli. Dagster orchestra gli stessi passi
 come grafo di asset.
 
-> **Stato dei numeri.** L'esecuzione completa su dati reali (2024–2026) non è ancora stata fatta. Ogni numero di
-> questo README viene dalla fixture sintetica (dati generati dal progetto, non ANAC) oppure è una stima e lo
-> dice. La tabella della sezione "Qualità dei dati" viene riempita da `uv run appalti report` dopo la prima
-> esecuzione reale; `docs/qualita-dati.md` è oggi il report della fixture e viene sostituito da quello reale.
+> **Stato dei numeri.** I numeri della sezione "Qualità dei dati" sono misurati nella prima esecuzione completa
+> su dati reali ANAC (2024–2026, run `20261025T125951-e7d029`, 25 ottobre 2026); `docs/qualita-dati.md` è il report
+> di quella esecuzione. Le pagine di documentazione su GitHub Pages sono invece generate dalla CI sulla fixture
+> sintetica, non sui dati reali.
 
 - Ambito: lotti (CIG) pubblicati dal 2024 in poi (configurabile in `appalti.toml`), con aggiudicazioni,
   aggiudicatari, partecipanti, varianti, subappalti, anagrafe delle stazioni appaltanti e vocabolario delle
   procedure di scelta del contraente.
 - Stack: Python 3.13, uv, dbt-core 1.12 con dbt-duckdb, DuckDB, Dagster con dagster-dbt, pytest, ruff,
   GitHub Actions, GitHub Pages.
-- Documentazione dbt (modelli, colonne, test, lineage), generata sulla fixture:
+- Documentazione dbt (modelli, colonne, test, lineage), generata dalla CI sulla fixture sintetica:
   https://harispaartan.github.io/anac-appalti-dbt/dbt/ e grafo degli asset Dagster:
   https://harispaartan.github.io/anac-appalti-dbt/dagster/ (la pagina iniziale è
   https://harispaartan.github.io/anac-appalti-dbt/).
@@ -137,25 +137,53 @@ Il progetto dbt ha 40 modelli (più 3 seed):
 
 ## Qualità dei dati
 
-La tabella qui sotto riporta le misure dell'ultima esecuzione completa su dati reali (`uv run appalti run`,
-poi `uv run appalti report`); finché quell'esecuzione non c'è, contiene solo un segnaposto. Il dettaglio di
-ogni controllo, con conteggio e quota, è in [docs/qualita-dati.md](docs/qualita-dati.md) (oggi è il report
-della fixture sintetica e dice di esserlo; un `appalti report` reale lo sostituisce); tempi, file e disco per
-fase sono in [docs/ultima-esecuzione.md](docs/ultima-esecuzione.md), che esiste dopo il primo `appalti report`.
+La tabella qui sotto riporta le misure della prima esecuzione completa su dati reali (`uv run appalti run`, poi
+`uv run appalti report`). Il dettaglio di ogni controllo, con conteggio e quota, è in
+[docs/qualita-dati.md](docs/qualita-dati.md); tempi, file e disco per fase sono in
+[docs/ultima-esecuzione.md](docs/ultima-esecuzione.md).
 
 <!-- numeri:inizio -->
-Nessuna esecuzione completa su dati reali registrata: questa tabella viene scritta da `uv run appalti report`.
+| Misura | Valore |
+|---|---:|
+| Lotti (CIG) correnti | 3.734.851 |
+| Anni di pubblicazione | 2024–2026 |
+| File ANAC scaricati | 83 (1,94 GB) |
+| Righe atterrate | 34.714.153 |
+| Righe CIG → lotti correnti | 6.334.426 → 3.734.851 |
+| Duplicati esatti rimossi | 1.663 (0,03 %) |
+| Modelli dbt | 40 |
+| Test dbt: gravità error / warn / unit test | 129 / 17 / 25 |
+| Esiti dell'ultimo dbt build | pass 164, success 43, warn 7 |
+| Modelli con test sulla chiave | 100 % |
+| Lotti con date impossibili | 2.520.462 (67,48 %) |
+| Lotti con importi anomali (esclusi dalle somme) | 150.243 (4,02 %) |
+| Righe di persone fisiche senza identità | 1.631.723 |
+| Freschezza delle sorgenti | pass 6 |
+| Durata: estrazione · landing · dbt · totale | 6 min 50 s · 2 min 12 s · 8 min 43 s · 14 min 19 s |
+| Disco: raw · landing · warehouse | 1,94 GB · 1,90 GB · 8,77 GB |
+| Costo del warehouse | 0 EUR |
+
+| Mart | Righe |
+|---|---:|
+| `mart_appalti_regione_mese` | 2.152 |
+| `mart_appalti_settore_cpv` | 273 |
+| `mart_concorrenza` | 2.087 |
+| `mart_procedure` | 378 |
+| `mart_ribassi` | 57 |
+| `mart_stazioni_appaltanti` | 71.987 |
+| `mart_tasso_aggiudicazione` | 3.678 |
+| `mart_tempi_aggiudicazione` | 3.719 |
+| `mart_varianti_subappalti` | 63 |
+
+Data di riferimento 2026-10-25, esecuzione `20261025T125951-e7d029`. Download, landing e durata totale dall'esecuzione `20261025T121119-3f3dd2`.
 <!-- numeri:fine -->
 
-Numeri della fixture sintetica (generati dal progetto, non dati ANAC), a titolo di esempio del formato:
-
-| Misura (fixture, mese 2) | Valore |
-|---|---:|
-| Righe CIG atterrate → lotti correnti | 1.704 → 1.500 |
-| Difetti iniettati: duplicati esatti · date impossibili · importi anomali | 3 · 3 · 3 |
-| Modelli dbt · modelli con descrizione e test sulla chiave | 40 · 40 |
-| Test dbt: gravità error · warn · unit test | 129 · 17 · 25 |
-| Esito di `dbt build` (166 test superati, 5 avvisi attesi) | 166 pass · 5 warn |
+Come leggere la tabella: il download (83 file, 1,94 GB, 6 min 50 s) e la prima fase di landing vengono dalla prima
+esecuzione (`20261025T121119-3f3dd2`), che si è fermata in `dbt build` per due difetti dei dati reali poi corretti
+(vedi Limiti); le altre cifre, compresa la durata di dbt, vengono dall'esecuzione `20261025T125951-e7d029` rifatta
+dall'archivio raw con il codice corretto (landing 2 min 57 s, `dbt build` 8 min 43 s). Un'esecuzione completa da
+zero costa quindi circa 18 minuti, non le due o tre ore stimate prima. La fixture sintetica (1.500 lotti, difetti
+iniettati) resta solo per test e CI.
 
 Controlli eseguiti a ogni `dbt build`:
 
@@ -193,16 +221,13 @@ uv run appalti report    # aggiorna docs/ e la tabella dei numeri qui sopra
 uv run appalti export    # nove mart in build/export/*.parquet
 ```
 
-Le cifre di questa sezione sono stime ricavate dalle dimensioni dichiarate da CKAN e dalle specifiche del progetto, non
-misure: la prima esecuzione completa le sostituirà con i valori misurati (tabella dei numeri e
-`docs/ultima-esecuzione.md`).
+Misure della prima esecuzione reale (25 ottobre 2026, portatile Windows, DuckDB con `memory_limit` 2 GB e 4 thread):
 
-- Download della prima esecuzione: circa 2 GB di zip (stima; CKAN dichiara circa 9 GB di CSV non compressi).
+- Download: 83 file e 1,94 GB di zip (stimati 2 GB; CKAN dichiara circa 9 GB di CSV non compressi), in 6 min 50 s.
   Le esecuzioni mensili successive scaricano solo i delta nuovi.
-- Disco: l'estrazione si ferma se lo spazio libero scende sotto 30 GB (`spazio_libero_min_gb` in
-  `appalti.toml`); l'occupazione misurata di archivio raw, landing e warehouse sarà nella tabella dei numeri.
-- Tempo: due o tre ore per la prima esecuzione su una connessione domestica (stima); i tempi misurati per fase
-  saranno in [docs/ultima-esecuzione.md](docs/ultima-esecuzione.md).
+- Disco: raw 1,94 GB, landing 1,90 GB, warehouse 8,77 GB (dopo la ricostruzione; 6,85 GB al primo build). L'estrazione
+  si ferma se lo spazio libero scende sotto 30 GB (`spazio_libero_min_gb` in `appalti.toml`).
+- Tempo: landing 2 min 57 s, `dbt build` 8 min 43 s (214 nodi, 171 test); circa 18 minuti da zero.
 - Costo del warehouse: 0 EUR (DuckDB locale).
 - `APPALTI_HOME` sposta `data/`, `build/` e `logs/` in un'altra cartella (vedi `.env.example`).
 - Se il portale blocca i download automatici, i file si possono scaricare dal browser e mettere in
@@ -241,7 +266,7 @@ misure: la prima esecuzione completa le sostituirà con i valori misurati (tabel
 - Privacy: i codici fiscali personali (16 caratteri) perdono codice e denominazione già nel landing e non si
   collegano tra file. Le ditte individuali con partita IVA di 11 cifre restano con la loro denominazione, che
   può contenere il nome del titolare: ANAC le pubblica come dati d'impresa e il progetto le tratta allo stesso
-  modo. I campi di testo libero non sono analizzati. L'archivio raw locale conserva i file originali
+  modo (se la denominazione è un codice fiscale personale viene annullata). I campi di testo libero non sono analizzati. L'archivio raw locale conserva i file originali
   (compresi i dati personali) ed è fuori da git.
 - I file ANAC di varianti e subappalti non contengono importi: i mart riportano conteggi, non valori.
 - Il territorio arriva a regione (NUTS 2) e provincia; non c'è una mappatura NUTS 3.
@@ -250,13 +275,39 @@ misure: la prima esecuzione completa le sostituirà con i valori misurati (tabel
 - Il pacchetto `cig-2026` non esiste: i lotti 2026 arrivano dai delta mensili del pacchetto `cig`.
 - I logCsv dei file annuali CIG riportano solo il totale: quei file risultano `non_disponibile` nella
   riconciliazione.
-- Da confermare sul primo file reale: (a) l'assunzione `cod_esito = 1` come aggiudicazione: un'aggiudicazione
-  conta come tale se `cod_esito` è assente o vale 1 (`flag_esito_aggiudicato` in `fct_aggiudicazioni`) e va
-  verificata sui valori reali; (b) la regola del punto singolo come separatore decimale, verificata sui file di
-  esempio ma da riscontrare sull'intero 2024–2026 con il conteggio delle perdite di lettura del report.
-- La fixture è sintetica e serve a test e CI; i numeri di questo README vengono dalla fixture o sono stime
-  dichiarate, finché non c'è un'esecuzione sui dati reali.
-- Il WAF del portale può rifiutare i client automatici; in quel caso vale la procedura `--da-archivio`.
+- Verificato sulla prima esecuzione reale (25 ottobre 2026):
+  - `cod_esito = 1` è `AGGIUDICATA`: sulle 6.035.083 aggiudicazioni correnti vale 1 nel 99,51 % dei casi (6.005.792);
+    gli altri codici sono 7 e 6 (annullata o revocata, 0,18 % e 0,13 %), 99 (non aggiudicata, 0,12 %), 98 (nessun
+    vincitore, 0,05 %), 90 (gara in corso, 0,01 %) e 2, 3, 4, 5 (meno di 60 righe in tutto). Nessun `cod_esito`
+    assente tra le correnti. La regola resta com'è: aggiudicata se il codice manca o vale 1.
+  - Regola del punto singolo: 3.727.125 importi di lotto hanno un solo punto e 7.725 sono interi; nessuno ha
+    due separatori. Un solo importo non si legge (`1E-7`, notazione scientifica: resta in `*_raw`, escluso dalle
+    somme) e 53 aggiudicazioni hanno importo o ribasso illeggibile. Circa 54.000 importi hanno più di due decimali
+    (per esempio `427751.27999999997`, artefatti di virgola mobile) e sono arrotondati a `decimal(18,2)`; 17.501
+    ne hanno esattamente tre (`119992.096`), coerenti con un punto decimale e non con le migliaia.
+  - Perdite di lettura: zero per tutte le sette colonne controllate (date di pubblicazione, scadenza,
+    aggiudicazione, variante, subappalto e conteggi di offerte).
+  - WAF: lo User-Agent del progetto è rifiutato dal portale (pagina HTML con HTTP 200 e "support ID", riconosciuta
+    dal corpo) e la pipeline passa allo User-Agent da browser, una volta per pacchetto (8 volte); con quello tutti i
+    download e le letture con Range (che richiedono 206) sono riusciti, senza altri rifiuti e senza ripetizioni.
+  - Riconciliazione: 73 file atterrati, 49 con righe uguali al logCsv, 24 `non_disponibile` (i file annuali
+    `cig-2024` e `cig-2025`), nessuna `differenza`. Nessun falso positivo da logCsv non aggiornato per uno zip
+    ripubblicato: le `differenze` della prima esecuzione erano perdite vere (punto successivo).
+- Difetti trovati dalla prima esecuzione e corretti nella 0.1.0: (1) i file ANAC scrivono le virgolette dentro un valore
+  con il backslash (`\"`) e non raddoppiandole: con il lettore a virgolette raddoppiate una riga rovinata assorbiva le
+  righe seguenti (da 19 a 1.335 righe perse in 13 dei 73 file, quelli dei delta da aprile 2026) e la riconciliazione dei
+  logCsv lo ha segnalato; ora il landing usa il backslash come escape e tutte le righe coincidono. (2) Alcune ditte
+  individuali hanno una partita IVA di 11 cifre e come denominazione il codice fiscale personale del titolare: il
+  test sui mart lo ha bloccato (65 righe) e ora quella denominazione è annullata al landing e in staging.
+- Il controllo "date impossibili" segnala il 67 % dei lotti, quasi tutti affidamenti diretti in cui la data di
+  scadenza dell'offerta precede la pubblicazione (in media di 11 giorni): è un avviso informativo e non esclude lotti
+  dai mart; una regola per famiglia di procedura è nella roadmap.
+- Le aggiudicazioni orfane (2,4 milioni) sono attese: il file completo delle aggiudicazioni contiene anni precedenti
+  al 2024. Circa 1,6 % dei lotti (58.733 su 3,73 milioni) ha territorio `ND`: codici ISTAT 99x non mappati o assenti.
+- 633 righe CIG contengono il carattere di sostituzione U+FFFD già nel file sorgente.
+- I numeri della fixture sintetica servono a test e CI; nulla di quello che è sulla fixture è un dato ANAC.
+- Il WAF del portale può rifiutare i client automatici anche con lo User-Agent da browser; in quel caso vale la
+  procedura `--da-archivio`.
 
 ## Roadmap
 
@@ -264,4 +315,5 @@ misure: la prima esecuzione completa le sostituirà con i valori misurati (tabel
 - Feed OCDS di ANAC (CC BY 4.0) come seconda sorgente, confrontabile a livello europeo.
 - Slim CI sulle pull request (`dbt build --select state:modified+ --defer`) e sqlfluff.
 - Mappatura dei comuni su NUTS 3.
+- Controllo delle date per famiglia di procedura (oggi la scadenza prima della pubblicazione scatta sugli affidamenti diretti).
 - MotherDuck come target cloud: non è nella v1 (decisione del proprietario), da valutare solo se serve.

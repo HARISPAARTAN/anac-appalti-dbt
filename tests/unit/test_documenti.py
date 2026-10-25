@@ -165,6 +165,7 @@ def test_pagina_dagster():
     assert "flowchart LR" in pagina
     assert "raw_cig --&gt; landing_cig" in pagina
     assert "mermaid@11.4.1" in pagina
+    assert "non da un'esecuzione sui dati reali" in pagina
 
 
 def test_indice_sito_licenza_e_link():
