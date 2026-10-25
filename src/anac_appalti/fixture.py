@@ -8,7 +8,8 @@ impossibili (41, 42: scadenza prima della pubblicazione), 2 importi anomali (51 
 1 lotto aggiudicato senza aggiudicatario (61), 1 ribasso fuori intervallo (71 = 120 %), 1 aggiudicazione
 precedente alla pubblicazione (81), 1 lotto oltre l'importo della gara (91). Il mese 2 aggiunge il delta
 `20260401-cig_csv.zip` con 50 aggiornamenti di importo e 1 cancellazione (CIG 201) e il delta
-`20260401-aggiudicazioni_csv.zip` con 20 aggiornamenti di importo e 1 aggiudicazione nuova (CIG 4).
+`20260401-aggiudicazioni_csv.zip` con 20 aggiornamenti di importo, 1 aggiudicazione nuova (CIG 4) e 1
+riaggiudicazione (CIG 5: nuovo `id_aggiudicazione`, quello del mese 1 resta valido).
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ AGGIORNATI = tuple(i for i in range(101, 200) if i % 10 != 0)[:50]
 CANCELLATO = 201
 AGGIUDICAZIONI_AGGIORNATE = tuple(i for i in range(301, 400) if i % 5 != 4)[:20]
 AGGIUDICAZIONE_NUOVA = 4
+RIAGGIUDICAZIONE = 5
 PROVINCE = (
     ("072", "BA", "BARI"),
     ("073", "TA", "TARANTO"),
@@ -276,7 +278,9 @@ def _ribasso(lotto: Lotto) -> float:
     return round((lotto.i % 30) + 0.5, 2) if lotto.procedura in COMPETITIVE else 0.0
 
 
-def riga_aggiudicazione(contratto: Contratto, lotto: Lotto, *, fattore_importo: float = 1.0) -> list[str]:
+def riga_aggiudicazione(
+    contratto: Contratto, lotto: Lotto, *, fattore_importo: float = 1.0, id_base: int = 5_000_000
+) -> list[str]:
     ribasso = _ribasso(lotto)
     offerte = str(n_offerte(lotto.i))
     importo = lotto.importo * (1 - min(ribasso, 100.0) / 100) * fattore_importo
@@ -296,7 +300,7 @@ def riga_aggiudicazione(contratto: Contratto, lotto: Lotto, *, fattore_importo: 
             "ribasso_aggiudicazione": f"{ribasso}",
             "num_imprese_offerenti": offerte,
             "flag_subappalto": "true" if lotto.i % 40 == 0 else "false",
-            "id_aggiudicazione": str(5_000_000 + lotto.i),
+            "id_aggiudicazione": str(id_base + lotto.i),
             "cod_esito": "1",
             "asta_elettronica": "0",
             "flag_scomputo": "0",
@@ -310,12 +314,16 @@ def righe_aggiudicazioni(contratto: Contratto, lotti: list[Lotto]) -> list[list[
 
 
 def righe_delta_aggiudicazioni(contratto: Contratto, lotti: list[Lotto]) -> list[list[str]]:
-    """Delta del mese 2: 20 aggiudicazioni con importo ridotto del 3 % e una aggiudicazione nuova."""
+    """Delta del mese 2: 20 aggiudicazioni con importo ridotto del 3 %, una aggiudicazione nuova (CIG 4) e una
+    riaggiudicazione (CIG 5): un secondo `id_aggiudicazione` per un lotto già aggiudicato."""
     per_indice = {lotto.i: lotto for lotto in lotti}
     righe = [
         riga_aggiudicazione(contratto, per_indice[i], fattore_importo=0.97) for i in AGGIUDICAZIONI_AGGIORNATE
     ]
     righe.append(riga_aggiudicazione(contratto, per_indice[AGGIUDICAZIONE_NUOVA]))
+    righe.append(
+        riga_aggiudicazione(contratto, per_indice[RIAGGIUDICAZIONE], fattore_importo=0.9, id_base=6_000_000)
+    )
     return righe
 
 

@@ -12,6 +12,7 @@ from anac_appalti.fixture import (
     IMPORTO_ENORME,
     IMPORTO_ZERO,
     OLTRE_GARA,
+    RIAGGIUDICAZIONE,
     RIBASSO_FUORI_INTERVALLO,
     SENZA_AGGIUDICATARIO,
     aggiudicato,
@@ -124,8 +125,18 @@ def test_delta_mese2(magazzino_mese2):
 def test_delta_aggiudicazioni_mese2(magazzino_mese2):
     imp = magazzino_mese2
     delta = "_risorsa = '20260401-aggiudicazioni_csv'"
-    assert uno(imp, "select count(*) from intermediate.int_aggiudicazioni__corrente") == 1201
-    assert uno(imp, f"select count(*) from intermediate.int_aggiudicazioni__corrente where {delta}") == 21
+    assert uno(imp, "select count(*) from intermediate.int_aggiudicazioni__corrente") == 1202
+    assert uno(imp, f"select count(*) from intermediate.int_aggiudicazioni__corrente where {delta}") == 22
+    # riaggiudicazione: stesso CIG, nuovo id. L'aggiudicazione di mese 1 resta (unique_key = id_aggiudicazione).
+    riaggiudicati = interroga(
+        imp,
+        f"select id_aggiudicazione, _risorsa, n_versioni from intermediate.int_aggiudicazioni__corrente "
+        f"where cig = '{cig(RIAGGIUDICAZIONE)}' order by id_aggiudicazione",
+    )
+    assert riaggiudicati == [
+        (5_000_000 + RIAGGIUDICAZIONE, "aggiudicazioni_csv", 1),
+        (6_000_000 + RIAGGIUDICAZIONE, "20260401-aggiudicazioni_csv", 1),
+    ]
     assert (
         uno(imp, "select count(*) from intermediate.int_aggiudicazioni__corrente where n_versioni = 2") == 20
     )
@@ -191,3 +202,12 @@ def test_incrementale_uguale_al_full_refresh(magazzino_mese2):
         con.execute("drop schema verifica cascade")
     finally:
         con.close()
+
+
+def test_perdite_di_parsing_assenti_nella_fixture(magazzino_mese1):
+    righe = interroga(
+        magazzino_mese1,
+        "select tabella, colonna, n_valorizzate, n_perdite from intermediate.int_perdite_parsing",
+    )
+    assert len(righe) == 7
+    assert all(n_perdite == 0 and n_valorizzate > 0 for _, _, n_valorizzate, n_perdite in righe), righe

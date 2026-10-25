@@ -66,6 +66,12 @@ sources:
       description: CIG del lotto aggiudicato.
     - name: data_aggiudicazione_definitiva
       description: Data dell'aggiudicazione definitiva.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: data
+          config:
+            severity: warn
     - name: esito
       description: Esito della procedura.
     - name: criterio_aggiudicazione
@@ -74,6 +80,12 @@ sources:
       description: Data di comunicazione dell'esito.
     - name: numero_offerte_ammesse
       description: Numero di offerte ammesse.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: intero
+          config:
+            severity: warn
     - name: numero_offerte_escluse
       description: Numero di offerte escluse.
     - name: importo_aggiudicazione
@@ -82,6 +94,12 @@ sources:
       description: Ribasso di aggiudicazione in percentuale.
     - name: num_imprese_offerenti
       description: Numero di imprese offerenti.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: intero
+          config:
+            severity: warn
     - name: flag_subappalto
       description: Vero se è previsto il subappalto.
     - name: id_aggiudicazione
@@ -144,8 +162,20 @@ sources:
       description: Provincia del luogo di esecuzione.
     - name: data_pubblicazione
       description: Data di pubblicazione del lotto.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: data
+          config:
+            severity: warn
     - name: data_scadenza_offerta
       description: Termine per la presentazione delle offerte.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: data
+          config:
+            severity: warn
     - name: cod_tipo_scelta_contraente
       description: Codice della procedura di scelta del contraente.
     - name: tipo_scelta_contraente
@@ -318,6 +348,12 @@ sources:
       description: 'Codice fiscale dell''appaltatore che subappalta. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
     - name: data_autorizzazione
       description: Data di autorizzazione del subappalto.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: data
+          config:
+            severity: warn
     - name: oggetto
       description: Oggetto del subappalto.
     - name: cod_categoria
@@ -404,6 +440,12 @@ sources:
       description: Motivo della variante.
     - name: data_approvazione_variante
       description: Data di approvazione della variante.
+      data_tests:
+      - perdita_parsing:
+          arguments:
+            tipo: data
+          config:
+            severity: warn
     - name: cig
       description: CIG del lotto.
     - name: id_aggiudicazione

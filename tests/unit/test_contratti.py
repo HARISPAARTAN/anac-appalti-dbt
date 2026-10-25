@@ -7,6 +7,7 @@ import yaml
 
 from anac_appalti.config import carica_impostazioni
 from anac_appalti.contratti import (
+    CONTROLLI_PARSING,
     ContrattoNonValido,
     carica_contratti,
     carica_contratto,
@@ -83,6 +84,42 @@ def test_genera_sources():
     colonne_sub = [c["name"] for c in tabelle["subappalti"]["columns"]]
     assert "_classe_cf" in colonne_sub and "_classe_cf_subappaltante" in colonne_sub
     assert "_classe_cf" not in colonne_cig
+
+
+def test_sources_con_test_di_perdita_di_parsing():
+    """Date e conteggi che alimentano i mart hanno un test warn: testo non vuoto e valore tipizzato NULL."""
+    documento = yaml.safe_load(genera_sources_yml(CONTRATTI, 40, 75))
+    tabelle = {t["name"]: t for t in documento["sources"][0]["tables"]}
+    trovati = {}
+    for nome, tabella in tabelle.items():
+        for colonna in tabella["columns"]:
+            for prova in colonna.get("data_tests", []):
+                trovati[(nome, colonna["name"])] = prova
+    assert set(trovati) == set(CONTROLLI_PARSING)
+    assert trovati[("cig", "data_pubblicazione")] == {
+        "perdita_parsing": {"arguments": {"tipo": "data"}, "config": {"severity": "warn"}}
+    }
+    assert trovati[("aggiudicazioni", "numero_offerte_ammesse")]["perdita_parsing"]["arguments"] == {
+        "tipo": "intero"
+    }
+    for tabella, colonna in CONTROLLI_PARSING:
+        tipo = next(c.tipo for c in CONTRATTI[tabella].tenute if c.nome == colonna)
+        atteso = {"date": "data", "integer": "intero", "bigint": "intero"}[tipo]
+        assert trovati[(tabella, colonna)]["perdita_parsing"]["arguments"]["tipo"] == atteso
+    assert {c for _, c in CONTROLLI_PARSING} >= {
+        "data_pubblicazione",
+        "data_scadenza_offerta",
+        "data_aggiudicazione_definitiva",
+        "numero_offerte_ammesse",
+        "num_imprese_offerenti",
+    }
+
+
+def test_modello_perdite_parsing_elenca_gli_stessi_controlli():
+    """int_perdite_parsing (per il report) e le sources (per i test) usano lo stesso elenco di colonne."""
+    sql = (IMP.dbt_dir / "models" / "intermediate" / "int_perdite_parsing.sql").read_text(encoding="utf-8")
+    nel_modello = set(re.findall(r"\('(\w+)', '(\w+)', '(?:data|intero)'\)", sql))
+    assert nel_modello == set(CONTROLLI_PARSING)
 
 
 def test_contratto_con_nomi_duplicati(tmp_path: Path):

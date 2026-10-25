@@ -36,9 +36,14 @@ IMPORTI = [
     ("1234.567", Decimal("1234.57")),
     ("5000000000.00", Decimal("5000000000.00")),
     ("9999999999999999.99", Decimal("9999999999999999.99")),
-    # ambigui: un solo separatore e tre cifre dopo, nessuna scelta silenziosa
-    ("1.234", None),
+    # un solo punto è il separatore decimale del formato ANAC, anche con tre decimali
+    ("1.234", Decimal("1.23")),
+    ("12.345", Decimal("12.35")),
+    ("0.125", Decimal("0.13")),
+    ("-1.234", Decimal("-1.23")),
+    # ambiguo: una sola virgola e tre cifre dopo (migliaia o decimali?), nessuna scelta silenziosa
     ("1,234", None),
+    ("-1,234", None),
     # fuori formato o oltre decimal(18,2): NULL (il testo resta in _raw e la qualità lo segnala)
     ("10000000000000000", None),
     ("12345678901234567.00", None),
@@ -59,6 +64,12 @@ def test_parse_importo(testo, atteso):
 def test_parse_ribasso():
     valori = ["12,5", "12.5", "-0.5", "120", "1.234,5", "12%", "", None]
     assert valuta("parse_ribasso", valori) == [12.5, 12.5, -0.5, 120.0, 1234.5, None, None, None]
+
+
+def test_parse_ribasso_un_solo_separatore_e_decimale():
+    """Un ribasso non ha migliaia: con un solo separatore è sempre decimale, anche con tre cifre dopo."""
+    valori = ["12.345", "12,345", "0.125", "0,125", "-1.234", "99.999", "1.234.567", "abc"]
+    assert valuta("parse_ribasso", valori) == [12.345, 12.345, 0.125, 0.125, -1.234, 99.999, 1234567.0, None]
 
 
 def test_parse_intero():

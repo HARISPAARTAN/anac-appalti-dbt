@@ -34,6 +34,20 @@ COLONNE_META: tuple[tuple[str, str], ...] = (
         "Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.",
     ),
 )
+# Date e conteggi che i mart usano: un testo non vuoto che diventa NULL in staging è una perdita silenziosa.
+# Il test dbt `perdita_parsing` (warn) sta nelle sources generate; int_perdite_parsing li conta per il report.
+CONTROLLI_PARSING: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("cig", "data_pubblicazione"),
+        ("cig", "data_scadenza_offerta"),
+        ("aggiudicazioni", "data_aggiudicazione_definitiva"),
+        ("aggiudicazioni", "numero_offerte_ammesse"),
+        ("aggiudicazioni", "num_imprese_offerenti"),
+        ("varianti", "data_approvazione_variante"),
+        ("subappalti", "data_autorizzazione"),
+    }
+)
+TIPO_PARSING = {"date": "data", "integer": "intero", "bigint": "intero"}
 DESCRIZIONE_CLASSE = (
     "Classe del codice fiscale di `{sorgente}` prima dell'annullamento: persona_giuridica (11 cifre), persona_fisica "
     "(16 caratteri), non_verificabile o assente. Non identifica nessuno: il valore originale non è nel landing."
@@ -150,6 +164,23 @@ def confronta_schema(contratto: Contratto, intestazione: list[str]) -> EsitoSche
     )
 
 
+def _colonna_sources(tabella: str, col: Colonna) -> dict:
+    voce: dict = {
+        "name": col.nome,
+        "description": col.descrizione + (NOTA_PERSONALE if col.dato_personale else ""),
+    }
+    if (tabella, col.nome) in CONTROLLI_PARSING:
+        voce["data_tests"] = [
+            {
+                "perdita_parsing": {
+                    "arguments": {"tipo": TIPO_PARSING[col.tipo]},
+                    "config": {"severity": "warn"},
+                }
+            }
+        ]
+    return voce
+
+
 def genera_sources_yml(contratti: dict[str, Contratto], warn_giorni: int, error_giorni: int) -> str:
     tabelle = []
     for tabella in sorted(contratti):
@@ -169,13 +200,7 @@ def genera_sources_yml(contratti: dict[str, Contratto], warn_giorni: int, error_
                 "error_after": {"count": error_giorni, "period": "day"},
             }
         voce["columns"] = (
-            [
-                {
-                    "name": col.nome,
-                    "description": col.descrizione + (NOTA_PERSONALE if col.dato_personale else ""),
-                }
-                for col in c.tenute
-            ]
+            [_colonna_sources(tabella, col) for col in c.tenute]
             + [
                 {"name": nome, "description": DESCRIZIONE_CLASSE.format(sorgente=col.sorgente)}
                 for col, nome in colonne_classe(c)

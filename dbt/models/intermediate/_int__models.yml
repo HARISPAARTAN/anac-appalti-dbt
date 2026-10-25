@@ -165,7 +165,69 @@ models:
               arguments:
                 values: ["ok", "differenza", "non_disponibile"]
 
+  - name: int_perdite_parsing
+    description: "Perdite di tipizzazione per colonna: righe atterrate con un testo non vuoto che staging trasforma in NULL, per le date e i conteggi usati dai mart (data_pubblicazione, data_scadenza_offerta, data_aggiudicazione_definitiva, numero_offerte_ammesse, num_imprese_offerenti, date di varianti e subappalti). Conta tutte le righe atterrate, anche le versioni superate. Alimenta il report della qualità dei dati."
+    config:
+      meta:
+        chiave: [tabella, colonna]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [tabella, colonna]
+    columns:
+      - name: tabella
+        description: "Tabella ANAC di origine."
+        data_tests:
+          - not_null
+      - name: colonna
+        description: "Colonna controllata."
+        data_tests:
+          - not_null
+      - name: n_valorizzate
+        description: "Righe con un testo non vuoto."
+      - name: n_perdite
+        description: "Di queste, righe in cui la tipizzazione dà NULL."
+
 unit_tests:
+  - name: test_perdite_parsing
+    description: "Testo non vuoto con valore tipizzato NULL è una perdita; vuoti e formati letti (ISO, gg/mm/aaaa, '27.0') no; '27.5' come conteggio è una perdita."
+    model: int_perdite_parsing
+    given:
+      - input: source('anac', 'cig')
+        format: sql
+        rows: |
+          select * from (values
+          ('2025-03-01', '2025-04-01'),
+          ('03/12/2025', 'boh'),
+          ('31/02/2025', ''),
+          ('', '12-03-2025')
+          ) as v(data_pubblicazione, data_scadenza_offerta)
+      - input: source('anac', 'aggiudicazioni')
+        format: sql
+        rows: |
+          select * from (values
+          ('2025-03-01', '3', '3.0'),
+          ('x', '27.5', ''),
+          ('', '', 'n.d.')
+          ) as v(data_aggiudicazione_definitiva, numero_offerte_ammesse, num_imprese_offerenti)
+      - input: source('anac', 'varianti')
+        format: sql
+        rows: |
+          select * from (values ('2025-03-01')) as v(data_approvazione_variante)
+      - input: source('anac', 'subappalti')
+        format: sql
+        rows: |
+          select * from (values ('2025-13-45')) as v(data_autorizzazione)
+    expect:
+      rows:
+        - {tabella: cig, colonna: data_pubblicazione, n_valorizzate: 3, n_perdite: 1}
+        - {tabella: cig, colonna: data_scadenza_offerta, n_valorizzate: 3, n_perdite: 2}
+        - {tabella: aggiudicazioni, colonna: data_aggiudicazione_definitiva, n_valorizzate: 2, n_perdite: 1}
+        - {tabella: aggiudicazioni, colonna: numero_offerte_ammesse, n_valorizzate: 2, n_perdite: 1}
+        - {tabella: aggiudicazioni, colonna: num_imprese_offerenti, n_valorizzate: 2, n_perdite: 1}
+        - {tabella: varianti, colonna: data_approvazione_variante, n_valorizzate: 1, n_perdite: 0}
+        - {tabella: subappalti, colonna: data_autorizzazione, n_valorizzate: 1, n_perdite: 1}
+
   - name: test_versione_corrente_e_duplicati
     description: "La versione corrente è la più recente per _data_snapshot; duplicati esatti contati; due righe prevalenti diverse nello stesso file segnalano un conflitto."
     model: int_cig__versioni

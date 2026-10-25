@@ -14,7 +14,8 @@ unit_tests:
           ('ABC0000002', '1,234.56', '1234,5', '2025-03-01 10:11:12', '31/03/2025', '4', '1', '0', '1', '12', '27.5', '2', ''),
           ('ABC0000003', '3000.00', '1500', '2025-03-02', '2025-03-30', '1', '2', 'SI', 'no', '1', '', '', ''),
           ('ABC0000004', 'n.d.', '12345678901234567.00', '31/02/2025', '12-03-2025', '24', '3', 'boh', 'boh', '', 'x', 'x', ''),
-          ('ABC0000005', '1.234', '-1.000,00', '', '', '', '', '', '', '', '', '', '')
+          ('ABC0000005', '1,234', '-1.000,00', '', '', '', '', '', '', '', '', '', ''),
+          ('ABC0000006', '12.345', '1.234', '', '', '', '', '', '', '', '', '', '')
           ) as v(cig, importo_complessivo_gara, importo_lotto, data_pubblicazione, data_scadenza_offerta, cod_tipo_scelta_contraente, cod_modalita_realizzazione, flag_prevalente, flag_urgenza, n_lotti_componenti, durata_prevista, cod_esito, data_cancellazione)
     expect:
       rows:
@@ -22,10 +23,11 @@ unit_tests:
         - {cig: ABC0000002, importo_complessivo_gara: 1234.56, importo_complessivo_gara_raw: "1,234.56", importo_lotto: 1234.50, importo_lotto_raw: "1234,5", data_pubblicazione: "2025-03-01", data_scadenza_offerta: "2025-03-31", cod_tipo_scelta_contraente: "4", cod_modalita_realizzazione: "1", flag_prevalente: false, flag_urgenza: true, n_lotti_componenti: 12, durata_prevista: null, cod_esito: 2, data_cancellazione: null}
         - {cig: ABC0000003, importo_complessivo_gara: 3000.00, importo_complessivo_gara_raw: "3000.00", importo_lotto: 1500.00, importo_lotto_raw: "1500", data_pubblicazione: "2025-03-02", data_scadenza_offerta: "2025-03-30", cod_tipo_scelta_contraente: "1", cod_modalita_realizzazione: "2", flag_prevalente: true, flag_urgenza: false, n_lotti_componenti: 1, durata_prevista: null, cod_esito: null, data_cancellazione: null}
         - {cig: ABC0000004, importo_complessivo_gara: null, importo_complessivo_gara_raw: "n.d.", importo_lotto: null, importo_lotto_raw: "12345678901234567.00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: "24", cod_modalita_realizzazione: "3", flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
-        - {cig: ABC0000005, importo_complessivo_gara: null, importo_complessivo_gara_raw: "1.234", importo_lotto: -1000.00, importo_lotto_raw: "-1.000,00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: null, cod_modalita_realizzazione: null, flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
+        - {cig: ABC0000005, importo_complessivo_gara: null, importo_complessivo_gara_raw: "1,234", importo_lotto: -1000.00, importo_lotto_raw: "-1.000,00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: null, cod_modalita_realizzazione: null, flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
+        - {cig: ABC0000006, importo_complessivo_gara: 12.35, importo_complessivo_gara_raw: "12.345", importo_lotto: 1.23, importo_lotto_raw: "1.234", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: null, cod_modalita_realizzazione: null, flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
 
   - name: test_formati_aggiudicazioni
-    description: "Importo e ribasso con virgola decimale, offerte ammesse diverse dalle escluse, id '27.0', perdite di lettura con testo originale conservato."
+    description: "Importo e ribasso con virgola decimale, un solo punto o una sola virgola con tre cifre (ribasso decimale, importo con virgola ambiguo e quindi NULL), offerte ammesse diverse dalle escluse, id '27.0', perdite di lettura con testo originale conservato."
     model: stg_anac__aggiudicazioni
     given:
       - input: source('anac', 'aggiudicazioni')
@@ -36,7 +38,9 @@ unit_tests:
           (' abc0000001', '03/12/2025', '5', '2', '1.234,56', '12,5', '7', '5000001.0', '1', 'true'),
           ('ABC0000002', '2025-12-03', '3.0', '0', '1234.56', '12.5', '4', ' 5000002', '1.0', 'false'),
           ('ABC0000003', '', '2', '1', 'abc', '12%', '', '-1', '', ''),
-          ('ABC0000004', '', '', '', '', '', '', '5000004', '', '')
+          ('ABC0000004', '', '', '', '', '', '', '5000004', '', ''),
+          ('ABC0000005', '2025-12-04', '2', '0', '1.234', '12.345', '2', '5000005', '1', 'false'),
+          ('ABC0000006', '2025-12-05', '2', '0', '1,234', '1,234', '2', '5000006', '1', 'false')
           ) as v(cig, data_aggiudicazione_definitiva, numero_offerte_ammesse, numero_offerte_escluse, importo_aggiudicazione, ribasso_aggiudicazione, num_imprese_offerenti, id_aggiudicazione, cod_esito, flag_subappalto)
     expect:
       rows:
@@ -44,6 +48,8 @@ unit_tests:
         - {cig: ABC0000002, data_aggiudicazione_definitiva: "2025-12-03", n_offerte_ammesse: 3, n_offerte_escluse: 0, importo_aggiudicazione: 1234.56, importo_aggiudicazione_raw: "1234.56", ribasso_aggiudicazione: 12.5, ribasso_aggiudicazione_raw: "12.5", n_imprese_offerenti: 4, id_aggiudicazione: 5000002, cod_esito: 1, flag_subappalto: false}
         - {cig: ABC0000003, data_aggiudicazione_definitiva: null, n_offerte_ammesse: 2, n_offerte_escluse: 1, importo_aggiudicazione: null, importo_aggiudicazione_raw: "abc", ribasso_aggiudicazione: null, ribasso_aggiudicazione_raw: "12%", n_imprese_offerenti: null, id_aggiudicazione: -1, cod_esito: null, flag_subappalto: null}
         - {cig: ABC0000004, data_aggiudicazione_definitiva: null, n_offerte_ammesse: null, n_offerte_escluse: null, importo_aggiudicazione: null, importo_aggiudicazione_raw: null, ribasso_aggiudicazione: null, ribasso_aggiudicazione_raw: null, n_imprese_offerenti: null, id_aggiudicazione: 5000004, cod_esito: null, flag_subappalto: null}
+        - {cig: ABC0000005, data_aggiudicazione_definitiva: "2025-12-04", n_offerte_ammesse: 2, n_offerte_escluse: 0, importo_aggiudicazione: 1.23, importo_aggiudicazione_raw: "1.234", ribasso_aggiudicazione: 12.345, ribasso_aggiudicazione_raw: "12.345", n_imprese_offerenti: 2, id_aggiudicazione: 5000005, cod_esito: 1, flag_subappalto: false}
+        - {cig: ABC0000006, data_aggiudicazione_definitiva: "2025-12-05", n_offerte_ammesse: 2, n_offerte_escluse: 0, importo_aggiudicazione: null, importo_aggiudicazione_raw: "1,234", ribasso_aggiudicazione: 1.234, ribasso_aggiudicazione_raw: "1,234", n_imprese_offerenti: 2, id_aggiudicazione: 5000006, cod_esito: 1, flag_subappalto: false}
 
   - name: test_privacy_partecipanti
     description: "Seconda linea di difesa sui partecipanti: un codice personale ancora presente perde codice e denominazione; un codice già annullato dal landing conserva la classe del landing."

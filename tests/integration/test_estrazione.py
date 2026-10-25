@@ -40,6 +40,6 @@ def test_estrazione_idempotente_e_delta(tmp_path):
     assert estratti["aggiudicazioni"].scaricati == 2
     assert sum(e.scaricati for e in estratti.values()) == 4
     assert atterrati["cig"].righe == {"20260401-cig_csv": 51}
-    assert atterrati["aggiudicazioni"].righe == {"20260401-aggiudicazioni_csv": 21}
+    assert atterrati["aggiudicazioni"].righe == {"20260401-aggiudicazioni_csv": 22}
     delta = {v.risorsa: v for v in leggi_registro(imp2.registro_file)}["20260401-cig_csv"]
     assert (delta.riconciliazione, delta.data_snapshot) == ("ok", "2026-04-01")
