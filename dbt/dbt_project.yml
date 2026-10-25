@@ -30,6 +30,15 @@ models:
     intermediate:
       +materialized: table
       +schema: intermediate
+    marts:
+      core:
+        +materialized: table
+        +schema: core
+      radar:
+        +materialized: table
+        +schema: radar
+        +contract:
+          enforced: true
 
 seeds:
   anac_appalti:

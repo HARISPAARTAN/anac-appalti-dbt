@@ -15,6 +15,7 @@
 select
     '{{ tabella }}' as tabella,
     '{{ colonna }}' as colonna,
+    '{{ tipo }}' as tipo,
     cast(count(*) filter (where nullif(trim({{ colonna }}), '') is not null) as bigint) as n_valorizzate,
     cast(count(*) filter (where {{ condizione_perdita_parsing(colonna, tipo) }}) as bigint) as n_perdite
 from {{ source('anac', tabella) }}

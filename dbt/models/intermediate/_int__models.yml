@@ -183,6 +183,12 @@ models:
         description: "Colonna controllata."
         data_tests:
           - not_null
+      - name: tipo
+        description: "data o intero: il tipo di lettura controllato."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["data", "intero"]
       - name: n_valorizzate
         description: "Righe con un testo non vuoto."
       - name: n_perdite
@@ -220,13 +226,13 @@ unit_tests:
           select * from (values ('2025-13-45')) as v(data_autorizzazione)
     expect:
       rows:
-        - {tabella: cig, colonna: data_pubblicazione, n_valorizzate: 3, n_perdite: 1}
-        - {tabella: cig, colonna: data_scadenza_offerta, n_valorizzate: 3, n_perdite: 2}
-        - {tabella: aggiudicazioni, colonna: data_aggiudicazione_definitiva, n_valorizzate: 2, n_perdite: 1}
-        - {tabella: aggiudicazioni, colonna: numero_offerte_ammesse, n_valorizzate: 2, n_perdite: 1}
-        - {tabella: aggiudicazioni, colonna: num_imprese_offerenti, n_valorizzate: 2, n_perdite: 1}
-        - {tabella: varianti, colonna: data_approvazione_variante, n_valorizzate: 1, n_perdite: 0}
-        - {tabella: subappalti, colonna: data_autorizzazione, n_valorizzate: 1, n_perdite: 1}
+        - {tabella: cig, colonna: data_pubblicazione, tipo: data, n_valorizzate: 3, n_perdite: 1}
+        - {tabella: cig, colonna: data_scadenza_offerta, tipo: data, n_valorizzate: 3, n_perdite: 2}
+        - {tabella: aggiudicazioni, colonna: data_aggiudicazione_definitiva, tipo: data, n_valorizzate: 2, n_perdite: 1}
+        - {tabella: aggiudicazioni, colonna: numero_offerte_ammesse, tipo: intero, n_valorizzate: 2, n_perdite: 1}
+        - {tabella: aggiudicazioni, colonna: num_imprese_offerenti, tipo: intero, n_valorizzate: 2, n_perdite: 1}
+        - {tabella: varianti, colonna: data_approvazione_variante, tipo: data, n_valorizzate: 1, n_perdite: 0}
+        - {tabella: subappalti, colonna: data_autorizzazione, tipo: data, n_valorizzate: 1, n_perdite: 1}
 
   - name: test_versione_corrente_e_duplicati
     description: "La versione corrente è la più recente per _data_snapshot; duplicati esatti contati; due righe prevalenti diverse nello stesso file segnalano un conflitto."

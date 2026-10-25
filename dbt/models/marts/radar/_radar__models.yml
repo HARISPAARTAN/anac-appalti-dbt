@@ -1,0 +1,165 @@
+version: 2
+
+models:
+  - name: mart_appalti_regione_mese
+    description: "Lotti e importi per regione di esecuzione, mese di pubblicazione e oggetto principale. Importi solo sui lotti sommabili."
+    config:
+      meta:
+        chiave: [regione, mese, oggetto_principale_contratto]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [regione, mese, oggetto_principale_contratto]
+    columns:
+      - {name: regione, data_type: varchar, description: "Regione di esecuzione ('Non definita' se luogo_istat non è mappato).", data_tests: [not_null]}
+      - {name: mese, data_type: date, description: "Primo giorno del mese di pubblicazione.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione."}
+      - {name: oggetto_principale_contratto, data_type: varchar, description: "Lavori, servizi o forniture.", data_tests: [not_null]}
+      - {name: n_lotti, data_type: bigint, description: "Numero di lotti (anche quelli esclusi dalle somme)."}
+      - {name: importo_totale, data_type: "decimal(18,2)", description: "Somma di importo_lotto sui lotti sommabili, euro."}
+      - {name: importo_mediano, data_type: "decimal(18,2)", description: "Mediana di importo_lotto sui lotti sommabili, euro."}
+      - {name: quota_pnrr, data_type: double, description: "Quota di lotti finanziati con PNRR o PNC (0–1)."}
+
+  - name: mart_appalti_settore_cpv
+    description: "Lotti e importi per divisione CPV, anno e settore, con la quota di affidamenti diretti."
+    config:
+      meta:
+        chiave: [divisione_cpv, anno, settore]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [divisione_cpv, anno, settore]
+    columns:
+      - {name: divisione_cpv, data_type: varchar, description: "Divisione CPV a due cifre ('ND' se manca).", data_tests: [not_null]}
+      - {name: descrizione_divisione, data_type: varchar, description: "Denominazione della divisione."}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
+      - {name: settore, data_type: varchar, description: "Settori ordinari o speciali.", data_tests: [not_null]}
+      - {name: n_lotti, data_type: bigint, description: "Numero di lotti."}
+      - {name: importo_totale, data_type: "decimal(18,2)", description: "Somma di importo_lotto sui lotti sommabili, euro."}
+      - {name: quota_affidamento_diretto, data_type: double, description: "Quota di lotti affidati direttamente (0–1)."}
+
+  - name: mart_procedure
+    description: "Peso di ogni famiglia di procedura per regione e anno, in numero di lotti e in importo."
+    config:
+      meta:
+        chiave: [famiglia_procedura, regione, anno]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [famiglia_procedura, regione, anno]
+    columns:
+      - {name: famiglia_procedura, data_type: varchar, description: "Famiglia di procedura.", data_tests: [not_null]}
+      - {name: regione, data_type: varchar, description: "Regione di esecuzione.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
+      - {name: n_lotti, data_type: bigint, description: "Numero di lotti."}
+      - {name: quota_lotti, data_type: double, description: "Quota dei lotti della regione nell'anno (0–1)."}
+      - {name: importo_totale, data_type: "decimal(18,2)", description: "Somma di importo_lotto sui lotti sommabili, euro."}
+      - {name: quota_importo, data_type: double, description: "Quota dell'importo della regione nell'anno (0–1)."}
+
+  - name: mart_tasso_aggiudicazione
+    description: "Tasso di aggiudicazione dei lotti con scadenza delle offerte di almeno 180 giorni prima della data di riferimento, per regione, famiglia di procedura e mese di pubblicazione."
+    config:
+      meta:
+        chiave: [regione, famiglia_procedura, mese]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [regione, famiglia_procedura, mese]
+    columns:
+      - {name: regione, data_type: varchar, description: "Regione di esecuzione.", data_tests: [not_null]}
+      - {name: famiglia_procedura, data_type: varchar, description: "Famiglia di procedura.", data_tests: [not_null]}
+      - {name: mese, data_type: date, description: "Primo giorno del mese di pubblicazione.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione."}
+      - {name: n_lotti_scaduti, data_type: bigint, description: "Lotti non cancellati con scadenza da almeno 180 giorni."}
+      - {name: n_aggiudicati, data_type: bigint, description: "Di questi, lotti con un'aggiudicazione."}
+      - {name: tasso_aggiudicazione, data_type: double, description: "n_aggiudicati / n_lotti_scaduti (0–1)."}
+
+  - name: mart_tempi_aggiudicazione
+    description: "Giorni dalla pubblicazione all'aggiudicazione (mediana e 90° percentile) su coppie di date valide."
+    config:
+      meta:
+        chiave: [regione, famiglia_procedura, mese]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [regione, famiglia_procedura, mese]
+    columns:
+      - {name: regione, data_type: varchar, description: "Regione di esecuzione.", data_tests: [not_null]}
+      - {name: famiglia_procedura, data_type: varchar, description: "Famiglia di procedura.", data_tests: [not_null]}
+      - {name: mese, data_type: date, description: "Primo giorno del mese di pubblicazione.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione."}
+      - {name: giorni_mediana, data_type: double, description: "Mediana dei giorni."}
+      - {name: giorni_p90, data_type: double, description: "90° percentile dei giorni."}
+      - {name: n_validi, data_type: bigint, description: "Lotti con una coppia di date valida."}
+
+  - name: mart_concorrenza
+    description: "Offerte medie e quota di offerta unica tra le procedure competitive aggiudicate (indicatore del Single Market Scoreboard UE), per divisione CPV, regione e anno."
+    config:
+      meta:
+        chiave: [divisione_cpv, regione, anno]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [divisione_cpv, regione, anno]
+    columns:
+      - {name: divisione_cpv, data_type: varchar, description: "Divisione CPV a due cifre.", data_tests: [not_null]}
+      - {name: regione, data_type: varchar, description: "Regione di esecuzione.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
+      - {name: n_lotti_competitivi_aggiudicati, data_type: bigint, description: "Lotti con procedura competitiva aggiudicati con numero di offerte noto."}
+      - {name: offerte_medie, data_type: double, description: "Numero medio di offerte."}
+      - {name: quota_offerta_unica, data_type: double, description: "Quota di lotti con una sola offerta (0–1)."}
+
+  - name: mart_ribassi
+    description: "Ribasso di aggiudicazione (mediana, 10° e 90° percentile) per famiglia di procedura, oggetto principale e anno; ribassi fuori 0–100 esclusi."
+    config:
+      meta:
+        chiave: [famiglia_procedura, oggetto_principale_contratto, anno]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [famiglia_procedura, oggetto_principale_contratto, anno]
+    columns:
+      - {name: famiglia_procedura, data_type: varchar, description: "Famiglia di procedura.", data_tests: [not_null]}
+      - {name: oggetto_principale_contratto, data_type: varchar, description: "Lavori, servizi o forniture.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
+      - {name: n_lotti, data_type: bigint, description: "Lotti con ribasso valido."}
+      - {name: ribasso_mediano, data_type: double, description: "Mediana del ribasso percentuale."}
+      - {name: ribasso_p10, data_type: double, description: "10° percentile del ribasso."}
+      - {name: ribasso_p90, data_type: double, description: "90° percentile del ribasso."}
+
+  - name: mart_varianti_subappalti
+    description: "Frequenza di varianti e subappalti tra i lotti aggiudicati, per regione e anno. ANAC non pubblica importi delle varianti, quindi la misura è il numero di varianti per lotto."
+    config:
+      meta:
+        chiave: [regione, anno]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [regione, anno]
+    columns:
+      - {name: regione, data_type: varchar, description: "Regione di esecuzione.", data_tests: [not_null]}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
+      - {name: n_lotti_aggiudicati, data_type: bigint, description: "Lotti aggiudicati."}
+      - {name: quota_lotti_con_variante, data_type: double, description: "Quota di lotti con almeno una variante (0–1)."}
+      - {name: varianti_per_lotto, data_type: double, description: "Numero medio di varianti per lotto aggiudicato."}
+      - {name: quota_subappalto, data_type: double, description: "Quota di lotti con almeno un subappalto autorizzato (0–1)."}
+
+  - name: mart_stazioni_appaltanti
+    description: "Indicatori per stazione appaltante (ente pubblico) e anno, base per la sicurezza a livello di riga per ente in Power BI."
+    config:
+      meta:
+        chiave: [stazione_key, anno]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [stazione_key, anno]
+    columns:
+      - {name: stazione_key, data_type: varchar, description: "Codice AUSA o 'ND'.", data_tests: [not_null]}
+      - {name: codice_ausa, data_type: varchar, description: "Codice AUSA."}
+      - {name: denominazione, data_type: varchar, description: "Denominazione dell'ente."}
+      - {name: regione, data_type: varchar, description: "Regione della sede dell'ente."}
+      - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
+      - {name: n_lotti, data_type: bigint, description: "Numero di lotti."}
+      - {name: importo_totale, data_type: "decimal(18,2)", description: "Somma di importo_lotto sui lotti sommabili, euro."}
+      - {name: quota_affidamento_diretto, data_type: double, description: "Quota di lotti affidati direttamente (0–1)."}
+      - {name: quota_offerta_unica, data_type: double, description: "Quota di offerta unica tra le procedure competitive aggiudicate (NULL se nessuna)."}

@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: int_radar__lotti
+    description: "Un lotto per riga con regione di esecuzione, divisione CPV, famiglia di procedura, stazione appaltante, ultima aggiudicazione, varianti e subappalti: base comune dei mart Radar. Esclude lotti cancellati e lotti senza data di pubblicazione; importo_sommabile è NULL per i lotti esclusi dalle somme."
+    config:
+      meta:
+        chiave: cig
+    columns:
+      - name: cig
+        description: "Codice Identificativo Gara."
+        data_tests:
+          - unique
+          - not_null
+      - name: importo_sommabile
+        description: "importo_lotto se il lotto entra nelle somme (non derivato da accordo quadro, non anomalo), altrimenti NULL."
+      - name: giorni_aggiudicazione
+        description: "Giorni tra pubblicazione e prima aggiudicazione valida."
+      - name: n_offerte
+        description: "Offerte ammesse (o imprese offerenti) dell'ultima aggiudicazione."

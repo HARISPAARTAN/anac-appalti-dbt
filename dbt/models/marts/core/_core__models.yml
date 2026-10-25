@@ -1,0 +1,307 @@
+version: 2
+
+models:
+  - name: dim_data
+    description: "Calendario dal 2007-01-01 al 2030-12-31 con nomi italiani di mesi e giorni."
+    config:
+      meta:
+        chiave: data_key
+    columns:
+      - name: data_key
+        description: "Data come intero aaaammgg."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_territorio
+    description: "Province ISTAT con regione e NUTS 2, più il membro 'ND' (non definito)."
+    config:
+      meta:
+        chiave: territorio_key
+    columns:
+      - name: territorio_key
+        description: "Codice ISTAT della provincia o 'ND'."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_stazioni_appaltanti
+    description: "Stazioni appaltanti (enti pubblici) dall'anagrafe AUSA, più quelle presenti nei lotti ma non in anagrafe (flag_in_anagrafe falso) e il membro 'ND'."
+    config:
+      meta:
+        chiave: stazione_key
+    columns:
+      - name: stazione_key
+        description: "Codice AUSA o 'ND'."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_cpv
+    description: "Codici CPV presenti nei lotti, con la divisione a due cifre e la sua denominazione."
+    config:
+      meta:
+        chiave: cpv_key
+    columns:
+      - name: cpv_key
+        description: "Codice CPV o 'ND'."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_procedure
+    description: "Procedure di scelta del contraente con famiglia_procedura (aperta, ristretta, negoziata con bando, negoziata senza bando, affidamento diretto, altro) e flag_competitiva."
+    config:
+      meta:
+        chiave: procedura_key
+    columns:
+      - name: procedura_key
+        description: "Codice ANAC della procedura o 'ND'."
+        data_tests:
+          - unique
+          - not_null
+      - name: famiglia_procedura
+        description: "Famiglia di procedura dal seed rivisto; 'altro' per i codici non mappati."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["aperta", "ristretta", "negoziata con bando", "negoziata senza bando", "affidamento diretto", "altro"]
+      - name: flag_competitiva
+        description: "Vero per aperta, ristretta e negoziata con bando."
+
+  - name: dim_operatori
+    description: "Operatori economici persone giuridiche, più i membri anonimi PERSONA_FISICA e NON_VERIFICABILE."
+    config:
+      meta:
+        chiave: operatore_key
+    columns:
+      - name: operatore_key
+        description: "Codice di 11 cifre, PERSONA_FISICA o NON_VERIFICABILE."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_lotti
+    description: "Fatto dei lotti, grana CIG (versione corrente). Le somme di importo usano solo i lotti con flag_importo_sommabile: non derivati da accordo quadro (niente doppio conteggio con l'accordo), non anomali, non cancellati."
+    config:
+      meta:
+        chiave: cig
+    columns:
+      - name: cig
+        description: "Codice Identificativo Gara."
+        data_tests:
+          - unique
+          - not_null
+      - name: data_pubblicazione_key
+        description: "Chiave verso dim_data."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_data')
+                field: data_key
+              config:
+                severity: warn
+      - name: stazione_key
+        description: "Chiave verso dim_stazioni_appaltanti."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_stazioni_appaltanti')
+                field: stazione_key
+      - name: territorio_key
+        description: "Provincia di esecuzione (luogo_istat), chiave verso dim_territorio."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_territorio')
+                field: territorio_key
+      - name: cpv_key
+        description: "Chiave verso dim_cpv."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_cpv')
+                field: cpv_key
+      - name: procedura_key
+        description: "Chiave verso dim_procedure."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_procedure')
+                field: procedura_key
+      - name: flag_derivato_da_accordo_quadro
+        description: "Lotto discendente da un accordo quadro o convenzione: escluso dalle somme."
+      - name: flag_importo_non_leggibile
+        description: "Il testo di importo_lotto o importo_complessivo_gara non si legge: il lotto è anomalo ed escluso dalle somme."
+      - name: flag_aggiudicazione_non_leggibile
+        description: "Importo o ribasso di una aggiudicazione del lotto non si legge (testo originale nei dati di staging)."
+      - name: flag_importo_sommabile
+        description: "Il lotto entra nelle somme di importo."
+
+  - name: fct_aggiudicazioni
+    description: "Fatto delle aggiudicazioni, grana id_aggiudicazione, solo per lotti in ambito."
+    config:
+      meta:
+        chiave: id_aggiudicazione
+    columns:
+      - name: id_aggiudicazione
+        description: "Identificativo ANAC dell'aggiudicazione."
+        data_tests:
+          - unique
+          - not_null
+      - name: cig
+        description: "Lotto aggiudicato."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('fct_lotti')
+                field: cig
+      - name: giorni_pubblicazione_aggiudicazione
+        description: "Giorni dalla pubblicazione all'aggiudicazione definitiva; NULL se una data manca, se l'aggiudicazione precede la pubblicazione o se il lotto ha date impossibili."
+
+  - name: fct_partecipazioni
+    description: "Ponte CIG × operatore × ruolo con flag_aggiudicatario e flag_partecipante. Le persone fisiche compaiono solo come operatore_key = 'PERSONA_FISICA', senza identità; n_righe_partecipanti e n_righe_aggiudicatari contano le righe (una per persona) anche quando più persone fisiche condividono la riga."
+    config:
+      meta:
+        chiave: partecipazione_key
+    columns:
+      - name: partecipazione_key
+        description: "Chiave surrogata md5 di cig, operatore_key e ruolo."
+        data_tests:
+          - unique
+          - not_null
+      - name: operatore_key
+        description: "Chiave verso dim_operatori."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operatori')
+                field: operatore_key
+      - name: n_righe_partecipanti
+        description: "Righe di partecipanti correnti raggruppate qui; per PERSONA_FISICA è il numero di persone distinte (un'impronta per ordinale), senza identificarle."
+      - name: n_righe_aggiudicatari
+        description: "Righe di aggiudicatari correnti raggruppate qui; per PERSONA_FISICA è il numero di persone distinte."
+
+  - name: fct_varianti
+    description: "Fatto delle varianti, grana id_variante, per lotti in ambito. Nessun importo: ANAC non lo pubblica."
+    config:
+      meta:
+        chiave: id_variante
+    columns:
+      - name: id_variante
+        description: "Identificativo ANAC della variante."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_subappalti
+    description: "Fatto dei subappalti autorizzati, grana id_subappalto, per lotti in ambito. Solo la classe di importo è pubblicata."
+    config:
+      meta:
+        chiave: id_subappalto
+    columns:
+      - name: id_subappalto
+        description: "Identificativo ANAC del subappalto."
+        data_tests:
+          - unique
+          - not_null
+      - name: operatore_key
+        description: "Subappaltatore, chiave verso dim_operatori."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operatori')
+                field: operatore_key
+      - name: subappaltante_key
+        description: "Subappaltante (appaltatore principale), chiave verso dim_operatori."
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_operatori')
+                field: operatore_key
+
+unit_tests:
+  - name: test_famiglia_procedura
+    description: "Codici del seed prendono la loro famiglia; codici sconosciuti (vocabolario o solo lotti) diventano 'altro' non mappati; c'è sempre il membro ND."
+    model: dim_procedure
+    given:
+      - input: ref('stg_anac__tipi_scelta_contraente')
+        rows:
+          - {cod_tipo_scelta_contraente: "1", tipo_scelta_contraente: PROCEDURA APERTA, _data_snapshot: "2026-10-13", _risorsa: v}
+          - {cod_tipo_scelta_contraente: "24", tipo_scelta_contraente: AFFIDAMENTO DIRETTO, _data_snapshot: "2026-10-13", _risorsa: v}
+          - {cod_tipo_scelta_contraente: "28", tipo_scelta_contraente: CONFRONTO COMPETITIVO, _data_snapshot: "2026-10-13", _risorsa: v}
+          - {cod_tipo_scelta_contraente: "777", tipo_scelta_contraente: PROCEDURA NUOVA, _data_snapshot: "2026-10-13", _risorsa: v}
+      - input: ref('famiglie_procedura')
+        rows:
+          - {cod_tipo_scelta_contraente: "1", famiglia_procedura: aperta}
+          - {cod_tipo_scelta_contraente: "24", famiglia_procedura: affidamento diretto}
+          - {cod_tipo_scelta_contraente: "28", famiglia_procedura: altro}
+      - input: ref('int_cig__corrente')
+        rows:
+          - {cig: X000000001, cod_tipo_scelta_contraente: "1", tipo_scelta_contraente: PROCEDURA APERTA, data_pubblicazione: "2025-01-01"}
+          - {cig: X000000002, cod_tipo_scelta_contraente: "555", tipo_scelta_contraente: PROCEDURA LOCALE, data_pubblicazione: "2025-01-01"}
+    expect:
+      rows:
+        - {procedura_key: "1", famiglia_procedura: aperta, flag_competitiva: true, flag_mappata: true}
+        - {procedura_key: "24", famiglia_procedura: affidamento diretto, flag_competitiva: false, flag_mappata: true}
+        - {procedura_key: "28", famiglia_procedura: altro, flag_competitiva: false, flag_mappata: true}
+        - {procedura_key: "777", famiglia_procedura: altro, flag_competitiva: false, flag_mappata: false}
+        - {procedura_key: "555", famiglia_procedura: altro, flag_competitiva: false, flag_mappata: false}
+        - {procedura_key: ND, famiglia_procedura: altro, flag_competitiva: false, flag_mappata: false}
+
+  - name: test_giorni_aggiudicazione
+    description: "Giorni solo per coppie di date valide; aggiudicazioni di lotti fuori ambito escluse."
+    model: fct_aggiudicazioni
+    given:
+      - input: ref('int_aggiudicazioni__corrente')
+        rows:
+          - {id_aggiudicazione: 1, cig: L000000001, data_aggiudicazione_definitiva: "2025-03-01"}
+          - {id_aggiudicazione: 2, cig: L000000002, data_aggiudicazione_definitiva: "2025-01-05"}
+          - {id_aggiudicazione: 3, cig: L000000003, data_aggiudicazione_definitiva: "2025-02-01"}
+          - {id_aggiudicazione: 4, cig: L000000004, data_aggiudicazione_definitiva: null}
+          - {id_aggiudicazione: 5, cig: FUORI00001, data_aggiudicazione_definitiva: "2025-02-01"}
+      - input: ref('fct_lotti')
+        rows:
+          - {cig: L000000001, data_pubblicazione: "2025-01-30", flag_data_impossibile: false}
+          - {cig: L000000002, data_pubblicazione: "2025-01-10", flag_data_impossibile: false}
+          - {cig: L000000003, data_pubblicazione: "2025-01-01", flag_data_impossibile: true}
+          - {cig: L000000004, data_pubblicazione: "2025-01-01", flag_data_impossibile: false}
+    expect:
+      rows:
+        - {id_aggiudicazione: 1, giorni_pubblicazione_aggiudicazione: 30}
+        - {id_aggiudicazione: 2, giorni_pubblicazione_aggiudicazione: null}
+        - {id_aggiudicazione: 3, giorni_pubblicazione_aggiudicazione: null}
+        - {id_aggiudicazione: 4, giorni_pubblicazione_aggiudicazione: null}
+
+  - name: test_partecipazioni_persone_fisiche
+    description: "Le persone fisiche diventano il membro anonimo PERSONA_FISICA e si contano per riga (una per persona, mai l'identità); codici non verificabili e assenti diventano NON_VERIFICABILE; ruolo assente diventa ND; le righe di lotti fuori ambito escluse; partecipante e aggiudicatario si uniscono sulla stessa riga."
+    model: fct_partecipazioni
+    given:
+      - input: ref('fct_lotti')
+        rows:
+          - {cig: X000000001}
+          - {cig: X000000002}
+      - input: ref('int_partecipanti__corrente')
+        rows:
+          - {cig: X000000001, ruolo: MANDATARIA, tipo_soggetto_privacy: persona_giuridica, codice_fiscale: "11111111111"}
+          - {cig: X000000001, ruolo: MANDANTE, tipo_soggetto_privacy: persona_fisica, codice_fiscale: null}
+          - {cig: X000000001, ruolo: MANDANTE, tipo_soggetto_privacy: persona_fisica, codice_fiscale: null}
+          - {cig: X000000001, ruolo: MANDANTE, tipo_soggetto_privacy: persona_giuridica, codice_fiscale: "22222222222"}
+          - {cig: X000000002, ruolo: null, tipo_soggetto_privacy: non_verificabile, codice_fiscale: null}
+          - {cig: X000000002, ruolo: null, tipo_soggetto_privacy: assente, codice_fiscale: null}
+          - {cig: FUORI00001, ruolo: MANDANTE, tipo_soggetto_privacy: persona_giuridica, codice_fiscale: "33333333333"}
+      - input: ref('int_aggiudicatari__corrente')
+        rows:
+          - {cig: X000000001, ruolo: MANDATARIA, tipo_soggetto_privacy: persona_giuridica, codice_fiscale: "11111111111"}
+          - {cig: X000000001, ruolo: MANDANTE, tipo_soggetto_privacy: persona_fisica, codice_fiscale: null}
+          - {cig: X000000001, ruolo: MANDANTE, tipo_soggetto_privacy: persona_fisica, codice_fiscale: null}
+    expect:
+      rows:
+        - {cig: X000000001, operatore_key: "11111111111", ruolo: MANDATARIA, flag_aggiudicatario: true, flag_partecipante: true, n_righe_partecipanti: 1, n_righe_aggiudicatari: 1}
+        - {cig: X000000001, operatore_key: PERSONA_FISICA, ruolo: MANDANTE, flag_aggiudicatario: true, flag_partecipante: true, n_righe_partecipanti: 2, n_righe_aggiudicatari: 2}
+        - {cig: X000000001, operatore_key: "22222222222", ruolo: MANDANTE, flag_aggiudicatario: false, flag_partecipante: true, n_righe_partecipanti: 1, n_righe_aggiudicatari: 0}
+        - {cig: X000000002, operatore_key: NON_VERIFICABILE, ruolo: ND, flag_aggiudicatario: false, flag_partecipante: true, n_righe_partecipanti: 2, n_righe_aggiudicatari: 0}
