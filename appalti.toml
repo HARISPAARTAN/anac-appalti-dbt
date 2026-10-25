@@ -1,0 +1,57 @@
+# Configurazione della pipeline ANAC. Le variabili d'ambiente APPALTI_HOME e APPALTI_USER_AGENT
+# hanno la precedenza (vedi .env.example). Nessun segreto è necessario.
+
+[ambito]
+anni = [2024, 2025, 2026]
+
+[[pacchetti]]
+nome = "cig"
+tabella = "cig"
+annuale = true
+
+[[pacchetti]]
+nome = "aggiudicazioni"
+tabella = "aggiudicazioni"
+
+[[pacchetti]]
+nome = "aggiudicatari"
+tabella = "aggiudicatari"
+
+[[pacchetti]]
+nome = "partecipanti"
+tabella = "partecipanti"
+
+[[pacchetti]]
+nome = "varianti"
+tabella = "varianti"
+
+[[pacchetti]]
+nome = "subappalti"
+tabella = "subappalti"
+
+[[pacchetti]]
+nome = "stazioni-appaltanti"
+tabella = "stazioni_appaltanti"
+
+[[pacchetti]]
+nome = "bandi-cig-tipo-scelta-contraente"
+tabella = "tipi_scelta_contraente"
+
+[ckan]
+base_url = "https://dati.anticorruzione.it/opendata"
+timeout_s = 60
+tentativi = 4
+
+[soglie]
+spazio_libero_min_gb = 30
+importo_max_plausibile = 5e9
+mad_fattore = 3
+giorni_scadenza_tasso = 180
+freschezza_warn_giorni = 40
+freschezza_error_giorni = 75
+
+[fixture]
+anni = [2025]
+data_riferimento = "2026-10-25"
+# I runner GitHub hanno meno di 30 GB liberi: la fixture pesa meno di 5 MB.
+spazio_libero_min_gb = 1
