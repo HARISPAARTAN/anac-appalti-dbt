@@ -28,4 +28,6 @@ progetto pubblica.
 
 - Chi riusa i mart deve mantenere attribuzione e licenza.
 - Il feed OCDS (CC BY 4.0), se aggiunto, avrà un'attribuzione propria.
+- I seed di riferimento (province ISTAT, CC BY 4.0; divisioni CPV, © Unione europea, Decisione 2011/833/UE; codici
+  NUTS di Eurostat) hanno attribuzioni proprie, riportate in `data/LICENSE-DATA.md`, in `ATTRIBUTION.md` e nei README.
 - La licenza dei dati non cambia il fatto che i dati personali non sono mai pubblicati (ADR-004).

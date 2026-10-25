@@ -55,8 +55,7 @@ pacchetto) e salvate in `contratti/anac/_intestazioni_reali.json`. I contratti d
 
 - Le esecuzioni sono idempotenti: una seconda esecuzione identica non scarica e non atterra nulla e produce le
   stesse impronte per modello (test di integrazione).
-- L'archivio occupa circa 2 GB per 2024–2026 (stima dalle dimensioni dichiarate, da misurare alla prima
-  esecuzione completa) e resta locale e fuori da git. Conserva i file ANAC originali, quindi anche i dati delle
+- L'archivio occupa circa 2 GB per 2024–2026 (misurato il 25 ottobre 2026: 1,94 GB in 83 file) e resta locale e fuori da git. Conserva i file ANAC originali, quindi anche i dati delle
   persone fisiche: vedi ADR-004.
 - `int_cig__versioni` conserva una versione per file; `int_cig__corrente` sceglie la più recente per data di
   snapshot.

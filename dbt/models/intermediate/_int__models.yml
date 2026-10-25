@@ -88,7 +88,7 @@ models:
           - not_null
 
   - name: int_varianti__corrente
-    description: "Una riga per variante, versione più recente. Limite noto: se nello stesso file un id_variante ha più righe diverse (nei dati reali 14.459 id con 32.481 righe, 6 id su più di un CIG) ne resta una sola e le altre non arrivano a fct_varianti; il test dq_varianti_collassate (avviso) conta le righe scartate a ogni esecuzione. La grana (id, ordinale) è in roadmap per la 0.2.0."
+    description: "Una riga per variante, versione più recente. Limite noto: se nello stesso file un id_variante ha più righe diverse (nei dati reali 18.378 righe scartate su 14.749 id) ne resta una sola e le altre non arrivano a fct_varianti; il test dq_varianti_collassate (avviso) conta le righe scartate a ogni esecuzione. La grana (id, ordinale) è in roadmap per la 0.2.0."
     config:
       meta:
         chiave: id_variante
@@ -100,7 +100,7 @@ models:
           - not_null
 
   - name: int_subappalti__corrente
-    description: "Una riga per subappalto, versione più recente. Limite noto: se nello stesso file un id_subappalto ha più righe diverse (nei dati reali 3.575 subappalti con più subappaltatori, in un raggruppamento temporaneo) ne resta una sola e le altre non arrivano a fct_subappalti; il test dq_subappalti_collassati (avviso) conta le righe scartate a ogni esecuzione. La grana (id, ordinale) è in roadmap per la 0.2.0."
+    description: "Una riga per subappalto, versione più recente. Limite noto: se nello stesso file un id_subappalto ha più righe diverse (nei dati reali 13.826 righe scartate su 10.592 id, di cui 4.702 con più subappaltatori identificabili) ne resta una sola e le altre non arrivano a fct_subappalti; il test dq_subappalti_collassati (avviso) conta le righe scartate a ogni esecuzione. La grana (id, ordinale) è in roadmap per la 0.2.0."
     config:
       meta:
         chiave: id_subappalto

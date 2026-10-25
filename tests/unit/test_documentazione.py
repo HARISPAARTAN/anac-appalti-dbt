@@ -145,4 +145,4 @@ def test_readme_dichiara_che_i_numeri_vengono_dalla_fixture(nome):
         "https://harispaartan.github.io/anac-appalti-dbt/dagster/",
     ):
         assert indirizzo in testo
-    assert "cod_esito" in testo and "40" in testo
+    assert "cod_esito" in testo and "41" in testo
