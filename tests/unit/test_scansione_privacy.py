@@ -72,3 +72,15 @@ def test_scansione_di_un_parquet(tmp_path):
     ]
     # senza codici dell'anagrafe resta solo il controllo sul formato del codice fiscale
     assert [r.tipo for r in scansiona_parquet(percorso, [])] == ["codice fiscale personale"]
+
+
+def test_elenco_degli_enti_uguale_nella_macro_dbt():
+    """La macro dbt `parole_ente` e `MARCATORI_ENTE` sono lo stesso elenco."""
+    import re
+
+    from anac_appalti.config import RADICE_PROGETTO
+    from anac_appalti.scansione_privacy import MARCATORI_ENTE
+
+    macro = (RADICE_PROGETTO / "dbt" / "macros" / "privacy.sql").read_text(encoding="utf-8")
+    elenco = macro.split("macro parole_ente()")[1].split("endmacro")[0]
+    assert set(re.findall(r"'([A-Z]+)'", elenco)) == set(MARCATORI_ENTE)

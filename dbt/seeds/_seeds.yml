@@ -67,7 +67,7 @@ seeds:
         description: "Denominazione della divisione."
 
   - name: ausa_persone_fisiche
-    description: "Codici AUSA (identificativi opachi, nessun nome) di stazioni appaltanti che la scansione di export ha riconosciuto come persone fisiche pur non avendo un codice fiscale di 16 caratteri né una forma giuridica individuale (per esempio un nome di persona con codice non verificabile e forma 'NON CLASSIFICATO'). Classificazione manuale: ogni rilievo della scansione che è davvero una persona si aggiunge qui e viene trattato come ogni altra stazione che è una persona fisica."
+    description: "Codici AUSA (identificativi opachi, nessun nome) di stazioni appaltanti che la scansione di export o la revisione manuale dei candidati (int_stazioni_da_verificare) hanno riconosciuto come persone fisiche pur non avendo un codice fiscale di 16 caratteri né una forma giuridica individuale (per esempio un nome di persona con codice non verificabile e forma 'NON CLASSIFICATO'). Classificazione manuale: ogni rilievo della scansione che è davvero una persona si aggiunge qui e viene trattato come ogni altra stazione che è una persona fisica."
     config:
       column_types:
         codice_ausa: varchar
@@ -80,3 +80,20 @@ seeds:
           - not_null
       - name: motivo
         description: "Perché la stazione è trattata come persona fisica."
+
+  - name: ausa_enti_verificati
+    description: "Codici AUSA (identificativi opachi, nessun nome) di stazioni candidate persone fisiche (codice non di 11 cifre, forma giuridica non classificata, nome di 2-3 parole senza parole di ente) che la revisione manuale ha riconosciuto come enti o organizzazioni. Elenco di permesso: il test assert_candidati_stazioni_classificati fallisce finché ogni candidato non è qui o in ausa_persone_fisiche."
+    config:
+      column_types:
+        codice_ausa: varchar
+        verificato_il: date
+    columns:
+      - name: codice_ausa
+        description: "Codice AUSA della stazione."
+        data_tests:
+          - unique
+          - not_null
+      - name: verificato_il
+        description: "Data della revisione manuale."
+        data_tests:
+          - not_null

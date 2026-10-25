@@ -234,3 +234,25 @@ unit_tests:
         - {codice_fiscale: "22222222222", denominazione: null, flag_ditta_individuale: true, n_occorrenze: 2}
         - {codice_fiscale: "33333333333", denominazione: IMPRESA C S.R.L., flag_ditta_individuale: false, n_occorrenze: 1}
         - {codice_fiscale: "44444444444", denominazione: null, flag_ditta_individuale: false, n_occorrenze: 1}
+
+  - name: test_stazioni_da_verificare
+    description: "Candidate: codice non di 11 cifre, forma giuridica non classificata/non definita/assente e nome di 2-3 parole senza cifre né parole di ente. Non candidate: codice di 11 cifre, forma giuridica nota, una parola, quattro parole, parola di ente, cifre nel nome, persona già riconosciuta."
+    model: int_stazioni_da_verificare
+    given:
+      - input: ref('stg_anac__stazioni_appaltanti')
+        rows:
+          - {codice_ausa: C1, codice_fiscale: "CFAVCP-0000001", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Mario Esempio, flag_persona_fisica: false}
+          - {codice_ausa: C2, codice_fiscale: null, natura_giuridica_descrizione: null, denominazione: Anna Maria Esempio, flag_persona_fisica: false}
+          - {codice_ausa: C3, codice_fiscale: "CFAVCP-0000002", natura_giuridica_descrizione: NON DEFINITO, denominazione: "Perù Esempio", flag_persona_fisica: false}
+          - {codice_ausa: N1, codice_fiscale: "80000000001", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Mario Esempio, flag_persona_fisica: false}
+          - {codice_ausa: N2, codice_fiscale: "CFAVCP-0000003", natura_giuridica_descrizione: AMMINISTRAZIONI COMUNALI, denominazione: Mario Esempio, flag_persona_fisica: false}
+          - {codice_ausa: N3, codice_fiscale: "CFAVCP-0000004", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Esempio, flag_persona_fisica: false}
+          - {codice_ausa: N4, codice_fiscale: "CFAVCP-0000005", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Mario Giuseppe Maria Esempio, flag_persona_fisica: false}
+          - {codice_ausa: N5, codice_fiscale: "CFAVCP-0000006", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Comune di Esempio, flag_persona_fisica: false}
+          - {codice_ausa: N6, codice_fiscale: "CFAVCP-0000007", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Esempio 2, flag_persona_fisica: false}
+          - {codice_ausa: N7, codice_fiscale: "CFAVCP-0000008", natura_giuridica_descrizione: NON CLASSIFICATO, denominazione: Luigi Esempio, flag_persona_fisica: true}
+    expect:
+      rows:
+        - {codice_ausa: C1, n_parole: 2}
+        - {codice_ausa: C2, n_parole: 3}
+        - {codice_ausa: C3, n_parole: 2}

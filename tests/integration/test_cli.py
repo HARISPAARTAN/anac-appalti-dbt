@@ -35,7 +35,7 @@ def test_run_scrive_il_log_di_successo(area):
     assert "successo" in esito.output
     (log,) = leggi_log(carica_impostazioni(fixtures=True, area=cartella))
     assert log["esito"] == "successo" and log["errori"] == []
-    assert log["dbt"]["n_modelli"] == 41 and log["dbt"]["esiti"]["warn"] == 5
+    assert log["dbt"]["n_modelli"] == 42 and log["dbt"]["esiti"]["warn"] == 5
 
 
 def test_report_marca_il_report_della_fixture(area):
@@ -59,7 +59,7 @@ def test_export_scrive_i_nove_mart(area):
 def test_copertura_test_conforme(area):
     esito = RUNNER.invoke(cli.app, ["copertura-test", "--fixtures"])
     assert esito.exit_code == 0, esito.output
-    assert "Modelli conformi: 41/41" in esito.output
+    assert "Modelli conformi: 42/42" in esito.output
 
 
 def test_docs_scrive_il_sito(area):

@@ -49,7 +49,7 @@ def test_pipeline_idempotente_e_delta(tmp_path):
     assert len(record["git_sha"]) == 40 and record["versione"]
     assert isinstance(record["git_modificato"], bool) and record["strumenti"]["dbt-core"]
     assert set(record["dbt"]) == {"esiti", "errori", "n_modelli", "n_test", "durata_s"}
-    assert record["dbt"]["errori"] == [] and record["dbt"]["n_modelli"] == 41
+    assert record["dbt"]["errori"] == [] and record["dbt"]["n_modelli"] == 42
     assert all(record["disco"][k] > 0 for k in ("raw", "landing", "warehouse"))
     assert set(record["estrazione"]) == set(record["landing"]) and len(record["estrazione"]) == len(
         imp1.pacchetti

@@ -63,6 +63,18 @@ models:
         data_tests:
           - not_null
 
+  - name: int_stazioni_da_verificare
+    description: "Stazioni appaltanti candidate a essere persone fisiche e invisibili alle regole del codice fiscale e della forma giuridica: codice non di 11 cifre, forma giuridica non classificata, non definita o assente, nome di 2-3 parole senza cifre e senza parole di ente. Ogni candidato va classificato a mano in ausa_persone_fisiche o ausa_enti_verificati; il test assert_candidati_stazioni_classificati fallisce finché ne resta uno senza classe. Il nome resta solo nel warehouse locale."
+    config:
+      meta:
+        chiave: codice_ausa
+    columns:
+      - name: codice_ausa
+        description: "Codice AUSA della stazione candidata."
+        data_tests:
+          - unique
+          - not_null
+
   - name: int_aggiudicatari__corrente
     description: "Aggiudicatari correnti: righe del file più recente per CIG e aggiudicazione, senza duplicati esatti."
     config:

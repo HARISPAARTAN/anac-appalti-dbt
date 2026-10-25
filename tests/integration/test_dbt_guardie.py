@@ -552,3 +552,22 @@ def test_un_nome_che_sfugge_blocca_l_esportazione(area_persone, tmp_path):
     with pytest.raises(ScansionePrivacyFallita):
         esporta_per_release(imp, "x", tmp_path / "bloccata")
     assert list((tmp_path / "bloccata").glob("*.parquet")) == []
+
+
+def test_un_candidato_non_classificato_fa_fallire_la_build(area_persone):
+    imp = area_persone
+    # nessun candidato nella fixture: il test passa
+    codice, esiti = esegui_test(imp, "assert_candidati_stazioni_classificati")
+    assert codice == 0 and esiti["assert_candidati_stazioni_classificati"] == ("pass", 0)
+    # un candidato che non è in nessuno dei due seed fa fallire il test, e la tabella di audit mostra il nome
+    scrivi(
+        imp,
+        "insert into intermediate.int_stazioni_da_verificare values "
+        "('0000999999', 'CFAVCP-0000009', 'NON CLASSIFICATO', 'ESEMPIO PAOLO', 2)",
+    )
+    codice, esiti = esegui_test(imp, "assert_candidati_stazioni_classificati")
+    assert codice != 0
+    assert esiti["assert_candidati_stazioni_classificati"] == ("fail", 1)
+    # classificato come ente nel seed: il test passa di nuovo
+    scrivi(imp, "insert into seeds.ausa_enti_verificati values ('0000999999', date '2026-10-25')")
+    assert esegui_test(imp, "assert_candidati_stazioni_classificati")[0] == 0

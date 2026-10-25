@@ -77,3 +77,10 @@ union
 select upper(trim(codice_ausa)) as codice_ausa
 from {{ ref('ausa_persone_fisiche') }}
 {%- endmacro %}
+
+{#- Parole che segnalano un ente o una società (non una persona) in una denominazione. Gemella di
+    scansione_privacy.MARCATORI_ENTE (stesso elenco, confrontato da tests/unit/test_scansione_privacy.py). Usata dal
+    modello int_stazioni_da_verificare. -#}
+{% macro parole_ente() -%}
+['AGENZIA', 'ALER', 'AMBITO', 'ASL', 'ASSOCIAZIONE', 'ASST', 'AUSL', 'AUTORITA', 'AZIENDA', 'AZIONE', 'BIBLIOTECA', 'CAMERA', 'CITTA', 'COLLEGIO', 'COMANDO', 'COMPRENSIVO', 'COMPRENSORIO', 'COMUNALE', 'COMUNE', 'COMUNI', 'COMUNITA', 'CONSORZIO', 'COOP', 'COOPERATIVA', 'CUC', 'DIOCESI', 'DIPARTIMENTO', 'DIREZIONE', 'ENTE', 'ENTI', 'FONDAZIONE', 'GRUPPO', 'ISTITUTO', 'ISTITUZIONE', 'ITALIANA', 'ITALIANO', 'LAVORI', 'LICEO', 'LOCALE', 'METROPOLITANA', 'MINISTERO', 'MUSEO', 'NAZIONALE', 'ORDINE', 'OSPEDALE', 'PARCO', 'PARROCCHIA', 'POLICLINICO', 'PREFETTURA', 'PROVINCIA', 'PROVINCIALE', 'QUESTURA', 'REGIONALE', 'REGIONE', 'SAS', 'SCARL', 'SCIENTIFICO', 'SCUOLA', 'SERVIZI', 'SERVIZIO', 'SNC', 'SOC', 'SOCIETA', 'SPA', 'SRL', 'STATALE', 'TEATRO', 'TERRA', 'TERRITORIALE', 'TRIBUNALE', 'UNIONE', 'UNIVERSITA']
+{%- endmacro %}

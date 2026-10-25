@@ -41,7 +41,7 @@ MODELLI_ATTESI = frozenset(
         *("int_aggiudicatari__corrente", "int_aggiudicazioni__corrente", "int_cig__corrente"),
         *("int_cig__versioni", "int_lotti__qualita", "int_operatori", "int_partecipanti__corrente"),
         *("int_perdite_parsing", "int_radar__lotti", "int_riconciliazione", "int_subappalti__corrente"),
-        *("int_stazioni", "int_varianti__corrente"),
+        *("int_stazioni", "int_stazioni_da_verificare", "int_varianti__corrente"),
         *MART_RADAR,
         *("stg_anac__aggiudicatari", "stg_anac__aggiudicazioni", "stg_anac__cig", "stg_anac__partecipanti"),
         *("stg_anac__stazioni_appaltanti", "stg_anac__subappalti", "stg_anac__tipi_scelta_contraente"),
@@ -157,7 +157,7 @@ def test_qualita_export_copertura(magazzino_mese1, tmp_path):
     copertura = verifica_copertura(imp)
     assert copertura.mancanze == []
     # un manifest vuoto o sbagliato non deve poter passare: il numero e i nomi dei modelli sono fissati
-    assert copertura.modelli == copertura.conformi == 41
+    assert copertura.modelli == copertura.conformi == 42
     assert copertura.quota == 1.0
     assert set(copertura.nomi) == MODELLI_ATTESI
     sql_sul_disco = {p.stem for p in (imp.dbt_dir / "models").rglob("*.sql")}

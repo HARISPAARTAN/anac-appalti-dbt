@@ -110,6 +110,9 @@ QUERY: dict[str, str] = {
     ),
     "varianti_righe_collassate": _collassate("stg_anac__varianti", "id_variante", "count(*)"),
     "varianti_id_collassati": _collassate("stg_anac__varianti", "id_variante", "count(distinct id_variante)"),
+    "stazioni_candidate": "select count(*) from intermediate.int_stazioni_da_verificare",
+    "stazioni_seed_persone": "select count(*) from seeds.ausa_persone_fisiche",
+    "stazioni_seed_enti": "select count(*) from seeds.ausa_enti_verificati",
     "stazioni_persone_fisiche": "select count(*) from intermediate.int_stazioni where flag_persona_fisica",
     "operatori_ditte_individuali": "select count(*) from core.dim_operatori where flag_ditta_individuale",
     "cf_mascherati_testo": "select coalesce(sum(n_cf_mascherati), 0) from intermediate.int_riconciliazione",
@@ -359,6 +362,16 @@ def componi_report(
         f"{_numero(i['varianti_righe_collassate'])} righe di variante ({_numero(i['varianti_id_collassati'])} id). "
         "I test dbt `dq_subappalti_collassati` e `dq_varianti_collassate` (avviso) le contano a ogni esecuzione; "
         "la correzione (grana id più ordinale) è in roadmap per la 0.2.0.",
+        "",
+        "Revisione manuale delle stazioni appaltanti: nell'anagrafe ci sono stazioni con un codice segnaposto, forma "
+        "giuridica non classificata e il nome di una persona, che le regole del codice fiscale e della forma "
+        "giuridica non vedono. `int_stazioni_da_verificare` elenca i candidati (codice non di 11 cifre, forma "
+        "giuridica non classificata, non definita o assente, nome di 2-3 parole senza cifre e senza parole di ente) e "
+        "il test `assert_candidati_stazioni_classificati` fallisce finché ciascuno non è nel seed delle persone o in "
+        "quello degli enti verificati. In questa esecuzione: "
+        f"{_numero(i['stazioni_candidate'])} candidati ancora da classificare (esiti: tutti classificati se il test "
+        f"passa), {_numero(i['stazioni_seed_persone'])} codici nel seed delle persone, "
+        f"{_numero(i['stazioni_seed_enti'])} nel seed degli enti verificati.",
         "",
         "Regole sulle somme: gli importi si sommano solo sui lotti non derivati da accordo quadro, non anomali e "
         "non cancellati, così un accordo quadro e i suoi contratti attuativi non sono contati due volte. "
