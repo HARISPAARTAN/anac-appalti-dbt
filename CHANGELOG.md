@@ -4,11 +4,42 @@ Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [Sem
 
 ## [Non rilasciato]
 
-- Struttura del progetto, configurazione, CI.
-- Archivio raw append-only con manifest SHA-256, landing in Parquet con allowlist dei contratti, riconciliazione delle righe e privacy applicata al landing, fixture sintetica di due mesi.
-- Correzioni dopo la review del Task 3: SHA-256 verificato a ogni lettura e prima di cancellare un download; impronta di riga con ordinale per le righe con identità annullata (nessun surrogato per persona) e colonne `_classe_cf`; differenze di riconciliazione e righe scartate segnalate (comando `appalti landing` con codice di uscita 1); limiti DuckDB in `appalti.toml`; test di integrazione in CI.
-- Progetto dbt: sources generati dai contratti, staging tipizzato con regola persone fisiche (seconda linea sopra il landing, classe conservata da `_classe_cf`), livello intermedio versionato (versioni, correnti, operatori, flag di qualità, riconciliazione), seed, unit test dbt e ponte Python `pipeline.py` che esegue dbt in un sottoprocesso.
-- Correzioni dopo la review del Task 4: macro di tipizzazione con importi italiani e inglesi, interi senza arrotondamento e date `gg/mm/aaaa` con test; un importo non leggibile non diventa un NULL silenzioso (testo originale in `*_raw`, flag `flag_importo_non_leggibile` e `flag_aggiudicazione_non_leggibile` in `int_lotti__qualita`); unit test dbt su `righe_correnti`, sulla seconda linea di difesa di partecipanti e subappalti e su ogni flag di qualità; fixture con ribasso fuori intervallo, aggiudicazione anticipata, lotto oltre la gara e un delta di aggiudicazioni; confronto tra incrementale e `--full-refresh`; `assert_riconciliazione` segnala anche `letto_con_scarti`; `appalti contratti sync --verifica` in CI.
-- Correzioni dopo la re-review del Task 4: un solo punto è il separatore decimale in importi e ribassi (`12.345` e `1.234` non sono più "non leggibili"), una sola virgola con tre cifre resta ambigua solo per gli importi; test `perdita_parsing` (warn) sulle date e sui conteggi usati dai mart e modello `int_perdite_parsing` per il report; riaggiudicazione di un CIG esistente nel delta del mese 2 per esercitare `unique_key` di `int_aggiudicazioni__corrente`. Sui warehouse esistenti serve `dbt build --full-refresh` dei due modelli incrementali (colonne `*_raw`).
-- Schema a stella `core` (sei dimensioni con membri `ND`, `PERSONA_FISICA` e `NON_VERIFICABILE`, cinque fatti), nove mart Radar in `radar` con contratto dbt imposto, `int_radar__lotti`, test di qualità dei dati (`dq_*`, avvisi) e test di privacy sui mart, report `qualita-dati.md` (`dq_report`), esportazione Parquet con attribuzione CC BY-SA nei metadati (`export`) e verifica della copertura dei test dal manifest (`copertura`).
-- Asset Dagster (`raw_*`, `landing_*`, `modelli_dbt` tramite il ponte a sottoprocesso, `riepilogo_qualita` con il controllo `qualita_dati`), job `pipeline_completo`, schedule `mensile_25` e sensor `ckan_aggiornato` (entrambi spenti per default); `appalti run` in un comando con log di esecuzione (JSON e `meta.log_esecuzioni`, impronte dei modelli), `--da-archivio` con `registra_manuali`; comandi `report`, `export`, `copertura-test` e `docs`; `docs/qualita-dati.md` generato sulla fixture; job `pipeline` in CI e sito GitHub Pages con documentazione dbt e grafo Dagster.
+La v0.1.0 esce dopo la prima esecuzione completa sui dati reali 2024–2026, che non è ancora stata fatta: finora
+ogni misura viene dalla fixture sintetica.
+
+### Aggiunto
+
+- Estrazione incrementale dal portale CKAN di ANAC con riconoscimento del WAF dal corpo della risposta e
+  User-Agent di riserva da browser, registrato nel log.
+- Archivio raw append-only con manifest SHA-256 e procedura `--da-archivio` per i file scaricati a mano;
+  intestazioni reali dei CSV lette dal portale (`appalti intestazioni`).
+- Landing in Parquet con contratti di sorgente, allowlist delle colonne, controllo dello schema,
+  riconciliazione con i logCsv di ANAC e annullamento delle persone fisiche prima della scrittura (ordinale di
+  riga per l'identità di riga, nessun abbinamento tra file).
+- Progetto dbt su DuckDB: 8 modelli di staging, 12 intermedi, schema a stella con 6 dimensioni e 5 fatti,
+  9 mart Radar con contratto applicato; 40 modelli in tutto.
+- Test dbt sulle chiavi di ogni modello (copertura verificata da `appalti copertura-test`), controlli di qualità
+  con gravità avviso, unit test dbt, test di privacy, regola unica del punto decimale e test `perdita_parsing`.
+- Report di qualità (`docs/qualita-dati.md`), log di esecuzione e impronte per modello.
+- Orchestrazione Dagster: asset per pacchetto e per modello, controllo `qualita_dati`, sensor giornaliero e
+  schedule mensile (spenti per default); `appalti run`, `report`, `export`, `copertura-test` e `docs`.
+- Esportazione dei mart in Parquet con attribuzione CC BY-SA 4.0 nei metadati.
+- CI su GitHub Actions con fixture sintetica (due mesi, idempotenza) e documentazione dbt e grafo Dagster su
+  GitHub Pages.
+- README in italiano e in inglese con i segnaposto dei numeri (`<!-- numeri:inizio -->`), cinque ADR, glossario
+  italiano, inglese e tedesco.
+
+### Corretto
+
+- Un errore di landing o di dbt fa fallire l'asset Dagster: lo stato dell'esecuzione di schedule, sensor e
+  interfaccia non è più verde quando la pipeline fallisce, non solo l'uscita di `appalti run`.
+- Il job `pipeline_completo` usa l'esecutore in processo (nessun download parallelo, nessun aggiornamento perso
+  del registro di landing).
+- `docs/qualita-dati.md` generato sulla fixture dice di esserlo (titolo, primo paragrafo e riga "Generato da").
+- Test dei percorsi di fallimento, del contenuto del log di esecuzione, dello stato spento di schedule e sensor,
+  delle dipendenze degli asset e dei comandi `run`, `report`, `export` e `docs`.
+
+### Da confermare sul primo file reale
+
+- L'assunzione `cod_esito = 1` per un'aggiudicazione (`flag_esito_aggiudicato`).
+- La regola del punto singolo come separatore decimale di importi e ribassi.
