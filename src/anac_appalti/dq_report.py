@@ -37,6 +37,20 @@ QUERY: dict[str, str] = {
     "duplicati_esatti": "select coalesce(sum(n_duplicati_esatti), 0) from intermediate.int_cig__versioni",
     "duplicati_conflittuali": "select count(*) from intermediate.int_lotti__qualita where flag_duplicato_conflittuale",
     "date_impossibili": "select count(*) from intermediate.int_lotti__qualita where flag_data_impossibile",
+    "date_impossibili_diretti": (
+        "select count(*) from core.fct_lotti as l inner join core.dim_procedure as p "
+        "on l.procedura_key = p.procedura_key "
+        "where l.flag_data_impossibile and p.famiglia_procedura = 'affidamento diretto'"
+    ),
+    "date_impossibili_scadenza_prima": (
+        "select count(*) from core.fct_lotti where flag_data_impossibile and data_scadenza_offerta < data_pubblicazione"
+    ),
+    "scarto_medio_scadenza_giorni": (
+        "select coalesce(round(avg(date_diff('day', l.data_scadenza_offerta, l.data_pubblicazione))), 0) "
+        "from core.fct_lotti as l inner join core.dim_procedure as p on l.procedura_key = p.procedura_key "
+        "where l.flag_data_impossibile and p.famiglia_procedura = 'affidamento diretto' "
+        "and l.data_scadenza_offerta < l.data_pubblicazione"
+    ),
     "importi_anomali": "select count(*) from intermediate.int_lotti__qualita where flag_importo_anomalo",
     "importi_non_positivi": "select count(*) from intermediate.int_lotti__qualita where flag_importo_non_positivo",
     "importi_oltre_gara": "select count(*) from intermediate.int_lotti__qualita where flag_importo_oltre_gara",
@@ -326,10 +340,26 @@ def componi_report(
             else [
                 'Date impossibili sui dati reali: la regola "scadenza prima della pubblicazione" scatta soprattutto '
                 "sugli affidamenti diretti, dove la data di scadenza dell'offerta può precedere la pubblicazione "
-                "senza che ci sia un errore; il controllo è informativo e non esclude lotti dai mart.",
+                "senza che ci sia un errore. Misura: "
+                f"{_quota(i.get('date_impossibili_diretti', 0), i['date_impossibili'])} dei lotti segnalati sono "
+                "affidamenti diretti, e la scadenza prima della pubblicazione spiega "
+                f"{_quota(i.get('date_impossibili_scadenza_prima', 0), i['date_impossibili'])} delle segnalazioni "
+                f"(negli affidamenti diretti di questo tipo la scadenza precede la pubblicazione in media di "
+                f"{_numero(i.get('scarto_medio_scadenza_giorni', 0))} giorni); il resto sono aggiudicazioni "
+                "anteriori alla pubblicazione o date fuori dall'intervallo plausibile. Il controllo è informativo e "
+                "non esclude lotti dai mart.",
                 "",
             ]
         ),
+        "Subappalti e varianti collassati: `int_subappalti__corrente` e `int_varianti__corrente` tengono una riga per "
+        "id, quindi le altre righe diverse con lo stesso id nello stesso file non arrivano ai fatti. In questa "
+        f"esecuzione: {_numero(i['subappalti_righe_collassate'])} righe di subappalto scartate "
+        f"({_numero(i['subappalti_id_collassati'])} id, di cui {_numero(i['subappalti_id_subappaltatori_diversi'])} "
+        "con più subappaltatori identificabili) e "
+        f"{_numero(i['varianti_righe_collassate'])} righe di variante ({_numero(i['varianti_id_collassati'])} id). "
+        "I test dbt `dq_subappalti_collassati` e `dq_varianti_collassate` (avviso) le contano a ogni esecuzione; "
+        "la correzione (grana id più ordinale) è in roadmap per la 0.2.0.",
+        "",
         "Regole sulle somme: gli importi si sommano solo sui lotti non derivati da accordo quadro, non anomali e "
         "non cancellati, così un accordo quadro e i suoi contratti attuativi non sono contati due volte. "
         "I lotti esclusi restano nei conteggi.",
@@ -340,7 +370,9 @@ def componi_report(
         "",
         "I file annuali `cig-AAAA` non hanno un conteggio CSV nel logCsv ANAC (solo TTL). Dalla 0.1.1 il landing li "
         "riconcilia con i record contati nel CSV (stati `ok_fisico` e `differenza_fisica`, distinti da `ok` e "
-        "`differenza` del logCsv); i file atterrati prima restano `non_disponibile` finché non vengono rielaborati.",
+        "`differenza` del logCsv). In questa esecuzione: "
+        f"{_numero(i['file_riconciliati'])} file `ok`, {_numero(i['file_riconciliati_fisici'])} `ok_fisico`, "
+        f"{_numero(i['file_con_differenza'])} con differenza, {_numero(i['file_non_verificabili'])} `non_disponibile`.",
         "",
         *(
             []
