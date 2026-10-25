@@ -30,6 +30,7 @@ from dagster import (
     SkipReason,
     asset,
     define_asset_job,
+    in_process_executor,
     sensor,
 )
 from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
@@ -40,6 +41,7 @@ from anac_appalti.config import Impostazioni, Pacchetto, carica_impostazioni
 from anac_appalti.contratti import carica_contratti
 from anac_appalti.landing import atterra_pacchetto
 from anac_appalti.pipeline import (
+    ErroreDbt,
     conteggi_esiti,
     errori_dbt,
     eseguibile_dbt,
@@ -50,6 +52,10 @@ from anac_appalti.pipeline import (
     target_dbt,
     variabili_dbt,
 )
+
+
+class ErroreLanding(RuntimeError):
+    """Almeno un file non è stato atterrato: l'asset fallisce, così lo stato dell'esecuzione Dagster è FAILURE."""
 
 
 class RisorsaAppalti(ConfigurableResource):
@@ -124,6 +130,8 @@ def _asset_landing(pacchetto: Pacchetto) -> AssetsDefinition:
             context.log.warning(avviso)
         for errore in riepilogo.errori:
             context.log.error(errore)
+        if riepilogo.errori:
+            raise ErroreLanding(" | ".join(riepilogo.errori))
         dati = asdict(riepilogo) | {"durata_s": round(time.perf_counter() - inizio, 3)}
         return MaterializeResult(
             metadata={
@@ -164,6 +172,10 @@ def modelli_dbt(context: AssetExecutionContext, dbt: DbtCliResource, appalti: Ri
     risultati = invocazione.target_path / "run_results.json"
     if risultati.exists():
         salva_run_results(imp, risultati)
+    if not invocazione.is_successful():
+        # dbt build con errori (test di gravità errore, modello fallito, warehouse non apribile):
+        # l'esecuzione Dagster deve risultare FAILURE, non solo l'uscita di `appalti run`
+        raise ErroreDbt(f"dbt build terminato con codice {invocazione.process.returncode}")
 
 
 @asset(
@@ -197,7 +209,11 @@ ASSETS: list[AssetsDefinition] = [
     riepilogo_qualita,
 ]
 
-pipeline_completo = define_asset_job("pipeline_completo", selection=AssetSelection.all())
+# Esecutore in processo: gli otto raw_* non colpiscono il portale in parallelo e i landing_* non si
+# contendono la riscrittura integrale di _registro.csv (aggiornamento perso con l'esecutore multiprocesso).
+pipeline_completo = define_asset_job(
+    "pipeline_completo", selection=AssetSelection.all(), executor_def=in_process_executor
+)
 
 # Schedule e sensor partono SPENTI: contattano il portale ANAC e vanno accesi a mano nel daemon (mai in CI).
 mensile_25 = ScheduleDefinition(

@@ -187,12 +187,31 @@ def calcola_indicatori(imp: Impostazioni) -> dict[str, int]:
         con.close()
 
 
-def componi_report(indicatori: dict[str, int], data_riferimento: str) -> str:
+def componi_report(
+    indicatori: dict[str, int], data_riferimento: str, *, fixtures: bool = False, mese: int = 1
+) -> str:
     i = indicatori
+    if fixtures:
+        intestazione = [
+            "# Qualità dei dati (report sulla fixture sintetica)",
+            "",
+            "**Questo è il report della fixture sintetica, non dei dati ANAC reali.** Ogni numero qui sotto "
+            "viene da dati generati dal progetto per test e CI. Dopo l'esecuzione completa su dati reali "
+            "(`uv run appalti run`, poi `uv run appalti report`) questo file viene sostituito dal report reale.",
+            "",
+            f"Generato da `appalti report --fixtures` sulla fixture sintetica (mese {mese}), "
+            f"data di riferimento {data_riferimento}.",
+            "",
+        ]
+    else:
+        intestazione = [
+            "# Qualità dei dati",
+            "",
+            f"Generato da `appalti report` sui dati reali ANAC con data di riferimento {data_riferimento}.",
+            "",
+        ]
     righe = [
-        "# Qualità dei dati",
-        "",
-        f"Generato da `appalti report` sui dati con data di riferimento {data_riferimento}. "
+        *intestazione,
         "Politica: si segnala, non si cancella. Ogni controllo è un test dbt (avviso o errore) "
         "e un flag in `int_lotti__qualita`.",
         "",
@@ -245,5 +264,9 @@ def componi_report(indicatori: dict[str, int], data_riferimento: str) -> str:
 def scrivi_report(imp: Impostazioni, indicatori: dict[str, int]) -> Path:
     percorso = imp.docs / "qualita-dati.md"
     percorso.parent.mkdir(parents=True, exist_ok=True)
-    percorso.write_text(componi_report(indicatori, imp.data_riferimento), encoding="utf-8", newline="\n")
+    percorso.write_text(
+        componi_report(indicatori, imp.data_riferimento, fixtures=imp.fixtures, mese=imp.mese),
+        encoding="utf-8",
+        newline="\n",
+    )
     return percorso

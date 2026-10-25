@@ -63,3 +63,15 @@ def test_magazzino_mancante_non_viene_creato(tmp_path):
     with pytest.raises(duckdb.Error):
         esporta_mart(imp, tmp_path / "export")
     assert not imp.warehouse_file.exists()
+
+
+def test_report_della_fixture_e_marcato_come_tale():
+    indicatori = {chiave: 0 for chiave in QUERY}
+    fixture = componi_report(indicatori, "2026-10-25", fixtures=True, mese=2)
+    righe = fixture.splitlines()
+    assert righe[0] == "# Qualità dei dati (report sulla fixture sintetica)"
+    assert "non dei dati ANAC reali" in righe[2]
+    assert "fixture sintetica (mese 2)" in righe[4] and "2026-10-25" in righe[4]
+    reale = componi_report(indicatori, "2026-10-25")
+    assert reale.splitlines()[0] == "# Qualità dei dati"
+    assert "fixture" not in reale.lower()

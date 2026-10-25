@@ -1,3 +1,5 @@
+import json
+
 import duckdb
 import pytest
 
@@ -6,6 +8,27 @@ from anac_appalti.pipeline import esegui_pipeline
 
 pytestmark = pytest.mark.integrazione
 
+CHIAVI_LOG = {
+    "run_id",
+    "versione",
+    "git_sha",
+    "inizio",
+    "fine",
+    "durata_s",
+    "fixtures",
+    "mese",
+    "anni",
+    "data_riferimento",
+    "esito",
+    "errori",
+    "estrazione",
+    "landing",
+    "dbt",
+    "freschezza",
+    "modelli",
+    "disco",
+}
+
 
 def test_pipeline_idempotente_e_delta(tmp_path):
     imp1 = carica_impostazioni(fixtures=True, mese=1, area=tmp_path)
@@ -13,6 +36,22 @@ def test_pipeline_idempotente_e_delta(tmp_path):
     assert primo.successo, primo.errori
     assert sum(v["scaricati"] for v in primo.record["estrazione"].values()) == 18
     assert primo.record["dbt"]["esiti"]["warn"] == 5
+    record = primo.record
+    assert set(record) == CHIAVI_LOG
+    assert (record["esito"], record["errori"], record["fixtures"], record["mese"]) == (
+        "successo",
+        [],
+        True,
+        1,
+    )
+    assert len(record["git_sha"]) == 40 and record["versione"]
+    assert set(record["dbt"]) == {"esiti", "errori", "n_modelli", "n_test", "durata_s"}
+    assert record["dbt"]["errori"] == [] and record["dbt"]["n_modelli"] == 40
+    assert all(record["disco"][k] > 0 for k in ("raw", "landing", "warehouse"))
+    assert set(record["estrazione"]) == set(record["landing"]) and len(record["estrazione"]) == len(
+        imp1.pacchetti
+    )
+    assert json.loads(primo.log.read_text(encoding="utf-8")) == json.loads(json.dumps(record, default=str))
     assert primo.record["modelli"]["intermediate.int_cig__corrente"]["righe"] == 1500
 
     secondo = esegui_pipeline(imp1)

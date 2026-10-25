@@ -1,6 +1,10 @@
-# Qualità dei dati
+# Qualità dei dati (report sulla fixture sintetica)
 
-Generato da `appalti report` sui dati con data di riferimento 2026-10-25. Politica: si segnala, non si cancella. Ogni controllo è un test dbt (avviso o errore) e un flag in `int_lotti__qualita`.
+**Questo è il report della fixture sintetica, non dei dati ANAC reali.** Ogni numero qui sotto viene da dati generati dal progetto per test e CI. Dopo l'esecuzione completa su dati reali (`uv run appalti run`, poi `uv run appalti report`) questo file viene sostituito dal report reale.
+
+Generato da `appalti report --fixtures` sulla fixture sintetica (mese 2), data di riferimento 2026-10-25.
+
+Politica: si segnala, non si cancella. Ogni controllo è un test dbt (avviso o errore) e un flag in `int_lotti__qualita`.
 
 ## Volumi
 
