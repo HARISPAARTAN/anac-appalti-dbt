@@ -1,0 +1,10 @@
+tabella: partecipanti
+pacchetto: partecipanti
+freschezza: true
+descrizione: "Operatori partecipanti alle procedure (esclude le gare aperte o chiuse da meno di 30 giorni). Contiene anche persone fisiche: l'identità è annullata in staging."
+colonne:
+  - {nome: cig, sorgente: "cig", tipo: varchar, tenere: true, dato_personale: false, descrizione: "CIG del lotto."}
+  - {nome: ruolo, sorgente: "ruolo", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Ruolo dell'operatore."}
+  - {nome: codice_fiscale, sorgente: "codice_fiscale", tipo: varchar, tenere: true, dato_personale: true, descrizione: "Codice fiscale o partita IVA dell'operatore."}
+  - {nome: denominazione, sorgente: "denominazione", tipo: varchar, tenere: true, dato_personale: true, descrizione: "Denominazione dell'operatore."}
+  - {nome: tipo_soggetto, sorgente: "tipo_soggetto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Tipo di soggetto dichiarato in ANAC."}

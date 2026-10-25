@@ -1,0 +1,66 @@
+tabella: cig
+pacchetto: cig
+freschezza: true
+descrizione: "Lotti (CIG) pubblicati: file annuali cig-AAAA (uno per mese di pubblicazione) e delta mensili del pacchetto cig. Più righe per CIG, una per CPV (flag_prevalente)."
+colonne:
+  - {nome: cig, sorgente: "cig", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice Identificativo Gara del lotto (10 caratteri)."}
+  - {nome: cig_accordo_quadro, sorgente: "cig_accordo_quadro", tipo: varchar, tenere: true, dato_personale: false, descrizione: "CIG dell'accordo quadro o convenzione da cui deriva il lotto."}
+  - {nome: numero_gara, sorgente: "numero_gara", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Numero della gara che raggruppa i lotti."}
+  - {nome: oggetto_gara, sorgente: "oggetto_gara", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto della gara."}
+  - {nome: importo_complessivo_gara, sorgente: "importo_complessivo_gara", tipo: "decimal(18,2)", tenere: true, dato_personale: false, descrizione: "Importo complessivo della gara in euro."}
+  - {nome: n_lotti_componenti, sorgente: "n_lotti_componenti", tipo: integer, tenere: true, dato_personale: false, descrizione: "Numero di lotti della gara."}
+  - {nome: oggetto_lotto, sorgente: "oggetto_lotto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto del lotto."}
+  - {nome: importo_lotto, sorgente: "importo_lotto", tipo: "decimal(18,2)", tenere: true, dato_personale: false, descrizione: "Importo del lotto in euro."}
+  - {nome: oggetto_principale_contratto, sorgente: "oggetto_principale_contratto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto principale: LAVORI, SERVIZI o FORNITURE."}
+  - {nome: stato, sorgente: "stato", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Stato del CIG (ATTIVO o cancellato)."}
+  - {nome: settore, sorgente: "settore", tipo: varchar, tenere: true, dato_personale: false, descrizione: "SETTORI ORDINARI o SETTORI SPECIALI."}
+  - {nome: luogo_istat, sorgente: "luogo_istat", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice ISTAT del comune del luogo di esecuzione (6 cifre) o codice NUTS."}
+  - {nome: provincia, sorgente: "provincia", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Provincia del luogo di esecuzione."}
+  - {nome: data_pubblicazione, sorgente: "data_pubblicazione", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di pubblicazione del lotto."}
+  - {nome: data_scadenza_offerta, sorgente: "data_scadenza_offerta", tipo: date, tenere: true, dato_personale: false, descrizione: "Termine per la presentazione delle offerte."}
+  - {nome: cod_tipo_scelta_contraente, sorgente: "cod_tipo_scelta_contraente", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice della procedura di scelta del contraente."}
+  - {nome: tipo_scelta_contraente, sorgente: "tipo_scelta_contraente", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Procedura di scelta del contraente."}
+  - {nome: cod_modalita_realizzazione, sorgente: "cod_modalita_realizzazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice della modalità di realizzazione."}
+  - {nome: modalita_realizzazione, sorgente: "modalita_realizzazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Modalità di realizzazione (contratto d'appalto, accordo quadro, discendente da accordo quadro...)."}
+  - {nome: codice_ausa, sorgente: "codice_ausa", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice AUSA della stazione appaltante."}
+  - {nome: cf_amministrazione_appaltante, sorgente: "cf_amministrazione_appaltante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice fiscale dell'amministrazione appaltante (ente pubblico)."}
+  - {nome: denominazione_amministrazione_appaltante, sorgente: "denominazione_amministrazione_appaltante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Denominazione dell'amministrazione appaltante."}
+  - {nome: sezione_regionale, sorgente: "sezione_regionale", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Sezione regionale dell'Osservatorio ANAC."}
+  - {nome: id_centro_costo, sorgente: "id_centro_costo", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Identificativo del centro di costo."}
+  - {nome: denominazione_centro_costo, sorgente: "denominazione_centro_costo", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Denominazione del centro di costo."}
+  - {nome: anno_pubblicazione, sorgente: "anno_pubblicazione", tipo: integer, tenere: false, dato_personale: false, descrizione: "Anno di pubblicazione (ridondante con data_pubblicazione)."}
+  - {nome: mese_pubblicazione, sorgente: "mese_pubblicazione", tipo: integer, tenere: false, dato_personale: false, descrizione: "Mese di pubblicazione (ridondante con data_pubblicazione)."}
+  - {nome: cod_cpv, sorgente: "cod_cpv", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice CPV del vocabolario comune per gli appalti."}
+  - {nome: descrizione_cpv, sorgente: "descrizione_cpv", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Descrizione del codice CPV."}
+  - {nome: flag_prevalente, sorgente: "flag_prevalente", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero se il CPV della riga è quello prevalente del lotto."}
+  - {nome: cod_motivo_cancellazione, sorgente: "COD_MOTIVO_CANCELLAZIONE", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice del motivo di cancellazione."}
+  - {nome: motivo_cancellazione, sorgente: "MOTIVO_CANCELLAZIONE", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Motivo di cancellazione del CIG."}
+  - {nome: data_cancellazione, sorgente: "DATA_CANCELLAZIONE", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di cancellazione del CIG."}
+  - {nome: data_ultimo_perfezionamento, sorgente: "DATA_ULTIMO_PERFEZIONAMENTO", tipo: date, tenere: true, dato_personale: false, descrizione: "Data dell'ultimo perfezionamento del CIG."}
+  - {nome: cod_modalita_indizione_speciali, sorgente: "COD_MODALITA_INDIZIONE_SPECIALI", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice della modalità di indizione nei settori speciali."}
+  - {nome: modalita_indizione_speciali, sorgente: "MODALITA_INDIZIONE_SPECIALI", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Modalità di indizione nei settori speciali."}
+  - {nome: cod_modalita_indizione_servizi, sorgente: "COD_MODALITA_INDIZIONE_SERVIZI", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice della modalità di indizione dei servizi."}
+  - {nome: modalita_indizione_servizi, sorgente: "MODALITA_INDIZIONE_SERVIZI", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Modalità di indizione dei servizi."}
+  - {nome: durata_prevista, sorgente: "DURATA_PREVISTA", tipo: integer, tenere: true, dato_personale: false, descrizione: "Durata prevista del contratto in giorni."}
+  - {nome: cod_strumento_svolgimento, sorgente: "COD_STRUMENTO_SVOLGIMENTO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice dello strumento di svolgimento."}
+  - {nome: strumento_svolgimento, sorgente: "STRUMENTO_SVOLGIMENTO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Strumento di svolgimento (telematico, tradizionale)."}
+  - {nome: flag_urgenza, sorgente: "FLAG_URGENZA", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero se la procedura è stata dichiarata urgente."}
+  - {nome: cod_motivo_urgenza, sorgente: "COD_MOTIVO_URGENZA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice del motivo di urgenza."}
+  - {nome: motivo_urgenza, sorgente: "MOTIVO_URGENZA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Motivo di urgenza."}
+  - {nome: flag_delega, sorgente: "FLAG_DELEGA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Indicatore di delega della procedura."}
+  - {nome: funzioni_delegate, sorgente: "FUNZIONI_DELEGATE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Funzioni delegate."}
+  - {nome: cf_sa_delegante, sorgente: "CF_SA_DELEGANTE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice fiscale della stazione appaltante delegante."}
+  - {nome: denominazione_sa_delegante, sorgente: "DENOMINAZIONE_SA_DELEGANTE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Denominazione della stazione appaltante delegante."}
+  - {nome: cf_sa_delegata, sorgente: "CF_SA_DELEGATA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice fiscale della stazione appaltante delegata."}
+  - {nome: denominazione_sa_delegata, sorgente: "DENOMINAZIONE_SA_DELEGATA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Denominazione della stazione appaltante delegata."}
+  - {nome: importo_sicurezza, sorgente: "IMPORTO_SICUREZZA", tipo: "decimal(18,2)", tenere: true, dato_personale: false, descrizione: "Oneri per la sicurezza in euro."}
+  - {nome: tipo_appalto_riservato, sorgente: "TIPO_APPALTO_RISERVATO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Tipo di appalto riservato."}
+  - {nome: cui_programma, sorgente: "CUI_PROGRAMMA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice unico dell'intervento nel programma."}
+  - {nome: flag_prev_ripetizioni, sorgente: "FLAG_PREV_RIPETIZIONI", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Previsione di ripetizioni."}
+  - {nome: cod_ipotesi_collegamento, sorgente: "COD_IPOTESI_COLLEGAMENTO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice dell'ipotesi di collegamento."}
+  - {nome: ipotesi_collegamento, sorgente: "IPOTESI_COLLEGAMENTO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Ipotesi di collegamento con altro CIG."}
+  - {nome: cig_collegamento, sorgente: "CIG_COLLEGAMENTO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "CIG collegato."}
+  - {nome: cod_esito, sorgente: "COD_ESITO", tipo: integer, tenere: true, dato_personale: false, descrizione: "Codice dell'esito (1 = aggiudicata)."}
+  - {nome: esito, sorgente: "ESITO", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Esito della procedura."}
+  - {nome: data_comunicazione_esito, sorgente: "DATA_COMUNICAZIONE_ESITO", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di comunicazione dell'esito."}
+  - {nome: flag_pnrr_pnc, sorgente: "FLAG_PNRR_PNC", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero se il lotto è finanziato con PNRR o PNC."}

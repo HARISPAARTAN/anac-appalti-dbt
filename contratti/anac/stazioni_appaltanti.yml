@@ -1,0 +1,23 @@
+tabella: stazioni_appaltanti
+pacchetto: stazioni-appaltanti
+freschezza: false
+descrizione: "Anagrafe delle stazioni appaltanti (enti pubblici), aggiornamento annuale."
+colonne:
+  - {nome: codice_fiscale, sorgente: "codice_fiscale", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice fiscale dell'ente."}
+  - {nome: partita_iva, sorgente: "partita_iva", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Partita IVA dell'ente."}
+  - {nome: denominazione, sorgente: "denominazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Denominazione dell'ente."}
+  - {nome: codice_ausa, sorgente: "codice_ausa", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice AUSA."}
+  - {nome: natura_giuridica_codice, sorgente: "natura_giuridica_codice", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice della natura giuridica."}
+  - {nome: natura_giuridica_descrizione, sorgente: "natura_giuridica_descrizione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Natura giuridica."}
+  - {nome: soggetto_estero, sorgente: "soggetto_estero", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero per soggetti esteri."}
+  - {nome: provincia_codice, sorgente: "provincia_codice", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Provincia in formato ISO 3166-2 (IT-MI)."}
+  - {nome: provincia, sorgente: "provincia_nome", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Nome della provincia."}
+  - {nome: codice_comune, sorgente: "citta_codice", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice ISTAT del comune."}
+  - {nome: comune, sorgente: "citta_nome", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Comune della sede."}
+  - {nome: indirizzo_odonimo, sorgente: "indirizzo_odonimo", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Indirizzo della sede."}
+  - {nome: cap, sorgente: "cap", tipo: varchar, tenere: false, dato_personale: false, descrizione: "CAP della sede."}
+  - {nome: flag_inhouse, sorgente: "flag_inHouse", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero per le società in house."}
+  - {nome: flag_partecipata, sorgente: "flag_partecipata", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero per le società partecipate."}
+  - {nome: stato, sorgente: "stato", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Stato dell'ente nell'anagrafe."}
+  - {nome: data_inizio, sorgente: "data_inizio", tipo: date, tenere: true, dato_personale: false, descrizione: "Inizio validità."}
+  - {nome: data_fine, sorgente: "data_fine", tipo: date, tenere: true, dato_personale: false, descrizione: "Fine validità."}

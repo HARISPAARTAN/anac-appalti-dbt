@@ -1,0 +1,7 @@
+tabella: tipi_scelta_contraente
+pacchetto: bandi-cig-tipo-scelta-contraente
+freschezza: false
+descrizione: "Vocabolario ANAC delle procedure di scelta del contraente (47 voci)."
+colonne:
+  - {nome: cod_tipo_scelta_contraente, sorgente: "tipo-scelta-contraente_codice", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice della procedura."}
+  - {nome: tipo_scelta_contraente, sorgente: "tipo-scelta-contraente_denominazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Denominazione della procedura."}

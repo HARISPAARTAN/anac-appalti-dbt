@@ -1,0 +1,20 @@
+tabella: subappalti
+pacchetto: subappalti
+freschezza: true
+descrizione: "Subappalti autorizzati. ANAC pubblica solo la classe di importo. Appaltatore e subappaltatore possono essere persone fisiche: l'identità è annullata in staging."
+colonne:
+  - {nome: cig, sorgente: "cig", tipo: varchar, tenere: true, dato_personale: false, descrizione: "CIG del lotto."}
+  - {nome: id_subappalto, sorgente: "id_subappalto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Identificativo del subappalto."}
+  - {nome: cf_subappaltante, sorgente: "cf_subappaltante", tipo: varchar, tenere: true, dato_personale: true, descrizione: "Codice fiscale dell'appaltatore che subappalta."}
+  - {nome: data_autorizzazione, sorgente: "data_autorizzazione", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di autorizzazione del subappalto."}
+  - {nome: oggetto, sorgente: "oggetto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto del subappalto."}
+  - {nome: cod_categoria, sorgente: "cod_categoria", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Categoria di opere (OG, OS)."}
+  - {nome: descrizione_categoria, sorgente: "descrizione_categoria", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Descrizione della categoria."}
+  - {nome: classe_importo, sorgente: "classe_importo", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Classe di importo del subappalto."}
+  - {nome: descrizione_tipo_categoria, sorgente: "descrizione_tipo_categoria", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Prevalente o scorporabile."}
+  - {nome: cod_cpv, sorgente: "cod_cpv", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice CPV."}
+  - {nome: descrizione_cpv, sorgente: "descrizione_cpv", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Descrizione CPV."}
+  - {nome: codice_fiscale, sorgente: "codice_fiscale", tipo: varchar, tenere: true, dato_personale: true, descrizione: "Codice fiscale del subappaltatore."}
+  - {nome: denominazione, sorgente: "denominazione", tipo: varchar, tenere: true, dato_personale: true, descrizione: "Denominazione del subappaltatore."}
+  - {nome: ruolo, sorgente: "ruolo", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Ruolo del subappaltatore."}
+  - {nome: tipo_soggetto, sorgente: "tipo_soggetto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Tipo di soggetto del subappaltatore."}

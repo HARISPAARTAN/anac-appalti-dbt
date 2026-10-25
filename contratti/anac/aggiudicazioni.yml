@@ -1,0 +1,33 @@
+tabella: aggiudicazioni
+pacchetto: aggiudicazioni
+freschezza: true
+descrizione: "Aggiudicazioni dei contratti ordinari: file completo annuale più delta mensili."
+colonne:
+  - {nome: cig, sorgente: "cig", tipo: varchar, tenere: true, dato_personale: false, descrizione: "CIG del lotto aggiudicato."}
+  - {nome: data_aggiudicazione_definitiva, sorgente: "data_aggiudicazione_definitiva", tipo: date, tenere: true, dato_personale: false, descrizione: "Data dell'aggiudicazione definitiva."}
+  - {nome: esito, sorgente: "esito", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Esito della procedura."}
+  - {nome: criterio_aggiudicazione, sorgente: "criterio_aggiudicazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Criterio di aggiudicazione."}
+  - {nome: data_comunicazione_esito, sorgente: "data_comunicazione_esito", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di comunicazione dell'esito."}
+  - {nome: numero_offerte_ammesse, sorgente: "numero_offerte_ammesse", tipo: integer, tenere: true, dato_personale: false, descrizione: "Numero di offerte ammesse."}
+  - {nome: numero_offerte_escluse, sorgente: "numero_offerte_escluse", tipo: integer, tenere: true, dato_personale: false, descrizione: "Numero di offerte escluse."}
+  - {nome: importo_aggiudicazione, sorgente: "importo_aggiudicazione", tipo: "decimal(18,2)", tenere: true, dato_personale: false, descrizione: "Importo di aggiudicazione in euro."}
+  - {nome: ribasso_aggiudicazione, sorgente: "ribasso_aggiudicazione", tipo: double, tenere: true, dato_personale: false, descrizione: "Ribasso di aggiudicazione in percentuale."}
+  - {nome: num_imprese_offerenti, sorgente: "num_imprese_offerenti", tipo: integer, tenere: true, dato_personale: false, descrizione: "Numero di imprese offerenti."}
+  - {nome: flag_subappalto, sorgente: "flag_subappalto", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero se è previsto il subappalto."}
+  - {nome: id_aggiudicazione, sorgente: "id_aggiudicazione", tipo: bigint, tenere: true, dato_personale: false, descrizione: "Identificativo ANAC dell'aggiudicazione."}
+  - {nome: cod_esito, sorgente: "cod_esito", tipo: integer, tenere: true, dato_personale: false, descrizione: "Codice dell'esito (1 = aggiudicata)."}
+  - {nome: num_imprese_richiedenti, sorgente: "num_imprese_richiedenti", tipo: integer, tenere: false, dato_personale: false, descrizione: "Numero di imprese richiedenti."}
+  - {nome: asta_elettronica, sorgente: "asta_elettronica", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Indicatore di asta elettronica."}
+  - {nome: num_imprese_invitate, sorgente: "num_imprese_invitate", tipo: integer, tenere: false, dato_personale: false, descrizione: "Numero di imprese invitate."}
+  - {nome: massimo_ribasso, sorgente: "massimo_ribasso", tipo: double, tenere: false, dato_personale: false, descrizione: "Ribasso massimo offerto."}
+  - {nome: minimo_ribasso, sorgente: "minimo_ribasso", tipo: double, tenere: false, dato_personale: false, descrizione: "Ribasso minimo offerto."}
+  - {nome: flag_scomputo, sorgente: "FLAG_SCOMPUTO", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Opere a scomputo."}
+  - {nome: cod_prestazioni_comprese, sorgente: "COD_PRESTAZIONI_COMPRESE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice delle prestazioni comprese."}
+  - {nome: prestazioni_comprese, sorgente: "PRESTAZIONI_COMPRESE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Prestazioni comprese."}
+  - {nome: cig_prog_esterna, sorgente: "CIG_PROG_ESTERNA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "CIG della progettazione esterna."}
+  - {nome: data_incarico_prog, sorgente: "DATA_INCARICO_PROG", tipo: date, tenere: false, dato_personale: false, descrizione: "Data di incarico della progettazione."}
+  - {nome: data_cons_prog, sorgente: "DATA_CONS_PROG", tipo: date, tenere: false, dato_personale: false, descrizione: "Data di consegna della progettazione."}
+  - {nome: cod_modo_riaggiudicazione, sorgente: "COD_MODO_RIAGGIUDICAZIONE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice del modo di riaggiudicazione."}
+  - {nome: modo_riaggiudicazione, sorgente: "MODO_RIAGGIUDICAZIONE", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Modo di riaggiudicazione."}
+  - {nome: flag_proc_accelerata, sorgente: "FLAG_PROC_ACCELERATA", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Procedura accelerata."}
+  - {nome: n_manif_interesse, sorgente: "N_MANIF_INTERESSE", tipo: integer, tenere: false, dato_personale: false, descrizione: "Numero di manifestazioni di interesse."}
