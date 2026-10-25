@@ -1,0 +1,112 @@
+codice_provincia,sigla_provincia,provincia,codice_regione,regione,nuts2
+001,TO,Torino,01,Piemonte,ITC1
+002,VC,Vercelli,01,Piemonte,ITC1
+003,NO,Novara,01,Piemonte,ITC1
+004,CN,Cuneo,01,Piemonte,ITC1
+005,AT,Asti,01,Piemonte,ITC1
+006,AL,Alessandria,01,Piemonte,ITC1
+096,BI,Biella,01,Piemonte,ITC1
+103,VB,Verbano-Cusio-Ossola,01,Piemonte,ITC1
+007,AO,Aosta,02,Valle d'Aosta,ITC2
+008,IM,Imperia,07,Liguria,ITC3
+009,SV,Savona,07,Liguria,ITC3
+010,GE,Genova,07,Liguria,ITC3
+011,SP,La Spezia,07,Liguria,ITC3
+012,VA,Varese,03,Lombardia,ITC4
+013,CO,Como,03,Lombardia,ITC4
+014,SO,Sondrio,03,Lombardia,ITC4
+015,MI,Milano,03,Lombardia,ITC4
+016,BG,Bergamo,03,Lombardia,ITC4
+017,BS,Brescia,03,Lombardia,ITC4
+018,PV,Pavia,03,Lombardia,ITC4
+019,CR,Cremona,03,Lombardia,ITC4
+020,MN,Mantova,03,Lombardia,ITC4
+097,LC,Lecco,03,Lombardia,ITC4
+098,LO,Lodi,03,Lombardia,ITC4
+108,MB,Monza e della Brianza,03,Lombardia,ITC4
+021,BZ,Bolzano/Bozen,04,Trentino-Alto Adige,ITH1
+022,TN,Trento,04,Trentino-Alto Adige,ITH2
+023,VR,Verona,05,Veneto,ITH3
+024,VI,Vicenza,05,Veneto,ITH3
+025,BL,Belluno,05,Veneto,ITH3
+026,TV,Treviso,05,Veneto,ITH3
+027,VE,Venezia,05,Veneto,ITH3
+028,PD,Padova,05,Veneto,ITH3
+029,RO,Rovigo,05,Veneto,ITH3
+030,UD,Udine,06,Friuli-Venezia Giulia,ITH4
+031,GO,Gorizia,06,Friuli-Venezia Giulia,ITH4
+032,TS,Trieste,06,Friuli-Venezia Giulia,ITH4
+093,PN,Pordenone,06,Friuli-Venezia Giulia,ITH4
+033,PC,Piacenza,08,Emilia-Romagna,ITH5
+034,PR,Parma,08,Emilia-Romagna,ITH5
+035,RE,Reggio nell'Emilia,08,Emilia-Romagna,ITH5
+036,MO,Modena,08,Emilia-Romagna,ITH5
+037,BO,Bologna,08,Emilia-Romagna,ITH5
+038,FE,Ferrara,08,Emilia-Romagna,ITH5
+039,RA,Ravenna,08,Emilia-Romagna,ITH5
+040,FC,Forlì-Cesena,08,Emilia-Romagna,ITH5
+099,RN,Rimini,08,Emilia-Romagna,ITH5
+045,MS,Massa-Carrara,09,Toscana,ITI1
+046,LU,Lucca,09,Toscana,ITI1
+047,PT,Pistoia,09,Toscana,ITI1
+048,FI,Firenze,09,Toscana,ITI1
+049,LI,Livorno,09,Toscana,ITI1
+050,PI,Pisa,09,Toscana,ITI1
+051,AR,Arezzo,09,Toscana,ITI1
+052,SI,Siena,09,Toscana,ITI1
+053,GR,Grosseto,09,Toscana,ITI1
+100,PO,Prato,09,Toscana,ITI1
+054,PG,Perugia,10,Umbria,ITI2
+055,TR,Terni,10,Umbria,ITI2
+041,PU,Pesaro e Urbino,11,Marche,ITI3
+042,AN,Ancona,11,Marche,ITI3
+043,MC,Macerata,11,Marche,ITI3
+044,AP,Ascoli Piceno,11,Marche,ITI3
+109,FM,Fermo,11,Marche,ITI3
+056,VT,Viterbo,12,Lazio,ITI4
+057,RI,Rieti,12,Lazio,ITI4
+058,RM,Roma,12,Lazio,ITI4
+059,LT,Latina,12,Lazio,ITI4
+060,FR,Frosinone,12,Lazio,ITI4
+066,AQ,L'Aquila,13,Abruzzo,ITF1
+067,TE,Teramo,13,Abruzzo,ITF1
+068,PE,Pescara,13,Abruzzo,ITF1
+069,CH,Chieti,13,Abruzzo,ITF1
+070,CB,Campobasso,14,Molise,ITF2
+094,IS,Isernia,14,Molise,ITF2
+061,CE,Caserta,15,Campania,ITF3
+062,BN,Benevento,15,Campania,ITF3
+063,NA,Napoli,15,Campania,ITF3
+064,AV,Avellino,15,Campania,ITF3
+065,SA,Salerno,15,Campania,ITF3
+071,FG,Foggia,16,Puglia,ITF4
+072,BA,Bari,16,Puglia,ITF4
+073,TA,Taranto,16,Puglia,ITF4
+074,BR,Brindisi,16,Puglia,ITF4
+075,LE,Lecce,16,Puglia,ITF4
+110,BT,Barletta-Andria-Trani,16,Puglia,ITF4
+076,PZ,Potenza,17,Basilicata,ITF5
+077,MT,Matera,17,Basilicata,ITF5
+078,CS,Cosenza,18,Calabria,ITF6
+079,CZ,Catanzaro,18,Calabria,ITF6
+080,RC,Reggio Calabria,18,Calabria,ITF6
+101,KR,Crotone,18,Calabria,ITF6
+102,VV,Vibo Valentia,18,Calabria,ITF6
+081,TP,Trapani,19,Sicilia,ITG1
+082,PA,Palermo,19,Sicilia,ITG1
+083,ME,Messina,19,Sicilia,ITG1
+084,AG,Agrigento,19,Sicilia,ITG1
+085,CL,Caltanissetta,19,Sicilia,ITG1
+086,EN,Enna,19,Sicilia,ITG1
+087,CT,Catania,19,Sicilia,ITG1
+088,RG,Ragusa,19,Sicilia,ITG1
+089,SR,Siracusa,19,Sicilia,ITG1
+090,SS,Sassari,20,Sardegna,ITG2
+091,NU,Nuoro,20,Sardegna,ITG2
+092,CA,Cagliari,20,Sardegna,ITG2
+095,OR,Oristano,20,Sardegna,ITG2
+111,SU,Sud Sardegna,20,Sardegna,ITG2
+104,OT,Olbia-Tempio,20,Sardegna,ITG2
+105,OG,Ogliastra,20,Sardegna,ITG2
+106,VS,Medio Campidano,20,Sardegna,ITG2
+107,CI,Carbonia-Iglesias,20,Sardegna,ITG2

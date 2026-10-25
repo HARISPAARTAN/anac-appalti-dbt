@@ -1,0 +1,41 @@
+name: anac_appalti
+version: "0.1.0"
+config-version: 2
+profile: anac_appalti
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+packages-install-path: dbt_packages
+clean-targets: ["dbt_packages"]
+
+flags:
+  send_anonymous_usage_stats: false
+
+vars:
+  # Anno minimo di pubblicazione dei lotti (Q1). La pipeline passa min(anni) da appalti.toml.
+  anno_minimo: 2024
+  # Data di riferimento per i controlli sulle date; vuota = current_date. La fixture usa 2026-10-25.
+  data_riferimento: null
+  importo_max_plausibile: 5000000000
+  mad_fattore: 3
+  giorni_scadenza_tasso: 180
+
+models:
+  anac_appalti:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+
+seeds:
+  anac_appalti:
+    +schema: seeds
+
+data_tests:
+  anac_appalti:
+    +schema: audit
+    +store_failures: true

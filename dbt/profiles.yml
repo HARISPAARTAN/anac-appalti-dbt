@@ -1,0 +1,12 @@
+# Nessun segreto: il percorso del file DuckDB arriva dalla pipeline (APPALTI_DUCKDB).
+anac_appalti:
+  target: locale
+  outputs:
+    locale:
+      type: duckdb
+      path: "{{ env_var('APPALTI_DUCKDB', 'data/warehouse/appalti.duckdb') }}"
+      threads: 4
+    ci:
+      type: duckdb
+      path: "{{ env_var('APPALTI_DUCKDB', 'build/fixture/data/warehouse/appalti.duckdb') }}"
+      threads: 2

@@ -1,0 +1,426 @@
+# Generato da `appalti contratti sync` a partire da contratti/anac/*.yml. Non modificare a mano.
+version: 2
+sources:
+- name: anac
+  description: Dati aperti ANAC (dati.anticorruzione.it), licenza CC BY-SA 4.0, atterrati in Parquet dalla pipeline Python.
+  tables:
+  - name: aggiudicatari
+    description: 'Operatori aggiudicatari per aggiudicazione. Contiene anche persone fisiche (ditte individuali, professionisti): l''identità è annullata in staging.'
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/aggiudicatari/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_aggiudicatari
+    loaded_at_field: cast(_data_snapshot as timestamp)
+    freshness:
+      warn_after:
+        count: 40
+        period: day
+      error_after:
+        count: 75
+        period: day
+    columns:
+    - name: cig
+      description: CIG del lotto.
+    - name: ruolo
+      description: Ruolo dell'operatore (monosoggettivo, mandataria, mandante...).
+    - name: codice_fiscale
+      description: 'Codice fiscale o partita IVA dell''operatore. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: denominazione
+      description: 'Denominazione dell''operatore. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: tipo_soggetto
+      description: Tipo di soggetto dichiarato in ANAC.
+    - name: id_aggiudicazione
+      description: Identificativo dell'aggiudicazione (-1 = sconosciuto, annullato in staging).
+    - name: _classe_cf
+      description: 'Classe del codice fiscale di `codice_fiscale` prima dell''annullamento: persona_giuridica (11 cifre), persona_fisica (16 caratteri), non_verificabile o assente. Non identifica nessuno: il valore originale non è nel landing.'
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: aggiudicazioni
+    description: 'Aggiudicazioni dei contratti ordinari: file completo annuale più delta mensili.'
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/aggiudicazioni/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_aggiudicazioni
+    loaded_at_field: cast(_data_snapshot as timestamp)
+    freshness:
+      warn_after:
+        count: 40
+        period: day
+      error_after:
+        count: 75
+        period: day
+    columns:
+    - name: cig
+      description: CIG del lotto aggiudicato.
+    - name: data_aggiudicazione_definitiva
+      description: Data dell'aggiudicazione definitiva.
+    - name: esito
+      description: Esito della procedura.
+    - name: criterio_aggiudicazione
+      description: Criterio di aggiudicazione.
+    - name: data_comunicazione_esito
+      description: Data di comunicazione dell'esito.
+    - name: numero_offerte_ammesse
+      description: Numero di offerte ammesse.
+    - name: numero_offerte_escluse
+      description: Numero di offerte escluse.
+    - name: importo_aggiudicazione
+      description: Importo di aggiudicazione in euro.
+    - name: ribasso_aggiudicazione
+      description: Ribasso di aggiudicazione in percentuale.
+    - name: num_imprese_offerenti
+      description: Numero di imprese offerenti.
+    - name: flag_subappalto
+      description: Vero se è previsto il subappalto.
+    - name: id_aggiudicazione
+      description: Identificativo ANAC dell'aggiudicazione.
+    - name: cod_esito
+      description: Codice dell'esito (1 = aggiudicata).
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: cig
+    description: 'Lotti (CIG) pubblicati: file annuali cig-AAAA (uno per mese di pubblicazione) e delta mensili del pacchetto cig. Più righe per CIG, una per CPV (flag_prevalente).'
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/cig/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_cig
+    loaded_at_field: cast(_data_snapshot as timestamp)
+    freshness:
+      warn_after:
+        count: 40
+        period: day
+      error_after:
+        count: 75
+        period: day
+    columns:
+    - name: cig
+      description: Codice Identificativo Gara del lotto (10 caratteri).
+    - name: cig_accordo_quadro
+      description: CIG dell'accordo quadro o convenzione da cui deriva il lotto.
+    - name: numero_gara
+      description: Numero della gara che raggruppa i lotti.
+    - name: oggetto_gara
+      description: Oggetto della gara.
+    - name: importo_complessivo_gara
+      description: Importo complessivo della gara in euro.
+    - name: n_lotti_componenti
+      description: Numero di lotti della gara.
+    - name: oggetto_lotto
+      description: Oggetto del lotto.
+    - name: importo_lotto
+      description: Importo del lotto in euro.
+    - name: oggetto_principale_contratto
+      description: 'Oggetto principale: LAVORI, SERVIZI o FORNITURE.'
+    - name: stato
+      description: Stato del CIG (ATTIVO o cancellato).
+    - name: settore
+      description: SETTORI ORDINARI o SETTORI SPECIALI.
+    - name: luogo_istat
+      description: Codice ISTAT del comune del luogo di esecuzione (6 cifre) o codice NUTS.
+    - name: provincia
+      description: Provincia del luogo di esecuzione.
+    - name: data_pubblicazione
+      description: Data di pubblicazione del lotto.
+    - name: data_scadenza_offerta
+      description: Termine per la presentazione delle offerte.
+    - name: cod_tipo_scelta_contraente
+      description: Codice della procedura di scelta del contraente.
+    - name: tipo_scelta_contraente
+      description: Procedura di scelta del contraente.
+    - name: cod_modalita_realizzazione
+      description: Codice della modalità di realizzazione.
+    - name: modalita_realizzazione
+      description: Modalità di realizzazione (contratto d'appalto, accordo quadro, discendente da accordo quadro...).
+    - name: codice_ausa
+      description: Codice AUSA della stazione appaltante.
+    - name: cf_amministrazione_appaltante
+      description: Codice fiscale dell'amministrazione appaltante (ente pubblico).
+    - name: denominazione_amministrazione_appaltante
+      description: Denominazione dell'amministrazione appaltante.
+    - name: sezione_regionale
+      description: Sezione regionale dell'Osservatorio ANAC.
+    - name: cod_cpv
+      description: Codice CPV del vocabolario comune per gli appalti.
+    - name: descrizione_cpv
+      description: Descrizione del codice CPV.
+    - name: flag_prevalente
+      description: Vero se il CPV della riga è quello prevalente del lotto.
+    - name: cod_motivo_cancellazione
+      description: Codice del motivo di cancellazione.
+    - name: motivo_cancellazione
+      description: Motivo di cancellazione del CIG.
+    - name: data_cancellazione
+      description: Data di cancellazione del CIG.
+    - name: data_ultimo_perfezionamento
+      description: Data dell'ultimo perfezionamento del CIG.
+    - name: durata_prevista
+      description: Durata prevista del contratto in giorni.
+    - name: flag_urgenza
+      description: Vero se la procedura è stata dichiarata urgente.
+    - name: importo_sicurezza
+      description: Oneri per la sicurezza in euro.
+    - name: cod_esito
+      description: Codice dell'esito (1 = aggiudicata).
+    - name: esito
+      description: Esito della procedura.
+    - name: data_comunicazione_esito
+      description: Data di comunicazione dell'esito.
+    - name: flag_pnrr_pnc
+      description: Vero se il lotto è finanziato con PNRR o PNC.
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: partecipanti
+    description: 'Operatori partecipanti alle procedure (esclude le gare aperte o chiuse da meno di 30 giorni). Contiene anche persone fisiche: l''identità è annullata in staging.'
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/partecipanti/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_partecipanti
+    loaded_at_field: cast(_data_snapshot as timestamp)
+    freshness:
+      warn_after:
+        count: 40
+        period: day
+      error_after:
+        count: 75
+        period: day
+    columns:
+    - name: cig
+      description: CIG del lotto.
+    - name: ruolo
+      description: Ruolo dell'operatore.
+    - name: codice_fiscale
+      description: 'Codice fiscale o partita IVA dell''operatore. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: denominazione
+      description: 'Denominazione dell''operatore. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: tipo_soggetto
+      description: Tipo di soggetto dichiarato in ANAC.
+    - name: _classe_cf
+      description: 'Classe del codice fiscale di `codice_fiscale` prima dell''annullamento: persona_giuridica (11 cifre), persona_fisica (16 caratteri), non_verificabile o assente. Non identifica nessuno: il valore originale non è nel landing.'
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: stazioni_appaltanti
+    description: Anagrafe delle stazioni appaltanti (enti pubblici), aggiornamento annuale.
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/stazioni_appaltanti/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_stazioni_appaltanti
+    columns:
+    - name: codice_fiscale
+      description: Codice fiscale dell'ente.
+    - name: partita_iva
+      description: Partita IVA dell'ente.
+    - name: denominazione
+      description: Denominazione dell'ente.
+    - name: codice_ausa
+      description: Codice AUSA.
+    - name: natura_giuridica_codice
+      description: Codice della natura giuridica.
+    - name: natura_giuridica_descrizione
+      description: Natura giuridica.
+    - name: soggetto_estero
+      description: Vero per soggetti esteri.
+    - name: provincia_codice
+      description: Provincia in formato ISO 3166-2 (IT-MI).
+    - name: provincia
+      description: Nome della provincia.
+    - name: codice_comune
+      description: Codice ISTAT del comune.
+    - name: comune
+      description: Comune della sede.
+    - name: flag_inhouse
+      description: Vero per le società in house.
+    - name: flag_partecipata
+      description: Vero per le società partecipate.
+    - name: stato
+      description: Stato dell'ente nell'anagrafe.
+    - name: data_inizio
+      description: Inizio validità.
+    - name: data_fine
+      description: Fine validità.
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: subappalti
+    description: 'Subappalti autorizzati. ANAC pubblica solo la classe di importo. Appaltatore e subappaltatore possono essere persone fisiche: l''identità è annullata in staging.'
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/subappalti/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_subappalti
+    loaded_at_field: cast(_data_snapshot as timestamp)
+    freshness:
+      warn_after:
+        count: 40
+        period: day
+      error_after:
+        count: 75
+        period: day
+    columns:
+    - name: cig
+      description: CIG del lotto.
+    - name: id_subappalto
+      description: Identificativo del subappalto.
+    - name: cf_subappaltante
+      description: 'Codice fiscale dell''appaltatore che subappalta. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: data_autorizzazione
+      description: Data di autorizzazione del subappalto.
+    - name: oggetto
+      description: Oggetto del subappalto.
+    - name: cod_categoria
+      description: Categoria di opere (OG, OS).
+    - name: descrizione_categoria
+      description: Descrizione della categoria.
+    - name: classe_importo
+      description: Classe di importo del subappalto.
+    - name: descrizione_tipo_categoria
+      description: Prevalente o scorporabile.
+    - name: cod_cpv
+      description: Codice CPV.
+    - name: descrizione_cpv
+      description: Descrizione CPV.
+    - name: codice_fiscale
+      description: 'Codice fiscale del subappaltatore. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: denominazione
+      description: 'Denominazione del subappaltatore. Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre.'
+    - name: ruolo
+      description: Ruolo del subappaltatore.
+    - name: tipo_soggetto
+      description: Tipo di soggetto del subappaltatore.
+    - name: _classe_cf_subappaltante
+      description: 'Classe del codice fiscale di `cf_subappaltante` prima dell''annullamento: persona_giuridica (11 cifre), persona_fisica (16 caratteri), non_verificabile o assente. Non identifica nessuno: il valore originale non è nel landing.'
+    - name: _classe_cf
+      description: 'Classe del codice fiscale di `codice_fiscale` prima dell''annullamento: persona_giuridica (11 cifre), persona_fisica (16 caratteri), non_verificabile o assente. Non identifica nessuno: il valore originale non è nel landing.'
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: tipi_scelta_contraente
+    description: Vocabolario ANAC delle procedure di scelta del contraente (47 voci).
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/tipi_scelta_contraente/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_tipi_scelta_contraente
+    columns:
+    - name: cod_tipo_scelta_contraente
+      description: Codice della procedura.
+    - name: tipo_scelta_contraente
+      description: Denominazione della procedura.
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
+  - name: varianti
+    description: Varianti contrattuali. ANAC non pubblica l'importo della variante in questo dataset.
+    meta:
+      external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/varianti/*.parquet', union_by_name = true)
+      dagster:
+        asset_key:
+        - landing_varianti
+    loaded_at_field: cast(_data_snapshot as timestamp)
+    freshness:
+      warn_after:
+        count: 40
+        period: day
+      error_after:
+        count: 75
+        period: day
+    columns:
+    - name: id_variante
+      description: Identificativo della variante.
+    - name: cod_motivo_variante
+      description: Codice del motivo della variante.
+    - name: motivo_variante
+      description: Motivo della variante.
+    - name: data_approvazione_variante
+      description: Data di approvazione della variante.
+    - name: cig
+      description: CIG del lotto.
+    - name: id_aggiudicazione
+      description: Identificativo dell'aggiudicazione.
+    - name: cig_proroga
+      description: CIG della proroga.
+    - name: data_atto_aggiuntivo
+      description: Data dell'atto aggiuntivo.
+    - name: _risorsa
+      description: Nome del file ANAC senza estensione da cui proviene la riga.
+    - name: _data_snapshot
+      description: 'Data del file: dal prefisso AAAAMMGG dei delta, altrimenti dalla data di modifica della risorsa CKAN.'
+    - name: _caricato_il
+      description: Istante di atterraggio del file in Parquet.
+    - name: _sha256
+      description: SHA-256 dello zip originale nell'archivio raw.
+    - name: _hash_riga
+      description: 'MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. Se un identificativo personale è stato annullato, nell''impronta entra anche `_ordinale_riga`: quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.'
+    - name: _ordinale_riga
+      description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.

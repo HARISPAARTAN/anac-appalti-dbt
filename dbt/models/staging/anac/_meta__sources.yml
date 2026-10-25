@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: landing_meta
+    description: "Metadati scritti dalla pipeline Python durante l'atterraggio."
+    tables:
+      - name: registro
+        description: "Registro di atterraggio: una riga per file ANAC atterrato, sostituito o in errore (data/landing/_registro.csv)."
+        meta:
+          external_location: "read_csv('{{ env_var('APPALTI_LANDING', 'data/landing') }}/_registro.csv', header = true, all_varchar = true, delim = ',', quote = '\"')"
+        columns:
+          - name: sha256
+            description: "SHA-256 dello zip."
+          - name: tabella
+            description: "Tabella di destinazione."
+          - name: risorsa
+            description: "Nome del file senza estensione."
+          - name: righe
+            description: "Righe atterrate."
+          - name: righe_attese
+            description: "Righe dichiarate da ANAC nel logCsv (vuoto se non disponibile)."
+          - name: riconciliazione
+            description: "ok, differenza o non_disponibile."
+          - name: esito
+            description: "atterrato, letto_con_scarti, sostituito o errore."

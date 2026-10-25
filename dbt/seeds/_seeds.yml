@@ -1,0 +1,67 @@
+version: 2
+
+seeds:
+  - name: famiglie_procedura
+    description: "Mappatura rivista dei 47 codici ANAC di scelta del contraente nelle sei famiglie di procedura (aperta, ristretta, negoziata con bando, negoziata senza bando, affidamento diretto, altro)."
+    config:
+      column_types:
+        cod_tipo_scelta_contraente: varchar
+        famiglia_procedura: varchar
+        descrizione_riferimento: varchar
+    columns:
+      - name: cod_tipo_scelta_contraente
+        description: "Codice ANAC della procedura."
+        data_tests:
+          - unique
+          - not_null
+      - name: famiglia_procedura
+        description: "Famiglia di procedura."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["aperta", "ristretta", "negoziata con bando", "negoziata senza bando", "affidamento diretto", "altro"]
+      - name: descrizione_riferimento
+        description: "Denominazione ANAC al momento della revisione (2026-10-25)."
+
+  - name: regioni_province
+    description: "Province ISTAT (codice a tre cifre usato in luogo_istat) con regione e NUTS 2 (classificazione 2021)."
+    config:
+      column_types:
+        codice_provincia: varchar
+        sigla_provincia: varchar
+        provincia: varchar
+        codice_regione: varchar
+        regione: varchar
+        nuts2: varchar
+    columns:
+      - name: codice_provincia
+        description: "Codice ISTAT storico della provincia (prime tre cifre del codice comune)."
+        data_tests:
+          - unique
+          - not_null
+      - name: sigla_provincia
+        description: "Sigla automobilistica."
+      - name: regione
+        description: "Regione."
+        data_tests:
+          - not_null
+      - name: nuts2
+        description: "Codice NUTS 2."
+        data_tests:
+          - not_null
+
+  - name: divisioni_cpv
+    description: "Divisioni CPV (prime due cifre) con la denominazione italiana del vocabolario comune per gli appalti."
+    config:
+      column_types:
+        divisione_cpv: varchar
+        descrizione_divisione: varchar
+    columns:
+      - name: divisione_cpv
+        description: "Divisione CPV a due cifre."
+        data_tests:
+          - unique
+          - not_null
+      - name: descrizione_divisione
+        description: "Denominazione della divisione."

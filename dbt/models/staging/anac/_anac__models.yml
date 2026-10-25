@@ -1,0 +1,166 @@
+version: 2
+
+models:
+  - name: stg_anac__cig
+    description: "Righe dei file CIG tipizzate (vista sul Parquet di landing). Grana: riga del file ANAC, cioè CIG × file × CPV; i duplicati esatti restano visibili qui."
+    columns:
+      - name: cig
+        description: "Codice Identificativo Gara del lotto, maiuscolo."
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: importo_lotto
+        description: "Importo del lotto in euro, decimal(18,2)."
+      - name: codice_provincia
+        description: "Codice ISTAT della provincia di esecuzione: prime tre cifre di luogo_istat."
+      - name: divisione_cpv
+        description: "Prime due cifre del codice CPV."
+      - name: flag_prevalente
+        description: "Vero per la riga del CPV prevalente: è la versione del lotto."
+      - name: settore
+        description: "Settori ordinari o speciali."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["SETTORI ORDINARI", "SETTORI SPECIALI"]
+              config:
+                warn_if: ">0"
+                error_if: ">1000"
+      - name: oggetto_principale_contratto
+        description: "Lavori, servizi o forniture."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["LAVORI", "SERVIZI", "FORNITURE"]
+              config:
+                warn_if: ">0"
+                error_if: ">1000"
+      - name: _hash_riga
+        description: "MD5 della riga originale (duplicati esatti)."
+        data_tests:
+          - not_null
+
+  - name: stg_anac__aggiudicazioni
+    description: "Aggiudicazioni tipizzate (file completo più delta). Grana: riga del file ANAC."
+    columns:
+      - name: id_aggiudicazione
+        description: "Identificativo ANAC dell'aggiudicazione (può essere negativo)."
+      - name: ribasso_aggiudicazione
+        description: "Ribasso percentuale offerto (0–100)."
+      - name: _hash_riga
+        description: "MD5 della riga originale."
+        data_tests:
+          - not_null
+
+  - name: stg_anac__aggiudicatari
+    description: "Aggiudicatari tipizzati con la regola persone fisiche: codice_fiscale e denominazione sono NULL se il codice non è di 11 cifre."
+    columns:
+      - name: codice_fiscale
+        description: "Codice fiscale o partita IVA di 11 cifre; NULL per persone fisiche e codici non verificabili."
+      - name: tipo_soggetto_privacy
+        description: "persona_giuridica, persona_fisica, non_verificabile o assente. Se il landing ha già annullato il codice, è la classe che il landing ha conservato (_classe_cf)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["persona_giuridica", "persona_fisica", "non_verificabile", "assente"]
+      - name: id_aggiudicazione
+        description: "Aggiudicazione di riferimento; -1 (sconosciuta) diventa NULL."
+      - name: _hash_riga
+        description: "MD5 della riga originale; per le persone fisiche include l'ordinale di riga."
+        data_tests:
+          - not_null
+      - name: _ordinale_riga
+        description: "Posizione della riga nel file di origine; vale solo dentro lo stesso file."
+
+  - name: stg_anac__partecipanti
+    description: "Partecipanti tipizzati con la regola persone fisiche."
+    columns:
+      - name: tipo_soggetto_privacy
+        description: "persona_giuridica, persona_fisica, non_verificabile o assente. Se il landing ha già annullato il codice, è la classe che il landing ha conservato (_classe_cf)."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["persona_giuridica", "persona_fisica", "non_verificabile", "assente"]
+      - name: _hash_riga
+        description: "MD5 della riga originale; per le persone fisiche include l'ordinale di riga."
+        data_tests:
+          - not_null
+      - name: _ordinale_riga
+        description: "Posizione della riga nel file di origine; vale solo dentro lo stesso file."
+
+  - name: stg_anac__varianti
+    description: "Varianti contrattuali tipizzate. ANAC non pubblica importi delle varianti."
+    columns:
+      - name: id_variante
+        description: "Identificativo ANAC della variante."
+      - name: _hash_riga
+        description: "MD5 della riga originale."
+        data_tests:
+          - not_null
+
+  - name: stg_anac__subappalti
+    description: "Subappalti autorizzati tipizzati, con la regola persone fisiche su subappaltatore e subappaltante. ANAC pubblica solo la classe di importo."
+    columns:
+      - name: tipo_soggetto_privacy
+        description: "Classificazione del codice del subappaltatore."
+        data_tests:
+          - not_null
+      - name: tipo_subappaltante_privacy
+        description: "Classificazione del codice del subappaltante."
+        data_tests:
+          - not_null
+      - name: _hash_riga
+        description: "MD5 della riga originale; per le persone fisiche include l'ordinale di riga."
+        data_tests:
+          - not_null
+      - name: _ordinale_riga
+        description: "Posizione della riga nel file di origine; vale solo dentro lo stesso file."
+
+  - name: stg_anac__stazioni_appaltanti
+    description: "Anagrafe delle stazioni appaltanti (AUSA), enti pubblici."
+    columns:
+      - name: codice_ausa
+        description: "Codice AUSA della stazione appaltante."
+      - name: codice_provincia
+        description: "Codice ISTAT della provincia (prime tre cifre del codice comune)."
+      - name: _hash_riga
+        description: "MD5 della riga originale."
+        data_tests:
+          - not_null
+
+  - name: stg_anac__tipi_scelta_contraente
+    description: "Vocabolario ANAC delle procedure di scelta del contraente."
+    columns:
+      - name: cod_tipo_scelta_contraente
+        description: "Codice della procedura."
+        data_tests:
+          - not_null
+      - name: _hash_riga
+        description: "MD5 della riga originale."
+        data_tests:
+          - not_null
+
+unit_tests:
+  - name: test_regola_persone_fisiche
+    description: "Codici di 16 caratteri e codici non verificabili perdono codice e denominazione; -1 diventa NULL; un codice già annullato dal landing conserva la classe del landing."
+    model: stg_anac__aggiudicatari
+    given:
+      - input: source('anac', 'aggiudicatari')
+        format: sql
+        rows: |
+          select 'FX00000001' as cig, 'MANDANTE' as ruolo, '01199250158' as codice_fiscale, 'IMPRESA ESEMPIO S.R.L.' as denominazione, 'IMPRESA' as tipo_soggetto, '5' as id_aggiudicazione, cast(null as varchar) as _classe_cf, 'r' as _risorsa, date '2026-01-23' as _data_snapshot, timestamp '2026-01-23 10:00:00' as _caricato_il, 's' as _sha256, 'h1' as _hash_riga, 1 as _ordinale_riga
+          union all
+          select 'FX00000002', 'MANDATARIA', 'RSSMRA80A01H501U', 'PERSONA ESEMPIO', 'IMPRESA', '-1', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h2', 2
+          union all
+          select 'FX00000003', 'MANDANTE', 'STTLII66TAZ129T', 'PERSONA ESEMPIO', 'IMPRESA', '7', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h3', 3
+          union all
+          select 'FX00000004', 'MANDANTE', null, null, 'IMPRESA', '8', 'persona_fisica', 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h4', 4
+    expect:
+      rows:
+        - {cig: FX00000001, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica, id_aggiudicazione: 5}
+        - {cig: FX00000002, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica, id_aggiudicazione: null}
+        - {cig: FX00000003, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: non_verificabile, id_aggiudicazione: 7}
+        - {cig: FX00000004, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica, id_aggiudicazione: 8}

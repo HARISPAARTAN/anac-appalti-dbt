@@ -1,0 +1,181 @@
+version: 2
+
+models:
+  - name: int_cig__versioni
+    description: "Tutte le versioni dei lotti: una riga per CIG e file (riga del CPV prevalente), con duplicati esatti contati, duplicati in conflitto segnalati, n_versioni e ordine_versione (1 = corrente)."
+    config:
+      meta:
+        chiave: versione_key
+    columns:
+      - name: versione_key
+        description: "Chiave surrogata md5 di cig e _risorsa."
+        data_tests:
+          - unique
+          - not_null
+      - name: n_duplicati_esatti
+        description: "Righe identiche in più nello stesso file per questo CIG."
+      - name: flag_duplicato_conflittuale
+        description: "Più righe prevalenti con contenuto diverso nello stesso file; vince l'ordine di _hash_riga."
+      - name: ordine_versione
+        description: "1 per la versione più recente (_data_snapshot, poi _risorsa)."
+
+  - name: int_cig__corrente
+    description: "Una riga per CIG: la versione corrente del lotto, dall'anno anno_minimo in poi. Incrementale (delete+insert su cig)."
+    config:
+      meta:
+        chiave: cig
+    columns:
+      - name: cig
+        description: "Codice Identificativo Gara."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_aggiudicazioni__corrente
+    description: "Una riga per aggiudicazione: la versione più recente. Incrementale (delete+insert su id_aggiudicazione). Comprende anche aggiudicazioni di lotti fuori ambito."
+    config:
+      meta:
+        chiave: id_aggiudicazione
+    columns:
+      - name: id_aggiudicazione
+        description: "Identificativo ANAC dell'aggiudicazione."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_aggiudicatari__corrente
+    description: "Aggiudicatari correnti: righe del file più recente per CIG e aggiudicazione, senza duplicati esatti."
+    config:
+      meta:
+        chiave: aggiudicatario_key
+    columns:
+      - name: aggiudicatario_key
+        description: "Chiave surrogata md5 di cig, _risorsa e _hash_riga."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_partecipanti__corrente
+    description: "Partecipanti correnti: righe del file più recente per CIG, senza duplicati esatti."
+    config:
+      meta:
+        chiave: partecipante_key
+    columns:
+      - name: partecipante_key
+        description: "Chiave surrogata md5 di cig, _risorsa e _hash_riga."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_varianti__corrente
+    description: "Una riga per variante, versione più recente."
+    config:
+      meta:
+        chiave: id_variante
+    columns:
+      - name: id_variante
+        description: "Identificativo ANAC della variante."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_subappalti__corrente
+    description: "Una riga per subappalto, versione più recente."
+    config:
+      meta:
+        chiave: id_subappalto
+    columns:
+      - name: id_subappalto
+        description: "Identificativo ANAC del subappalto."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_operatori
+    description: "Una riga per persona giuridica (codice di 11 cifre) vista come aggiudicatario, partecipante, subappaltatore o subappaltante; le persone fisiche non compaiono."
+    config:
+      meta:
+        chiave: codice_fiscale
+    columns:
+      - name: codice_fiscale
+        description: "Codice fiscale o partita IVA di 11 cifre."
+        data_tests:
+          - unique
+          - not_null
+      - name: denominazione
+        description: "Denominazione dall'occorrenza più recente."
+
+  - name: int_lotti__qualita
+    description: "Una riga per lotto corrente con tutti i flag di qualità dei dati. I flag non cancellano righe; flag_importo_anomalo esclude il lotto dalle somme."
+    config:
+      meta:
+        chiave: cig
+    columns:
+      - name: cig
+        description: "Codice Identificativo Gara."
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('int_cig__corrente')
+                field: cig
+      - name: flag_duplicato_esatto
+        description: "Il CIG ha righe identiche ripetute in almeno un file."
+      - name: flag_duplicato_conflittuale
+        description: "Il CIG ha righe prevalenti diverse nello stesso file."
+      - name: flag_data_impossibile
+        description: "Scadenza o aggiudicazione prima della pubblicazione, o una data prima del 2007 o oltre due anni dalla data di riferimento."
+      - name: flag_importo_non_positivo
+        description: "importo_lotto minore o uguale a zero."
+      - name: flag_importo_oltre_gara
+        description: "importo_lotto maggiore dell'importo complessivo della gara."
+      - name: flag_importo_implausibile
+        description: "importo_lotto oltre importo_max_plausibile (5 miliardi)."
+      - name: flag_importo_mad
+        description: "|log10(importo) − mediana| oltre mad_fattore × 1,4826 × MAD nel gruppo divisione CPV × oggetto principale (gruppi di almeno 30 lotti)."
+      - name: flag_importo_anomalo
+        description: "Uno qualsiasi dei quattro flag di importo: il lotto è contato ma escluso dalle somme."
+      - name: flag_senza_aggiudicatario
+        description: "Lotto aggiudicato (esito o aggiudicazione presente) senza alcun aggiudicatario."
+      - name: flag_stazione_orfana
+        description: "codice_ausa assente dall'anagrafe delle stazioni appaltanti."
+      - name: flag_ribasso_fuori_range
+        description: "Ribasso fuori dall'intervallo 0–100 %."
+
+  - name: int_riconciliazione
+    description: "File atterrati validi con righe atterrate, righe dichiarate da ANAC e stato della riconciliazione."
+    config:
+      meta:
+        chiave: sha256
+    columns:
+      - name: sha256
+        description: "SHA-256 dello zip."
+        data_tests:
+          - unique
+          - not_null
+      - name: riconciliazione
+        description: "ok, differenza o non_disponibile."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["ok", "differenza", "non_disponibile"]
+
+unit_tests:
+  - name: test_versione_corrente_e_duplicati
+    description: "La versione corrente è la più recente per _data_snapshot; duplicati esatti contati; due righe prevalenti diverse nello stesso file segnalano un conflitto."
+    model: int_cig__versioni
+    given:
+      - input: ref('stg_anac__cig')
+        rows:
+          - {cig: AAA0000001, flag_prevalente: true, importo_lotto: 100, _risorsa: cig_csv_2025_01, _data_snapshot: "2026-01-16", _hash_riga: h1}
+          - {cig: AAA0000001, flag_prevalente: true, importo_lotto: 100, _risorsa: cig_csv_2025_01, _data_snapshot: "2026-01-16", _hash_riga: h1}
+          - {cig: AAA0000001, flag_prevalente: false, importo_lotto: 100, _risorsa: cig_csv_2025_01, _data_snapshot: "2026-01-16", _hash_riga: h2}
+          - {cig: AAA0000001, flag_prevalente: true, importo_lotto: 110, _risorsa: 20260401-cig_csv, _data_snapshot: "2026-04-01", _hash_riga: h3}
+          - {cig: BBB0000002, flag_prevalente: true, importo_lotto: 200, _risorsa: cig_csv_2025_01, _data_snapshot: "2026-01-16", _hash_riga: h4}
+          - {cig: BBB0000002, flag_prevalente: true, importo_lotto: 300, _risorsa: cig_csv_2025_01, _data_snapshot: "2026-01-16", _hash_riga: h5}
+    expect:
+      rows:
+        - {cig: AAA0000001, _risorsa: 20260401-cig_csv, importo_lotto: 110, n_versioni: 2, ordine_versione: 1, n_duplicati_esatti: 0, flag_duplicato_conflittuale: false}
+        - {cig: AAA0000001, _risorsa: cig_csv_2025_01, importo_lotto: 100, n_versioni: 2, ordine_versione: 2, n_duplicati_esatti: 1, flag_duplicato_conflittuale: false}
+        - {cig: BBB0000002, _risorsa: cig_csv_2025_01, importo_lotto: 200, n_versioni: 1, ordine_versione: 1, n_duplicati_esatti: 0, flag_duplicato_conflittuale: true}

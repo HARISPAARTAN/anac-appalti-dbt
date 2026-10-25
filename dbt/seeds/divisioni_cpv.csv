@@ -1,0 +1,46 @@
+divisione_cpv,descrizione_divisione
+03,"Prodotti dell'agricoltura, dell'allevamento, della pesca, della silvicoltura e prodotti affini"
+09,"Prodotti derivati dal petrolio, combustibili, elettricità e altre fonti di energia"
+14,"Prodotti delle miniere, metalli di base e prodotti affini"
+15,"Prodotti alimentari, bevande, tabacco e prodotti affini"
+16,Macchinari agricoli
+18,"Indumenti, calzature, articoli da viaggio e accessori"
+19,"Pelle e tessuti, materiali in plastica e gomma"
+22,Stampati e prodotti affini
+24,Prodotti chimici
+30,"Macchine per ufficio ed elaboratori elettronici, attrezzature e forniture, esclusi i mobili e i pacchetti software"
+31,"Macchine, apparecchi, attrezzature e articoli di consumo elettrici; illuminazione"
+32,"Apparecchiature per radiodiffusione, televisione, comunicazione, telecomunicazione e affini"
+33,"Apparecchiature mediche, prodotti farmaceutici e prodotti per la cura personale"
+34,Attrezzature di trasporto e prodotti ausiliari per il trasporto
+35,"Attrezzature di sicurezza, antincendio, per la polizia e di difesa"
+37,"Strumenti musicali, articoli sportivi, giochi, giocattoli, articoli per artigianato, materiali artistici e accessori"
+38,"Attrezzature di laboratorio, ottiche e di precisione (esclusi vetri)"
+39,"Mobili, arredamento, apparecchi elettrodomestici (esclusa illuminazione) e prodotti per pulizie"
+41,Acqua captata e depurata
+42,Macchine industriali
+43,"Macchinari per l'industria mineraria, le cave e attrezzature da costruzione"
+44,Strutture e materiali per costruzione; prodotti ausiliari per costruzione (eccetto apparecchiature elettriche)
+45,Lavori di costruzione
+48,Pacchetti software e sistemi di informazione
+50,Servizi di riparazione e manutenzione
+51,Servizi di installazione (escluso software)
+55,"Servizi alberghieri, di ristorazione e di vendita al dettaglio"
+60,Servizi di trasporto (escluso il trasporto di rifiuti)
+63,Servizi di supporto e ausiliari nel campo dei trasporti; servizi di agenzie di viaggio
+64,Servizi di poste e telecomunicazioni
+65,Servizi pubblici
+66,Servizi finanziari e assicurativi
+70,Servizi immobiliari
+71,"Servizi architettonici, di costruzione, ingegneria e ispezione"
+72,"Servizi informatici: consulenza, sviluppo di software, Internet e supporto"
+73,Servizi di ricerca e sviluppo nonché servizi di consulenza affini
+75,"Servizi di pubblica amministrazione, difesa e servizi di previdenza sociale"
+76,Servizi connessi all'industria del gas e del petrolio
+77,"Servizi agricoli, forestali, orticoli, di acquacoltura e di apicoltura"
+79,"Servizi per le imprese: legge, marketing, consulenza, assunzioni, stampa e sicurezza"
+80,Servizi di istruzione e formazione
+85,Servizi sanitari e di assistenza sociale
+90,"Servizi fognari, di raccolta dei rifiuti, di pulizia e ambientali"
+92,"Servizi ricreativi, culturali e sportivi"
+98,"Altri servizi di comunità, sociali e personali"
