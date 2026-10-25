@@ -13,22 +13,54 @@ upper(nullif(trim({{ colonna }}), ''))
 regexp_replace(upper(nullif(trim({{ colonna }}), '')), '\.0+$', '')
 {%- endmacro %}
 
-{#- Date ISO (anche con ora: si tengono i primi 10 caratteri) oppure gg/mm/aaaa. -#}
+{#- Date ISO (anche con ora: si tengono i primi 10 caratteri) oppure gg/mm/aaaa (anche con ora). Il resto è NULL. -#}
 {% macro parse_data_it(colonna) -%}
 coalesce(
     try_cast(left(nullif(trim({{ colonna }}), ''), 10) as date),
-    cast(try_strptime(nullif(trim({{ colonna }}), ''), '%d/%m/%Y') as date)
+    cast(
+        try_strptime(regexp_extract(trim({{ colonna }}), '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}'), '%d/%m/%Y') as date
+    )
 )
 {%- endmacro %}
 
-{% macro parse_importo(colonna) -%}
-try_cast(try_cast(replace(nullif(trim({{ colonna }}), ''), ',', '.') as double) as decimal(18, 2))
+{#- Numero decimale in testo normalizzato al formato con il punto decimale e senza separatori delle migliaia.
+    Riconosce: 1234.56 (formato ANAC), 1234,56, 1.234,56 (italiano), 1,234.56 (inglese), 1.234.567 e 1,234,567
+    (migliaia senza decimali). Le forme ambigue con un solo separatore e tre cifre dopo (1.234, 1,234) e tutto
+    ciò che non è un numero restano NULL: il chiamante conserva il testo originale in una colonna _raw e la
+    qualità dei dati segnala la perdita (int_lotti__qualita). -#}
+{% macro numero_normalizzato(colonna) -%}
+case
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]{1,3}[.,][0-9]{3}') then null
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]{1,3}(\.[0-9]{3})+,[0-9]+')
+        then replace(replace(trim({{ colonna }}), '.', ''), ',', '.')
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]{1,3}(,[0-9]{3})+\.[0-9]+')
+        then replace(trim({{ colonna }}), ',', '')
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]{1,3}(\.[0-9]{3}){2,}')
+        then replace(trim({{ colonna }}), '.', '')
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]{1,3}(,[0-9]{3}){2,}')
+        then replace(trim({{ colonna }}), ',', '')
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]+,[0-9]+') then replace(trim({{ colonna }}), ',', '.')
+    when regexp_full_match(trim({{ colonna }}), '-?[0-9]+(\.[0-9]+)?') then trim({{ colonna }})
+end
 {%- endmacro %}
 
+{#- Importo in euro, decimal(18,2). Fuori formato o con 16 cifre intere o più (oltre decimal(18,2)): NULL. -#}
+{% macro parse_importo(colonna) -%}
+try_cast({{ numero_normalizzato(colonna) }} as decimal(18, 2))
+{%- endmacro %}
+
+{% macro parse_ribasso(colonna) -%}
+try_cast({{ numero_normalizzato(colonna) }} as double)
+{%- endmacro %}
+
+{#- Interi: "27" e "27.0" sì, "27.5" no (NULL, non arrotondato: il cast di DuckDB da testo arrotonderebbe). -#}
 {% macro parse_intero(colonna) -%}
 coalesce(
-    try_cast(nullif(trim({{ colonna }}), '') as bigint),
-    try_cast(try_cast(nullif(trim({{ colonna }}), '') as double) as bigint)
+    try_cast(case when regexp_full_match(trim({{ colonna }}), '-?[0-9]+') then trim({{ colonna }}) end as bigint),
+    case
+        when try_cast(nullif(trim({{ colonna }}), '') as double) = floor(try_cast(nullif(trim({{ colonna }}), '') as double))
+            then try_cast(try_cast(nullif(trim({{ colonna }}), '') as double) as bigint)
+    end
 )
 {%- endmacro %}
 

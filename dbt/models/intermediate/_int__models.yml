@@ -132,16 +132,20 @@ models:
         description: "importo_lotto maggiore dell'importo complessivo della gara."
       - name: flag_importo_implausibile
         description: "importo_lotto oltre importo_max_plausibile (5 miliardi)."
+      - name: flag_importo_non_leggibile
+        description: "importo_lotto o importo_complessivo_gara non vuoto nel file ma non leggibile (formato sconosciuto, oltre decimal(18,2)): il testo originale è in importo_lotto_raw e importo_complessivo_gara_raw."
       - name: flag_importo_mad
         description: "|log10(importo) − mediana| oltre mad_fattore × 1,4826 × MAD nel gruppo divisione CPV × oggetto principale (gruppi di almeno 30 lotti)."
       - name: flag_importo_anomalo
-        description: "Uno qualsiasi dei quattro flag di importo: il lotto è contato ma escluso dalle somme."
+        description: "Uno qualsiasi dei cinque flag di importo (non positivo, oltre gara, implausibile, non leggibile, MAD): il lotto è contato ma escluso dalle somme."
       - name: flag_senza_aggiudicatario
         description: "Lotto aggiudicato (esito o aggiudicazione presente) senza alcun aggiudicatario."
       - name: flag_stazione_orfana
         description: "codice_ausa assente dall'anagrafe delle stazioni appaltanti."
       - name: flag_ribasso_fuori_range
         description: "Ribasso fuori dall'intervallo 0–100 %."
+      - name: flag_aggiudicazione_non_leggibile
+        description: "Importo o ribasso di un'aggiudicazione non vuoto nel file ma non leggibile; il testo originale è in importo_aggiudicazione_raw e ribasso_aggiudicazione_raw."
 
   - name: int_riconciliazione
     description: "File atterrati validi con righe atterrate, righe dichiarate da ANAC e stato della riconciliazione."

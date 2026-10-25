@@ -1,5 +1,7 @@
 -- Una riga per lotto corrente con tutti i flag di qualità (sezione 9 della specifica).
 -- Politica: si segnala, non si cancella. flag_importo_anomalo esclude il lotto dalle somme.
+-- Un importo che non si legge (formato sconosciuto, oltre decimal(18,2)) non diventa un NULL silenzioso:
+-- il testo originale resta in *_raw e il lotto è segnalato da flag_importo_non_leggibile.
 with lotti as (
     select * from {{ ref('int_cig__corrente') }}
 ),
@@ -17,7 +19,11 @@ aggiudicazioni as (
     select
         cig,
         min(data_aggiudicazione_definitiva) as data_aggiudicazione,
-        bool_or(ribasso_aggiudicazione < 0 or ribasso_aggiudicazione > 100) as flag_ribasso_fuori_range
+        bool_or(ribasso_aggiudicazione < 0 or ribasso_aggiudicazione > 100) as flag_ribasso_fuori_range,
+        bool_or(
+            (importo_aggiudicazione is null and importo_aggiudicazione_raw is not null)
+            or (ribasso_aggiudicazione is null and ribasso_aggiudicazione_raw is not null)
+        ) as flag_aggiudicazione_non_leggibile
     from {{ ref('int_aggiudicazioni__corrente') }}
     group by cig
 ),
@@ -106,11 +112,17 @@ flag as (
             l.importo_complessivo_gara > 0 and l.importo_lotto > l.importo_complessivo_gara + 0.01, false
         ) as flag_importo_oltre_gara,
         coalesce(l.importo_lotto > {{ var('importo_max_plausibile') }}, false) as flag_importo_implausibile,
+        coalesce(
+            (l.importo_lotto is null and l.importo_lotto_raw is not null)
+            or (l.importo_complessivo_gara is null and l.importo_complessivo_gara_raw is not null),
+            false
+        ) as flag_importo_non_leggibile,
         coalesce(r.flag_importo_mad, false) as flag_importo_mad,
         coalesce((l.esito = 'AGGIUDICATA' or a.cig is not null) and g.cig is null, false)
             as flag_senza_aggiudicatario,
         coalesce(l.codice_ausa is not null and st.codice_ausa is null, false) as flag_stazione_orfana,
-        coalesce(a.flag_ribasso_fuori_range, false) as flag_ribasso_fuori_range
+        coalesce(a.flag_ribasso_fuori_range, false) as flag_ribasso_fuori_range,
+        coalesce(a.flag_aggiudicazione_non_leggibile, false) as flag_aggiudicazione_non_leggibile
     from lotti as l
     left join storia as s on l.cig = s.cig
     left join aggiudicazioni as a on l.cig = a.cig
@@ -124,5 +136,6 @@ select
     flag_importo_non_positivo
     or flag_importo_oltre_gara
     or flag_importo_implausibile
+    or flag_importo_non_leggibile
     or flag_importo_mad as flag_importo_anomalo
 from flag

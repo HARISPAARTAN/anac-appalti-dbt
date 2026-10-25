@@ -11,7 +11,11 @@ models:
               config:
                 severity: warn
       - name: importo_lotto
-        description: "Importo del lotto in euro, decimal(18,2)."
+        description: "Importo del lotto in euro, decimal(18,2). NULL se il testo non si legge (formato sconosciuto, oltre decimal(18,2)): in quel caso importo_lotto_raw è non vuoto e int_lotti__qualita segnala il lotto."
+      - name: importo_lotto_raw
+        description: "Testo originale dell'importo del lotto, tale e quale (senza spazi agli estremi)."
+      - name: importo_complessivo_gara_raw
+        description: "Testo originale dell'importo complessivo della gara."
       - name: codice_provincia
         description: "Codice ISTAT della provincia di esecuzione: prime tre cifre di luogo_istat."
       - name: divisione_cpv
@@ -47,7 +51,11 @@ models:
       - name: id_aggiudicazione
         description: "Identificativo ANAC dell'aggiudicazione (può essere negativo)."
       - name: ribasso_aggiudicazione
-        description: "Ribasso percentuale offerto (0–100)."
+        description: "Ribasso percentuale offerto (0–100). NULL se il testo non si legge: vedi ribasso_aggiudicazione_raw."
+      - name: ribasso_aggiudicazione_raw
+        description: "Testo originale del ribasso."
+      - name: importo_aggiudicazione_raw
+        description: "Testo originale dell'importo di aggiudicazione."
       - name: _hash_riga
         description: "MD5 della riga originale."
         data_tests:
@@ -108,10 +116,16 @@ models:
         description: "Classificazione del codice del subappaltatore."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ["persona_giuridica", "persona_fisica", "non_verificabile", "assente"]
       - name: tipo_subappaltante_privacy
         description: "Classificazione del codice del subappaltante."
         data_tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ["persona_giuridica", "persona_fisica", "non_verificabile", "assente"]
       - name: _hash_riga
         description: "MD5 della riga originale; per le persone fisiche include l'ordinale di riga."
         data_tests:

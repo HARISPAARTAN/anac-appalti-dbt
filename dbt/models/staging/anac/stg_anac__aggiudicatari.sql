@@ -3,9 +3,15 @@
 with sorgente as (
     select
         *,
-        {{ classe_privacy('codice_fiscale', '_classe_cf') }} as tipo_soggetto_privacy,
         {{ classifica_cf('codice_fiscale') }} as classe_codice_presente
     from {{ source('anac', 'aggiudicatari') }}
+),
+
+classificata as (
+    select
+        *,
+        {{ classe_privacy('classe_codice_presente', '_classe_cf') }} as tipo_soggetto_privacy
+    from sorgente
 )
 
 select
@@ -22,4 +28,4 @@ select
     _sha256,
     _hash_riga,
     _ordinale_riga
-from sorgente
+from classificata

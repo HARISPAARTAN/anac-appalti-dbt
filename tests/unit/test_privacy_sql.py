@@ -33,3 +33,24 @@ def test_macro_classifica_come_il_python():
     con.close()
     for n, codice in enumerate(CODICI):
         assert risultati[n] == classifica_codice_fiscale(codice), repr(codice)
+
+
+LANDING = [None, "", "persona_fisica", "non_verificabile"]
+
+
+def test_classe_privacy_usa_il_codice_presente_poi_il_landing():
+    # la classe del codice presente si calcola una volta sola e si passa già espansa
+    sql = "{{ classe_privacy(classifica_cf('codice'), 'classe') }}"
+    espressione = jinja2.Environment().from_string(MACRO + sql).render()
+    con = duckdb.connect()
+    con.execute("create table t (n integer, codice varchar, classe varchar)")
+    righe = [
+        (n, codice, classe) for n, (codice, classe) in enumerate((c, k) for c in CODICI for k in LANDING)
+    ]
+    con.executemany("insert into t values (?, ?, ?)", righe)
+    risultati = dict(con.execute(f"select n, {espressione} from t").fetchall())
+    con.close()
+    for n, codice, classe in righe:
+        presente = classifica_codice_fiscale(codice)
+        atteso = presente if presente != "assente" else (classe or "assente")
+        assert risultati[n] == atteso, (codice, classe)

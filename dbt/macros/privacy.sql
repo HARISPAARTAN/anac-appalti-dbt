@@ -9,12 +9,13 @@ case
 end
 {%- endmacro %}
 
-{#- Classe da riportare in staging. Il landing annulla già i codici delle persone fisiche e ne conserva la
-    classe in `_classe_*`: se il codice è ancora presente lo si riclassifica (seconda linea di difesa), altrimenti
-    si usa la classe del landing. L'identità non viene mai ricostruita: serve solo a contare e a spiegare i NULL. -#}
-{% macro classe_privacy(colonna, classe_landing) -%}
+{#- Classe da riportare in staging. `classe_presente` è la classifica_cf del codice ancora presente (calcolata una
+    sola volta per colonna dal modello). Il landing annulla già i codici delle persone fisiche e ne conserva la
+    classe in `_classe_*`: se il codice è ancora presente si usa la sua classe (seconda linea di difesa), altrimenti
+    la classe del landing. L'identità non viene mai ricostruita: serve solo a contare e a spiegare i NULL. -#}
+{% macro classe_privacy(classe_presente, classe_landing) -%}
 case
-    when {{ classifica_cf(colonna) }} <> 'assente' then {{ classifica_cf(colonna) }}
+    when {{ classe_presente }} <> 'assente' then {{ classe_presente }}
     else coalesce(nullif(trim({{ classe_landing }}), ''), 'assente')
 end
 {%- endmacro %}

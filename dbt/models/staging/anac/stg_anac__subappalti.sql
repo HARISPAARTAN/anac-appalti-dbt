@@ -3,11 +3,17 @@
 with sorgente as (
     select
         *,
-        {{ classe_privacy('codice_fiscale', '_classe_cf') }} as tipo_soggetto_privacy,
-        {{ classe_privacy('cf_subappaltante', '_classe_cf_subappaltante') }} as tipo_subappaltante_privacy,
         {{ classifica_cf('codice_fiscale') }} as classe_codice_presente,
         {{ classifica_cf('cf_subappaltante') }} as classe_subappaltante_presente
     from {{ source('anac', 'subappalti') }}
+),
+
+classificata as (
+    select
+        *,
+        {{ classe_privacy('classe_codice_presente', '_classe_cf') }} as tipo_soggetto_privacy,
+        {{ classe_privacy('classe_subappaltante_presente', '_classe_cf_subappaltante') }} as tipo_subappaltante_privacy
+    from sorgente
 )
 
 select
@@ -34,4 +40,4 @@ select
     _sha256,
     _hash_riga,
     _ordinale_riga
-from sorgente
+from classificata

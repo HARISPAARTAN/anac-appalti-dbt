@@ -4,27 +4,34 @@
  "result": {
   "name": "aggiudicazioni",
   "license_id": "CC-BY-SA-4.0",
-  "metadata_modified": "2026-01-15T00:00:00.000000",
+  "metadata_modified": "2026-04-02T00:00:00.000000",
   "resources": [
+   {
+    "name": "20260401-aggiudicazioni_csv",
+    "format": "CSV",
+    "size": 3952,
+    "last_modified": "2026-04-02T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicazioni/filesystem/20260401-aggiudicazioni_csv.zip"
+   },
    {
     "name": "aggiudicazioni_csv",
     "format": "CSV",
-    "size": 191721,
+    "size": 191718,
     "last_modified": "2026-01-15T00:00:00",
     "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicazioni/filesystem/aggiudicazioni_csv.zip"
    },
    {
     "name": "aggiudicazioni_csv_logCsv",
     "format": "CSV",
-    "size": 176,
-    "last_modified": "2026-01-15T00:00:00",
+    "size": 280,
+    "last_modified": "2026-04-02T00:00:00",
     "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicazioni/filesystem/aggiudicazioni_csv_logCsv.csv"
    },
    {
     "name": "aggiudicazioni_json",
     "format": "JSON",
     "size": 1,
-    "last_modified": "2026-01-15T00:00:00",
+    "last_modified": "2026-04-02T00:00:00",
     "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicazioni/filesystem/aggiudicazioni_json.zip"
    }
   ]

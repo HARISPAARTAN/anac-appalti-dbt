@@ -35,6 +35,7 @@ def test_fixture_committata_uguale_al_generatore(tmp_path: Path):
         "cig_csv_2025_01.zip": 828,
         "cig_csv_2025_02.zip": 825,
         "20260401-cig_csv.zip": 51,
+        "20260401-aggiudicazioni_csv.zip": 21,
         "aggiudicazioni_csv.zip": 1200,
         "aggiudicatari_csv.zip": 1199,
         "partecipanti_csv.zip": partecipanti,

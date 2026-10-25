@@ -5,8 +5,10 @@ specchio CKAN. Nessun dato reale e nessuna persona fisica: tutti i codici fiscal
 
 Difetti iniettati nel mese 1 (conteggi attesi nei test): 3 duplicati esatti (CIG 11, 21, 31), 2 date
 impossibili (41, 42: scadenza prima della pubblicazione), 2 importi anomali (51 = 0 euro, 52 = 9 miliardi),
-1 lotto aggiudicato senza aggiudicatario (61). Il mese 2 aggiunge il delta `20260401-cig_csv.zip` con 50
-aggiornamenti di importo e 1 cancellazione (CIG 201).
+1 lotto aggiudicato senza aggiudicatario (61), 1 ribasso fuori intervallo (71 = 120 %), 1 aggiudicazione
+precedente alla pubblicazione (81), 1 lotto oltre l'importo della gara (91). Il mese 2 aggiunge il delta
+`20260401-cig_csv.zip` con 50 aggiornamenti di importo e 1 cancellazione (CIG 201) e il delta
+`20260401-aggiudicazioni_csv.zip` con 20 aggiornamenti di importo e 1 aggiudicazione nuova (CIG 4).
 """
 
 from __future__ import annotations
@@ -29,8 +31,13 @@ DATE_IMPOSSIBILI = (41, 42)
 IMPORTO_ZERO = 51
 IMPORTO_ENORME = 52
 SENZA_AGGIUDICATARIO = 61
+RIBASSO_FUORI_INTERVALLO = 71
+AGGIUDICAZIONE_ANTICIPATA = 81
+OLTRE_GARA = 91
 AGGIORNATI = tuple(i for i in range(101, 200) if i % 10 != 0)[:50]
 CANCELLATO = 201
+AGGIUDICAZIONI_AGGIORNATE = tuple(i for i in range(301, 400) if i % 5 != 4)[:20]
+AGGIUDICAZIONE_NUOVA = 4
 PROVINCE = (
     ("072", "BA", "BARI"),
     ("073", "TA", "TARANTO"),
@@ -137,6 +144,8 @@ def crea_lotti(rng: random.Random) -> list[Lotto]:
         else:
             scadenza = pubblicazione + timedelta(days=20 + i % 21)
             aggiudicazione = scadenza + timedelta(days=10 + i % 50)
+        if i == AGGIUDICAZIONE_ANTICIPATA:
+            aggiudicazione = pubblicazione - timedelta(days=10)
         oggetto = OGGETTI[i % 3]
         cpv, descrizione = CPV[oggetto][i % len(CPV[oggetto])]
         importo = round(10 ** rng.uniform(4.0, 5.0), 2)
@@ -182,6 +191,7 @@ def riga_cig(
     cancellazione: date | None = None,
 ) -> list[str]:
     valore = lotto.importo if importo is None else importo
+    complessivo = round(valore * 0.5, 2) if lotto.i == OLTRE_GARA else valore
     accordo = lotto.i % 25 == 0
     codice_cpv, descrizione_cpv = cpv or (lotto.cpv, lotto.descrizione_cpv)
     valori = {
@@ -189,7 +199,7 @@ def riga_cig(
         "cig_accordo_quadro": "FX99999999" if accordo else "",
         "numero_gara": str(9_000_000 + lotto.i),
         "oggetto_gara": f"GARA DI ESEMPIO {lotto.i:04d}",
-        "importo_complessivo_gara": f"{valore:.2f}",
+        "importo_complessivo_gara": f"{complessivo:.2f}",
         "n_lotti_componenti": "1",
         "oggetto_lotto": f"LOTTO DI ESEMPIO {lotto.i:04d}",
         "importo_lotto": f"{valore:.2f}",
@@ -261,41 +271,51 @@ def righe_delta_cig(contratto: Contratto, lotti: list[Lotto]) -> list[list[str]]
 
 
 def _ribasso(lotto: Lotto) -> float:
+    if lotto.i == RIBASSO_FUORI_INTERVALLO:
+        return 120.0
     return round((lotto.i % 30) + 0.5, 2) if lotto.procedura in COMPETITIVE else 0.0
 
 
+def riga_aggiudicazione(contratto: Contratto, lotto: Lotto, *, fattore_importo: float = 1.0) -> list[str]:
+    ribasso = _ribasso(lotto)
+    offerte = str(n_offerte(lotto.i))
+    importo = lotto.importo * (1 - min(ribasso, 100.0) / 100) * fattore_importo
+    return componi(
+        contratto,
+        {
+            "cig": cig(lotto.i),
+            "data_aggiudicazione_definitiva": lotto.aggiudicazione.isoformat(),
+            "esito": "AGGIUDICATA",
+            "criterio_aggiudicazione": "OFFERTA ECONOMICAMENTE PIU' VANTAGGIOSA"
+            if lotto.procedura in COMPETITIVE
+            else "PREZZO PIU' BASSO",
+            "data_comunicazione_esito": lotto.aggiudicazione.isoformat(),
+            "numero_offerte_ammesse": offerte,
+            "numero_offerte_escluse": "0",
+            "importo_aggiudicazione": f"{importo:.2f}",
+            "ribasso_aggiudicazione": f"{ribasso}",
+            "num_imprese_offerenti": offerte,
+            "flag_subappalto": "true" if lotto.i % 40 == 0 else "false",
+            "id_aggiudicazione": str(5_000_000 + lotto.i),
+            "cod_esito": "1",
+            "asta_elettronica": "0",
+            "flag_scomputo": "0",
+            "flag_proc_accelerata": "0",
+        },
+    )
+
+
 def righe_aggiudicazioni(contratto: Contratto, lotti: list[Lotto]) -> list[list[str]]:
-    righe = []
-    for lotto in lotti:
-        if not aggiudicato(lotto.i):
-            continue
-        ribasso = _ribasso(lotto)
-        offerte = str(n_offerte(lotto.i))
-        righe.append(
-            componi(
-                contratto,
-                {
-                    "cig": cig(lotto.i),
-                    "data_aggiudicazione_definitiva": lotto.aggiudicazione.isoformat(),
-                    "esito": "AGGIUDICATA",
-                    "criterio_aggiudicazione": "OFFERTA ECONOMICAMENTE PIU' VANTAGGIOSA"
-                    if lotto.procedura in COMPETITIVE
-                    else "PREZZO PIU' BASSO",
-                    "data_comunicazione_esito": lotto.aggiudicazione.isoformat(),
-                    "numero_offerte_ammesse": offerte,
-                    "numero_offerte_escluse": "0",
-                    "importo_aggiudicazione": f"{lotto.importo * (1 - ribasso / 100):.2f}",
-                    "ribasso_aggiudicazione": f"{ribasso}",
-                    "num_imprese_offerenti": offerte,
-                    "flag_subappalto": "true" if lotto.i % 40 == 0 else "false",
-                    "id_aggiudicazione": str(5_000_000 + lotto.i),
-                    "cod_esito": "1",
-                    "asta_elettronica": "0",
-                    "flag_scomputo": "0",
-                    "flag_proc_accelerata": "0",
-                },
-            )
-        )
+    return [riga_aggiudicazione(contratto, lotto) for lotto in lotti if aggiudicato(lotto.i)]
+
+
+def righe_delta_aggiudicazioni(contratto: Contratto, lotti: list[Lotto]) -> list[list[str]]:
+    """Delta del mese 2: 20 aggiudicazioni con importo ridotto del 3 % e una aggiudicazione nuova."""
+    per_indice = {lotto.i: lotto for lotto in lotti}
+    righe = [
+        riga_aggiudicazione(contratto, per_indice[i], fattore_importo=0.97) for i in AGGIUDICAZIONI_AGGIORNATE
+    ]
+    righe.append(riga_aggiudicazione(contratto, per_indice[AGGIUDICAZIONE_NUOVA]))
     return righe
 
 
@@ -566,6 +586,15 @@ def genera_fixture(contratti_dir: Path, destinazione: Path) -> dict[str, int]:
             delta = righe_delta_cig(contratto_cig, lotti)
             specchio.zip("cig", "20260401-cig_csv.zip", contratto_cig, delta, LM_DELTA)
             conteggi["20260401-cig_csv.zip"] = len(delta)
+            delta_agg = righe_delta_aggiudicazioni(per_pacchetto["aggiudicazioni"], lotti)
+            specchio.zip(
+                "aggiudicazioni",
+                "20260401-aggiudicazioni_csv.zip",
+                per_pacchetto["aggiudicazioni"],
+                delta_agg,
+                LM_DELTA,
+            )
+            conteggi["20260401-aggiudicazioni_csv.zip"] = len(delta_agg)
         for pacchetto, generatore in GENERATORI:
             contratto = per_pacchetto[pacchetto]
             righe = generatore(contratto, lotti)

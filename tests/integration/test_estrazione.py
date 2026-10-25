@@ -37,7 +37,9 @@ def test_estrazione_idempotente_e_delta(tmp_path):
     imp2 = carica_impostazioni(fixtures=True, mese=2, area=tmp_path)
     estratti, atterrati = esegui(imp2)
     assert estratti["cig"].scaricati == 2
-    assert sum(e.scaricati for e in estratti.values()) == 2
+    assert estratti["aggiudicazioni"].scaricati == 2
+    assert sum(e.scaricati for e in estratti.values()) == 4
     assert atterrati["cig"].righe == {"20260401-cig_csv": 51}
+    assert atterrati["aggiudicazioni"].righe == {"20260401-aggiudicazioni_csv": 21}
     delta = {v.risorsa: v for v in leggi_registro(imp2.registro_file)}["20260401-cig_csv"]
     assert (delta.riconciliazione, delta.data_snapshot) == ("ok", "2026-04-01")

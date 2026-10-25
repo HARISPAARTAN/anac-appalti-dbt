@@ -1,0 +1,103 @@
+version: 2
+
+unit_tests:
+  - name: test_formati_cig
+    description: "Importi italiani e inglesi, date gg/mm/aaaa e ISO con ora, codici '27.0', flag testuali, perdite di lettura. Ogni colonna ha un valore diverso dalle colonne vicine, così una colonna letta al posto di un'altra si vede."
+    model: stg_anac__cig
+    given:
+      - input: source('anac', 'cig')
+        format: sql
+        rows: |
+          select v.*, cast(null as varchar) as cig_accordo_quadro, cast(null as varchar) as numero_gara, cast(null as varchar) as oggetto_gara, cast(null as varchar) as oggetto_lotto, cast(null as varchar) as oggetto_principale_contratto, cast(null as varchar) as stato, cast(null as varchar) as settore, cast(null as varchar) as luogo_istat, cast(null as varchar) as provincia, cast(null as varchar) as tipo_scelta_contraente, cast(null as varchar) as modalita_realizzazione, cast(null as varchar) as codice_ausa, cast(null as varchar) as cf_amministrazione_appaltante, cast(null as varchar) as denominazione_amministrazione_appaltante, cast(null as varchar) as sezione_regionale, cast(null as varchar) as cod_cpv, cast(null as varchar) as descrizione_cpv, cast(null as varchar) as cod_motivo_cancellazione, cast(null as varchar) as motivo_cancellazione, cast(null as varchar) as data_ultimo_perfezionamento, cast(null as varchar) as importo_sicurezza, cast(null as varchar) as esito, cast(null as varchar) as data_comunicazione_esito, cast(null as varchar) as flag_pnrr_pnc, cast(null as varchar) as _risorsa, cast(null as varchar) as _sha256, cast(null as varchar) as _hash_riga, date '2026-01-15' as _data_snapshot, timestamp '2026-01-15 10:00:00' as _caricato_il
+          from (values
+          (' abc0000001 ', '2.500.000,50', '1.234,56', '03/12/2025', '2025-12-20T10:00:00', '27.0', ' 11.00 ', '1', '0', '3.0', '365.0', '1.0', '5/1/2025 10:30:00'),
+          ('ABC0000002', '1,234.56', '1234,5', '2025-03-01 10:11:12', '31/03/2025', '4', '1', '0', '1', '12', '27.5', '2', ''),
+          ('ABC0000003', '3000.00', '1500', '2025-03-02', '2025-03-30', '1', '2', 'SI', 'no', '1', '', '', ''),
+          ('ABC0000004', 'n.d.', '12345678901234567.00', '31/02/2025', '12-03-2025', '24', '3', 'boh', 'boh', '', 'x', 'x', ''),
+          ('ABC0000005', '1.234', '-1.000,00', '', '', '', '', '', '', '', '', '', '')
+          ) as v(cig, importo_complessivo_gara, importo_lotto, data_pubblicazione, data_scadenza_offerta, cod_tipo_scelta_contraente, cod_modalita_realizzazione, flag_prevalente, flag_urgenza, n_lotti_componenti, durata_prevista, cod_esito, data_cancellazione)
+    expect:
+      rows:
+        - {cig: ABC0000001, importo_complessivo_gara: 2500000.50, importo_complessivo_gara_raw: "2.500.000,50", importo_lotto: 1234.56, importo_lotto_raw: "1.234,56", data_pubblicazione: "2025-12-03", data_scadenza_offerta: "2025-12-20", cod_tipo_scelta_contraente: "27", cod_modalita_realizzazione: "11", flag_prevalente: true, flag_urgenza: false, n_lotti_componenti: 3, durata_prevista: 365, cod_esito: 1, data_cancellazione: "2025-01-05"}
+        - {cig: ABC0000002, importo_complessivo_gara: 1234.56, importo_complessivo_gara_raw: "1,234.56", importo_lotto: 1234.50, importo_lotto_raw: "1234,5", data_pubblicazione: "2025-03-01", data_scadenza_offerta: "2025-03-31", cod_tipo_scelta_contraente: "4", cod_modalita_realizzazione: "1", flag_prevalente: false, flag_urgenza: true, n_lotti_componenti: 12, durata_prevista: null, cod_esito: 2, data_cancellazione: null}
+        - {cig: ABC0000003, importo_complessivo_gara: 3000.00, importo_complessivo_gara_raw: "3000.00", importo_lotto: 1500.00, importo_lotto_raw: "1500", data_pubblicazione: "2025-03-02", data_scadenza_offerta: "2025-03-30", cod_tipo_scelta_contraente: "1", cod_modalita_realizzazione: "2", flag_prevalente: true, flag_urgenza: false, n_lotti_componenti: 1, durata_prevista: null, cod_esito: null, data_cancellazione: null}
+        - {cig: ABC0000004, importo_complessivo_gara: null, importo_complessivo_gara_raw: "n.d.", importo_lotto: null, importo_lotto_raw: "12345678901234567.00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: "24", cod_modalita_realizzazione: "3", flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
+        - {cig: ABC0000005, importo_complessivo_gara: null, importo_complessivo_gara_raw: "1.234", importo_lotto: -1000.00, importo_lotto_raw: "-1.000,00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: null, cod_modalita_realizzazione: null, flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
+
+  - name: test_formati_aggiudicazioni
+    description: "Importo e ribasso con virgola decimale, offerte ammesse diverse dalle escluse, id '27.0', perdite di lettura con testo originale conservato."
+    model: stg_anac__aggiudicazioni
+    given:
+      - input: source('anac', 'aggiudicazioni')
+        format: sql
+        rows: |
+          select v.*, cast(null as varchar) as esito, cast(null as varchar) as criterio_aggiudicazione, cast(null as varchar) as data_comunicazione_esito, cast(null as varchar) as _risorsa, cast(null as varchar) as _sha256, cast(null as varchar) as _hash_riga, date '2026-01-15' as _data_snapshot, timestamp '2026-01-15 10:00:00' as _caricato_il
+          from (values
+          (' abc0000001', '03/12/2025', '5', '2', '1.234,56', '12,5', '7', '5000001.0', '1', 'true'),
+          ('ABC0000002', '2025-12-03', '3.0', '0', '1234.56', '12.5', '4', ' 5000002', '1.0', 'false'),
+          ('ABC0000003', '', '2', '1', 'abc', '12%', '', '-1', '', ''),
+          ('ABC0000004', '', '', '', '', '', '', '5000004', '', '')
+          ) as v(cig, data_aggiudicazione_definitiva, numero_offerte_ammesse, numero_offerte_escluse, importo_aggiudicazione, ribasso_aggiudicazione, num_imprese_offerenti, id_aggiudicazione, cod_esito, flag_subappalto)
+    expect:
+      rows:
+        - {cig: ABC0000001, data_aggiudicazione_definitiva: "2025-12-03", n_offerte_ammesse: 5, n_offerte_escluse: 2, importo_aggiudicazione: 1234.56, importo_aggiudicazione_raw: "1.234,56", ribasso_aggiudicazione: 12.5, ribasso_aggiudicazione_raw: "12,5", n_imprese_offerenti: 7, id_aggiudicazione: 5000001, cod_esito: 1, flag_subappalto: true}
+        - {cig: ABC0000002, data_aggiudicazione_definitiva: "2025-12-03", n_offerte_ammesse: 3, n_offerte_escluse: 0, importo_aggiudicazione: 1234.56, importo_aggiudicazione_raw: "1234.56", ribasso_aggiudicazione: 12.5, ribasso_aggiudicazione_raw: "12.5", n_imprese_offerenti: 4, id_aggiudicazione: 5000002, cod_esito: 1, flag_subappalto: false}
+        - {cig: ABC0000003, data_aggiudicazione_definitiva: null, n_offerte_ammesse: 2, n_offerte_escluse: 1, importo_aggiudicazione: null, importo_aggiudicazione_raw: "abc", ribasso_aggiudicazione: null, ribasso_aggiudicazione_raw: "12%", n_imprese_offerenti: null, id_aggiudicazione: -1, cod_esito: null, flag_subappalto: null}
+        - {cig: ABC0000004, data_aggiudicazione_definitiva: null, n_offerte_ammesse: null, n_offerte_escluse: null, importo_aggiudicazione: null, importo_aggiudicazione_raw: null, ribasso_aggiudicazione: null, ribasso_aggiudicazione_raw: null, n_imprese_offerenti: null, id_aggiudicazione: 5000004, cod_esito: null, flag_subappalto: null}
+
+  - name: test_privacy_partecipanti
+    description: "Seconda linea di difesa sui partecipanti: un codice personale ancora presente perde codice e denominazione; un codice già annullato dal landing conserva la classe del landing."
+    model: stg_anac__partecipanti
+    given:
+      - input: source('anac', 'partecipanti')
+        format: sql
+        rows: |
+          select 'FX00000001' as cig, 'MANDANTE' as ruolo, '01199250158' as codice_fiscale, 'IMPRESA ESEMPIO S.R.L.' as denominazione, 'IMPRESA' as tipo_soggetto, cast(null as varchar) as _classe_cf, 'r' as _risorsa, date '2026-01-23' as _data_snapshot, timestamp '2026-01-23 10:00:00' as _caricato_il, 's' as _sha256, 'h1' as _hash_riga, 1 as _ordinale_riga
+          union all
+          select 'FX00000002', 'MANDANTE', 'RSSMRA80A01H501U', 'PERSONA ESEMPIO', 'IMPRESA', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h2', 2
+          union all
+          select 'FX00000003', 'MANDANTE', 'DE123456789', 'IMPRESA ESTERA', 'IMPRESA', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h3', 3
+          union all
+          select 'FX00000004', 'MANDANTE', null, null, 'IMPRESA', 'persona_fisica', 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h4', 4
+          union all
+          select 'FX00000005', 'MANDANTE', null, null, 'IMPRESA', 'non_verificabile', 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h5', 5
+          union all
+          select 'FX00000006', 'MANDANTE', null, null, 'IMPRESA', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h6', 6
+          union all
+          select 'FX00000007', 'MANDANTE', ' 01199250158 ', 'IMPRESA ESEMPIO S.R.L.', 'IMPRESA', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h7', 7
+    expect:
+      rows:
+        - {cig: FX00000001, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 1}
+        - {cig: FX00000002, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica, _ordinale_riga: 2}
+        - {cig: FX00000003, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: non_verificabile, _ordinale_riga: 3}
+        - {cig: FX00000004, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica, _ordinale_riga: 4}
+        - {cig: FX00000005, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: non_verificabile, _ordinale_riga: 5}
+        - {cig: FX00000006, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: assente, _ordinale_riga: 6}
+        - {cig: FX00000007, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 7}
+
+  - name: test_privacy_subappalti
+    description: "Seconda linea di difesa sui subappalti, su subappaltatore (codice_fiscale) e subappaltante (cf_subappaltante) separatamente: un codice personale accanto a uno societario e viceversa; la classe del landing è quella della colonna giusta."
+    model: stg_anac__subappalti
+    given:
+      - input: source('anac', 'subappalti')
+        format: sql
+        rows: |
+          select v.*, cast(null as varchar) as data_autorizzazione, cast(null as varchar) as oggetto, cast(null as varchar) as cod_categoria, cast(null as varchar) as descrizione_categoria, cast(null as varchar) as classe_importo, cast(null as varchar) as descrizione_tipo_categoria, cast(null as varchar) as cod_cpv, cast(null as varchar) as descrizione_cpv, cast(null as varchar) as ruolo, cast(null as varchar) as _risorsa, cast(null as varchar) as _sha256, date '2026-01-15' as _data_snapshot, timestamp '2026-01-15 10:00:00' as _caricato_il
+          from (values
+          ('FX00000001', 'S1', '02345678901', '01199250158', 'IMPRESA ESEMPIO S.R.L.', 'IMPRESA', null, null, '1', 'h1'),
+          ('FX00000002', 'S2', 'RSSMRA80A01H501U', '01199250158', 'IMPRESA ESEMPIO S.R.L.', 'IMPRESA', null, null, '2', 'h2'),
+          ('FX00000003', 'S3', '02345678901', 'RSSMRA80A01H501U', 'PERSONA ESEMPIO', 'IMPRESA', null, null, '3', 'h3'),
+          ('FX00000004', 'S4', null, null, null, 'IMPRESA', 'persona_fisica', 'non_verificabile', '4', 'h4'),
+          ('FX00000005', 'S5', 'DE123456789', '01199250158', 'IMPRESA ESEMPIO S.R.L.', 'IMPRESA', null, null, '5', 'h5'),
+          ('FX00000006', 'S6', null, '01199250158', 'IMPRESA ESEMPIO S.R.L.', 'IMPRESA', null, 'persona_fisica', '6', 'h6'),
+          ('FX00000007', 'S7', ' 02345678901 ', null, null, 'IMPRESA', 'persona_fisica', null, '7', 'h7')
+          ) as v(cig, id_subappalto, cf_subappaltante, codice_fiscale, denominazione, tipo_soggetto, _classe_cf, _classe_cf_subappaltante, _ordinale_riga, _hash_riga)
+    expect:
+      rows:
+        - {cig: FX00000001, cf_subappaltante: "02345678901", tipo_subappaltante_privacy: persona_giuridica, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica}
+        - {cig: FX00000002, cf_subappaltante: null, tipo_subappaltante_privacy: persona_fisica, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica}
+        - {cig: FX00000003, cf_subappaltante: "02345678901", tipo_subappaltante_privacy: persona_giuridica, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica}
+        - {cig: FX00000004, cf_subappaltante: null, tipo_subappaltante_privacy: non_verificabile, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica}
+        - {cig: FX00000005, cf_subappaltante: null, tipo_subappaltante_privacy: non_verificabile, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica}
+        - {cig: FX00000006, cf_subappaltante: null, tipo_subappaltante_privacy: persona_fisica, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica}
+        - {cig: FX00000007, cf_subappaltante: "02345678901", tipo_subappaltante_privacy: persona_giuridica, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica}
