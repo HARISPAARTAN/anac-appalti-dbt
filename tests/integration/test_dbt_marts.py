@@ -14,6 +14,7 @@ from anac_appalti.fixture import (
     IMPORTO_ZERO,
     OLTRE_GARA,
     RIAGGIUDICAZIONE,
+    RIBASSO_FUORI_INTERVALLO,
     aggiudicato,
     cig,
     codice_procedura,
@@ -26,6 +27,27 @@ pytestmark = pytest.mark.integrazione
 LOTTI = range(1, 1501)
 # Lotti fuori dalle somme: derivati da accordo quadro (i % 25 == 0) e importi anomali (zero, enorme, oltre la gara).
 ESCLUSI_DALLE_SOMME = (IMPORTO_ZERO, IMPORTO_ENORME, OLTRE_GARA)
+MODELLI_ATTESI = frozenset(
+    {
+        *(
+            "dim_cpv",
+            "dim_data",
+            "dim_operatori",
+            "dim_procedure",
+            "dim_stazioni_appaltanti",
+            "dim_territorio",
+        ),
+        *("fct_aggiudicazioni", "fct_lotti", "fct_partecipazioni", "fct_subappalti", "fct_varianti"),
+        *("int_aggiudicatari__corrente", "int_aggiudicazioni__corrente", "int_cig__corrente"),
+        *("int_cig__versioni", "int_lotti__qualita", "int_operatori", "int_partecipanti__corrente"),
+        *("int_perdite_parsing", "int_radar__lotti", "int_riconciliazione", "int_subappalti__corrente"),
+        "int_varianti__corrente",
+        *MART_RADAR,
+        *("stg_anac__aggiudicatari", "stg_anac__aggiudicazioni", "stg_anac__cig", "stg_anac__partecipanti"),
+        *("stg_anac__stazioni_appaltanti", "stg_anac__subappalti", "stg_anac__tipi_scelta_contraente"),
+        "stg_anac__varianti",
+    }
+)
 
 
 def test_dimensioni_e_fatti(magazzino_mese1):
@@ -85,9 +107,20 @@ def test_mart_radar(magazzino_mese1):
 
 
 def test_ribassi_senza_valori_fuori_range(magazzino_mese1):
-    # il ribasso del 120 % (CIG 71) è segnalato e non entra in mart_ribassi
-    massimo = uno(magazzino_mese1, "select max(ribasso_p90) from radar.mart_ribassi")
-    assert massimo <= 100
+    # il ribasso del 120 % (CIG 71) è segnalato, annullato in int_radar__lotti e non entra in mart_ribassi:
+    # 1200 lotti aggiudicati, uno escluso. Senza l'esclusione la somma sarebbe 1200 e il p90 del gruppo salirebbe.
+    imp = magazzino_mese1
+    lotto = interroga(
+        imp,
+        f"select flag_aggiudicato, ribasso_aggiudicazione from intermediate.int_radar__lotti "
+        f"where cig = '{cig(RIBASSO_FUORI_INTERVALLO)}'",
+    )
+    assert lotto == [(True, None)]
+    assert (
+        uno(imp, "select count(*) from intermediate.int_radar__lotti where ribasso_aggiudicazione > 100") == 0
+    )
+    assert uno(imp, "select sum(n_lotti) from radar.mart_ribassi") == 1199
+    assert uno(imp, "select max(ribasso_p90) from radar.mart_ribassi") <= 100
 
 
 def test_qualita_export_copertura(magazzino_mese1, tmp_path):
@@ -121,7 +154,12 @@ def test_qualita_export_copertura(magazzino_mese1, tmp_path):
     assert metadati[b"attribuzione"].decode("utf-8") == ATTRIBUZIONE
     copertura = verifica_copertura(imp)
     assert copertura.mancanze == []
+    # un manifest vuoto o sbagliato non deve poter passare: il numero e i nomi dei modelli sono fissati
+    assert copertura.modelli == copertura.conformi == 40
     assert copertura.quota == 1.0
+    assert set(copertura.nomi) == MODELLI_ATTESI
+    sql_sul_disco = {p.stem for p in (imp.dbt_dir / "models").rglob("*.sql")}
+    assert sql_sul_disco == MODELLI_ATTESI
 
 
 def test_nessuna_identita_personale_nei_fatti(magazzino_mese1):

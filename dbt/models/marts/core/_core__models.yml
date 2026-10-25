@@ -160,6 +160,10 @@ models:
               arguments:
                 to: ref('fct_lotti')
                 field: cig
+      - name: n_offerte
+        description: "Offerte ammesse; se il valore è 0 o assente, numero di imprese offerenti."
+      - name: flag_esito_aggiudicato
+        description: "Falso se cod_esito è valorizzato e diverso da 1 (aggiudicata): queste righe non contano come aggiudicazione nei mart Radar. Da verificare sul primo file reale."
       - name: giorni_pubblicazione_aggiudicazione
         description: "Giorni dalla pubblicazione all'aggiudicazione definitiva; NULL se una data manca, se l'aggiudicazione precede la pubblicazione o se il lotto ha date impossibili."
 
@@ -264,18 +268,44 @@ unit_tests:
           - {id_aggiudicazione: 3, cig: L000000003, data_aggiudicazione_definitiva: "2025-02-01"}
           - {id_aggiudicazione: 4, cig: L000000004, data_aggiudicazione_definitiva: null}
           - {id_aggiudicazione: 5, cig: FUORI00001, data_aggiudicazione_definitiva: "2025-02-01"}
+          - {id_aggiudicazione: 6, cig: L000000005, data_aggiudicazione_definitiva: "2025-02-01"}
       - input: ref('fct_lotti')
         rows:
           - {cig: L000000001, data_pubblicazione: "2025-01-30", flag_data_impossibile: false}
           - {cig: L000000002, data_pubblicazione: "2025-01-10", flag_data_impossibile: false}
           - {cig: L000000003, data_pubblicazione: "2025-01-01", flag_data_impossibile: true}
           - {cig: L000000004, data_pubblicazione: "2025-01-01", flag_data_impossibile: false}
+          - {cig: L000000005, data_pubblicazione: "2025-02-01", flag_data_impossibile: false}
     expect:
       rows:
         - {id_aggiudicazione: 1, giorni_pubblicazione_aggiudicazione: 30}
         - {id_aggiudicazione: 2, giorni_pubblicazione_aggiudicazione: null}
         - {id_aggiudicazione: 3, giorni_pubblicazione_aggiudicazione: null}
         - {id_aggiudicazione: 4, giorni_pubblicazione_aggiudicazione: null}
+        # aggiudicazione nello stesso giorno della pubblicazione: 0 giorni, non NULL (confronto >=)
+        - {id_aggiudicazione: 6, giorni_pubblicazione_aggiudicazione: 0}
+
+  - name: test_offerte_ed_esito
+    description: "n_offerte prende le offerte ammesse, ma se sono 0 o assenti il numero di imprese offerenti; solo un cod_esito presente e diverso da 1 toglie l'esito di aggiudicazione."
+    model: fct_aggiudicazioni
+    given:
+      - input: ref('int_aggiudicazioni__corrente')
+        rows:
+          - {id_aggiudicazione: 1, cig: L000000001, n_offerte_ammesse: 4, n_imprese_offerenti: 6, cod_esito: 1}
+          - {id_aggiudicazione: 2, cig: L000000001, n_offerte_ammesse: 0, n_imprese_offerenti: 3, cod_esito: null}
+          - {id_aggiudicazione: 3, cig: L000000001, n_offerte_ammesse: null, n_imprese_offerenti: 2, cod_esito: 2}
+          - {id_aggiudicazione: 4, cig: L000000001, n_offerte_ammesse: 0, n_imprese_offerenti: 0, cod_esito: 1}
+          - {id_aggiudicazione: 5, cig: L000000001, n_offerte_ammesse: null, n_imprese_offerenti: null, cod_esito: 1}
+      - input: ref('fct_lotti')
+        rows:
+          - {cig: L000000001, data_pubblicazione: "2025-01-01", flag_data_impossibile: false}
+    expect:
+      rows:
+        - {id_aggiudicazione: 1, n_offerte: 4, flag_esito_aggiudicato: true}
+        - {id_aggiudicazione: 2, n_offerte: 3, flag_esito_aggiudicato: true}
+        - {id_aggiudicazione: 3, n_offerte: 2, flag_esito_aggiudicato: false}
+        - {id_aggiudicazione: 4, n_offerte: 0, flag_esito_aggiudicato: true}
+        - {id_aggiudicazione: 5, n_offerte: null, flag_esito_aggiudicato: true}
 
   - name: test_partecipazioni_persone_fisiche
     description: "Le persone fisiche diventano il membro anonimo PERSONA_FISICA e si contano per riga (una per persona, mai l'identità); codici non verificabili e assenti diventano NON_VERIFICABILE; ruolo assente diventa ND; le righe di lotti fuori ambito escluse; partecipante e aggiudicatario si uniscono sulla stessa riga."

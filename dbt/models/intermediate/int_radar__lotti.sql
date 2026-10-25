@@ -1,5 +1,6 @@
 -- Preparazione dei mart Radar: un lotto per riga con tutti gli attributi delle dimensioni.
--- Esclusi i lotti cancellati e quelli senza data di pubblicazione.
+-- Esclusi i lotti cancellati e quelli senza data di pubblicazione. Contano solo le aggiudicazioni con esito
+-- aggiudicata (flag_esito_aggiudicato); l'ultima per data e id guida n_offerte e ribasso.
 with lotti as (
     select * from {{ ref('fct_lotti') }}
     where not flag_annullato and data_pubblicazione is not null
@@ -12,11 +13,13 @@ ultima_aggiudicazione as (
             partition by cig order by data_aggiudicazione_definitiva desc nulls last, id_aggiudicazione desc
         ) as _rn
     from {{ ref('fct_aggiudicazioni') }}
+    where flag_esito_aggiudicato
 ),
 
 tempi as (
     select cig, min(giorni_pubblicazione_aggiudicazione) as giorni_aggiudicazione
     from {{ ref('fct_aggiudicazioni') }}
+    where flag_esito_aggiudicato
     group by cig
 ),
 

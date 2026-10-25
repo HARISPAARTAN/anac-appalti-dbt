@@ -1,0 +1,229 @@
+version: 2
+
+# Unit test dei nove mart Radar con righe di int_radar__lotti calcolate a mano. Ogni test usa più di una regione o
+# più di un anno quando la misura dipende dal raggruppamento o dalla partizione.
+unit_tests:
+  - name: test_mart_regione_mese
+    description: "Conteggio di tutti i lotti, somma e mediana solo sugli importi sommabili (la mediana non è la media), quota PNRR, gruppi per regione, mese e oggetto; la regione 'Non definita' è un gruppo come gli altri."
+    model: mart_appalti_regione_mese
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,regione,mese,anno,oggetto_principale_contratto,importo_sommabile,flag_pnrr_pnc
+          A1,Puglia,2025-03-01,2025,LAVORI,100,true
+          A2,Puglia,2025-03-01,2025,LAVORI,200,false
+          A3,Puglia,2025-03-01,2025,LAVORI,900,false
+          A4,Puglia,2025-03-01,2025,LAVORI,,false
+          A5,Lombardia,2025-03-01,2025,LAVORI,,false
+          A6,Puglia,2026-01-01,2026,LAVORI,40,false
+          A7,Puglia,2025-03-01,2025,SERVIZI,10,false
+          A8,Non definita,2025-03-01,2025,LAVORI,70,false
+    expect:
+      format: csv
+      rows: |
+        regione,mese,anno,oggetto_principale_contratto,n_lotti,importo_totale,importo_mediano,quota_pnrr
+        Puglia,2025-03-01,2025,LAVORI,4,1200.00,200.00,0.25
+        Lombardia,2025-03-01,2025,LAVORI,1,0.00,,0.0
+        Puglia,2026-01-01,2026,LAVORI,1,40.00,40.00,0.0
+        Puglia,2025-03-01,2025,SERVIZI,1,10.00,10.00,0.0
+        Non definita,2025-03-01,2025,LAVORI,1,70.00,70.00,0.0
+
+  - name: test_mart_settore_cpv
+    description: "La quota di affidamenti diretti conta la famiglia 'affidamento diretto', non le procedure competitive; due anni e due settori sono gruppi separati; la divisione 'ND' resta un gruppo."
+    model: mart_appalti_settore_cpv
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,divisione_cpv,descrizione_divisione,anno,settore,importo_sommabile,flag_affidamento_diretto,flag_competitiva
+          B1,45,Lavori,2025,ORDINARI,100,true,false
+          B2,45,Lavori,2025,ORDINARI,200,false,true
+          B3,45,Lavori,2025,ORDINARI,,false,true
+          B4,45,Lavori,2025,ORDINARI,50,false,false
+          B5,45,Lavori,2026,ORDINARI,30,true,false
+          B6,45,Lavori,2025,SPECIALI,5,false,true
+          B7,ND,Non definita,2025,ORDINARI,8,false,false
+    expect:
+      format: csv
+      rows: |
+        divisione_cpv,descrizione_divisione,anno,settore,n_lotti,importo_totale,quota_affidamento_diretto
+        45,Lavori,2025,ORDINARI,4,350.00,0.25
+        45,Lavori,2026,ORDINARI,1,30.00,1.0
+        45,Lavori,2025,SPECIALI,1,5.00,0.0
+        ND,Non definita,2025,ORDINARI,1,8.00,0.0
+
+  - name: test_mart_procedure
+    description: "Quote di lotti e di importo calcolate sulla partizione regione-anno: due regioni e due anni non si mescolano; con importo totale zero la quota di importo è NULL."
+    model: mart_procedure
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,famiglia_procedura,regione,anno,importo_sommabile
+          C1,aperta,Puglia,2025,100
+          C2,aperta,Puglia,2025,100
+          C3,aperta,Puglia,2025,200
+          C4,affidamento diretto,Puglia,2025,400
+          C5,aperta,Puglia,2026,
+          C6,aperta,Lombardia,2025,50
+          C7,aperta,Lombardia,2025,50
+    expect:
+      format: csv
+      rows: |
+        famiglia_procedura,regione,anno,n_lotti,quota_lotti,importo_totale,quota_importo
+        aperta,Puglia,2025,3,0.75,400.00,0.5
+        affidamento diretto,Puglia,2025,1,0.25,400.00,0.5
+        aperta,Puglia,2026,1,1.0,0.00,
+        aperta,Lombardia,2025,2,1.0,100.00,1.0
+
+  - name: test_mart_tasso_aggiudicazione
+    description: "Entrano i lotti con scadenza offerte almeno 180 giorni prima della data di riferimento (confine incluso: 2026-04-28 per il 2026-10-25); chi non ha scadenza o è più recente resta fuori."
+    model: mart_tasso_aggiudicazione
+    overrides:
+      vars:
+        data_riferimento: "2026-10-25"
+        giorni_scadenza_tasso: 180
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,regione,famiglia_procedura,mese,anno,data_scadenza_offerta,flag_aggiudicato
+          T1,Puglia,aperta,2026-01-01,2026,2026-04-28,true
+          T2,Puglia,aperta,2026-01-01,2026,2026-04-27,false
+          T3,Puglia,aperta,2026-01-01,2026,2026-04-29,true
+          T4,Puglia,aperta,2026-01-01,2026,,true
+          T5,Lombardia,aperta,2026-01-01,2026,2025-12-01,true
+          T6,Puglia,aperta,2025-02-01,2025,2025-03-01,false
+    expect:
+      format: csv
+      rows: |
+        regione,famiglia_procedura,mese,anno,n_lotti_scaduti,n_aggiudicati,tasso_aggiudicazione
+        Puglia,aperta,2026-01-01,2026,2,1,0.5
+        Lombardia,aperta,2026-01-01,2026,1,1,1.0
+        Puglia,aperta,2025-02-01,2025,1,0,0.0
+
+  - name: test_mart_tempi_aggiudicazione
+    description: "Mediana e 90° percentile dei giorni su undici valori 0..100 (mediana 50, p90 90); i lotti senza giorni validi non contano; un altro gruppo (regione e anno) resta separato."
+    model: mart_tempi_aggiudicazione
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,regione,famiglia_procedura,mese,anno,giorni_aggiudicazione
+          G00,Puglia,aperta,2025-03-01,2025,0
+          G01,Puglia,aperta,2025-03-01,2025,10
+          G02,Puglia,aperta,2025-03-01,2025,20
+          G03,Puglia,aperta,2025-03-01,2025,30
+          G04,Puglia,aperta,2025-03-01,2025,40
+          G05,Puglia,aperta,2025-03-01,2025,50
+          G06,Puglia,aperta,2025-03-01,2025,60
+          G07,Puglia,aperta,2025-03-01,2025,70
+          G08,Puglia,aperta,2025-03-01,2025,80
+          G09,Puglia,aperta,2025-03-01,2025,90
+          G10,Puglia,aperta,2025-03-01,2025,100
+          G11,Puglia,aperta,2025-03-01,2025,
+          G12,Lombardia,aperta,2026-01-01,2026,7
+    expect:
+      format: csv
+      rows: |
+        regione,famiglia_procedura,mese,anno,giorni_mediana,giorni_p90,n_validi
+        Puglia,aperta,2025-03-01,2025,50.0,90.0,11
+        Lombardia,aperta,2026-01-01,2026,7.0,7.0,1
+
+  - name: test_mart_concorrenza
+    description: "Entrano solo i lotti competitivi aggiudicati con almeno un'offerta; offerta unica = esattamente una offerta (con 1, 2, 3 e 4 offerte la quota è 0,25, non 0,5)."
+    model: mart_concorrenza
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,divisione_cpv,regione,anno,flag_competitiva,flag_aggiudicato,n_offerte
+          K1,45,Puglia,2025,true,true,1
+          K2,45,Puglia,2025,true,true,2
+          K3,45,Puglia,2025,true,true,3
+          K4,45,Puglia,2025,true,true,4
+          K5,45,Puglia,2025,false,true,1
+          K6,45,Puglia,2025,true,false,1
+          K7,45,Puglia,2025,true,true,0
+          K8,45,Puglia,2025,true,true,
+          K9,45,Lombardia,2026,true,true,1
+    expect:
+      format: csv
+      rows: |
+        divisione_cpv,regione,anno,n_lotti_competitivi_aggiudicati,offerte_medie,quota_offerta_unica
+        45,Puglia,2025,4,2.5,0.25
+        45,Lombardia,2026,1,1.0,1.0
+
+  - name: test_mart_ribassi
+    description: "Mediana, 10° e 90° percentile del ribasso su undici valori 0..100 (50, 10, 90); i ribassi NULL (anche quelli fuori intervallo, già annullati a monte) non contano; un altro anno resta separato."
+    model: mart_ribassi
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,famiglia_procedura,oggetto_principale_contratto,anno,ribasso_aggiudicazione
+          R00,aperta,LAVORI,2025,0
+          R01,aperta,LAVORI,2025,10
+          R02,aperta,LAVORI,2025,20
+          R03,aperta,LAVORI,2025,30
+          R04,aperta,LAVORI,2025,40
+          R05,aperta,LAVORI,2025,50
+          R06,aperta,LAVORI,2025,60
+          R07,aperta,LAVORI,2025,70
+          R08,aperta,LAVORI,2025,80
+          R09,aperta,LAVORI,2025,90
+          R10,aperta,LAVORI,2025,100
+          R11,aperta,LAVORI,2025,
+          R12,aperta,LAVORI,2026,33.5
+    expect:
+      format: csv
+      rows: |
+        famiglia_procedura,oggetto_principale_contratto,anno,n_lotti,ribasso_mediano,ribasso_p10,ribasso_p90
+        aperta,LAVORI,2025,11,50.0,10.0,90.0
+        aperta,LAVORI,2026,1,33.5,33.5,33.5
+
+  - name: test_mart_varianti_subappalti
+    description: "Base: solo lotti aggiudicati; quota con variante, varianti per lotto e quota con subappalto per regione e anno."
+    model: mart_varianti_subappalti
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,regione,anno,flag_aggiudicato,n_varianti,flag_con_subappalto
+          V1,Puglia,2025,true,0,true
+          V2,Puglia,2025,true,2,false
+          V3,Puglia,2025,true,1,false
+          V4,Puglia,2025,true,0,false
+          V5,Puglia,2025,false,5,true
+          V6,Lombardia,2026,true,3,true
+    expect:
+      format: csv
+      rows: |
+        regione,anno,n_lotti_aggiudicati,quota_lotti_con_variante,varianti_per_lotto,quota_subappalto
+        Puglia,2025,4,0.5,0.75,0.25
+        Lombardia,2026,1,1.0,3.0,1.0
+
+  - name: test_mart_stazioni_appaltanti
+    description: "La quota di offerta unica conta solo i lotti competitivi aggiudicati con almeno un'offerta (non quelli non aggiudicati, con zero offerte o senza numero di offerte): qui 1 su 2, non 1 su 6; NULL se la stazione non ne ha; due anni e due stazioni restano separati."
+    model: mart_stazioni_appaltanti
+    given:
+      - input: ref('int_radar__lotti')
+        format: csv
+        rows: |
+          cig,stazione_key,codice_ausa,denominazione_stazione,regione_stazione,anno,importo_sommabile,flag_affidamento_diretto,flag_competitiva,flag_aggiudicato,n_offerte
+          S01,A1,A1,Comune Uno,Puglia,2025,100,false,true,true,1
+          S02,A1,A1,Comune Uno,Puglia,2025,200,false,true,true,3
+          S03,A1,A1,Comune Uno,Puglia,2025,,false,true,false,1
+          S04,A1,A1,Comune Uno,Puglia,2025,50,false,true,true,0
+          S05,A1,A1,Comune Uno,Puglia,2025,,false,true,true,
+          S06,A1,A1,Comune Uno,Puglia,2025,,true,false,true,1
+          S07,A1,A1,Comune Uno,Puglia,2026,70,false,true,true,1
+          S08,A2,A2,Comune Due,Lombardia,2025,5,true,false,true,1
+    expect:
+      format: csv
+      rows: |
+        stazione_key,codice_ausa,denominazione,regione,anno,n_lotti,importo_totale,quota_affidamento_diretto,quota_offerta_unica
+        A1,A1,Comune Uno,Puglia,2025,6,350.00,0.16666666666666666,0.5
+        A1,A1,Comune Uno,Puglia,2026,1,70.00,0.0,1.0
+        A2,A2,Comune Due,Lombardia,2025,1,5.00,1.0,

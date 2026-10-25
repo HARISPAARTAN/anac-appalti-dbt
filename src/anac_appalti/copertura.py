@@ -3,6 +3,9 @@
 Staging (grana = riga del file ANAC, non univoca): descrizione e almeno un test not_null.
 Intermediate e mart: `config.meta.chiave` (colonna o lista) con unique + not_null, oppure
 dbt_utils.unique_combination_of_columns + not_null su ogni colonna della chiave.
+
+Un test conta solo se è un controllo vero: severità errore, nessun filtro `where` o `limit`, abilitato.
+Un manifest senza modelli del progetto è un errore, mai una copertura piena.
 """
 
 from __future__ import annotations
@@ -14,19 +17,34 @@ from anac_appalti.config import Impostazioni
 from anac_appalti.pipeline import garantisci_manifest
 
 
+class ErroreCopertura(ValueError):
+    """Il manifest non contiene modelli del progetto: la copertura non è calcolabile."""
+
+
 @dataclass
 class Copertura:
     modelli: int
     conformi: int
     mancanze: list[str] = field(default_factory=list)
+    nomi: list[str] = field(default_factory=list)
 
     @property
     def quota(self) -> float:
-        return 1.0 if not self.modelli else self.conformi / self.modelli
+        return self.conformi / self.modelli if self.modelli else 0.0
 
 
 def _nome_test(nodo: dict) -> str:
     return (nodo.get("test_metadata") or {}).get("name", "")
+
+
+def _test_valido(nodo: dict) -> bool:
+    """Severità errore, abilitato, senza filtri che svuotano il controllo."""
+    config = nodo.get("config") or {}
+    if str(config.get("severity", "error")).lower() != "error":
+        return False
+    if config.get("enabled", True) is False:
+        return False
+    return not config.get("where") and config.get("limit") in (None, "")
 
 
 def _chiave(nodo: dict):
@@ -35,13 +53,15 @@ def _chiave(nodo: dict):
 
 
 def calcola_copertura(manifest: dict, progetto: str = "anac_appalti") -> Copertura:
-    nodi = manifest["nodes"]
+    nodi = manifest.get("nodes") or {}
     modelli = {
         uid: n for uid, n in nodi.items() if n["resource_type"] == "model" and n["package_name"] == progetto
     }
+    if not modelli:
+        raise ErroreCopertura(f"nessun modello del progetto {progetto!r} nel manifest ({len(nodi)} nodi)")
     test_per_modello: dict[str, list[dict]] = {}
     for nodo in nodi.values():
-        if nodo["resource_type"] == "test" and nodo.get("attached_node"):
+        if nodo["resource_type"] == "test" and nodo.get("attached_node") and _test_valido(nodo):
             test_per_modello.setdefault(nodo["attached_node"], []).append(nodo)
     mancanze: list[str] = []
     conformi = 0
@@ -80,7 +100,8 @@ def calcola_copertura(manifest: dict, progetto: str = "anac_appalti") -> Copertu
             mancanze.extend(problemi)
         else:
             conformi += 1
-    return Copertura(modelli=len(modelli), conformi=conformi, mancanze=mancanze)
+    nomi = sorted(n["name"] for n in modelli.values())
+    return Copertura(modelli=len(modelli), conformi=conformi, mancanze=mancanze, nomi=nomi)
 
 
 def verifica_copertura(imp: Impostazioni) -> Copertura:

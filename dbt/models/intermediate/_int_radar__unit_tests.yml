@@ -1,0 +1,120 @@
+version: 2
+
+# Unit test di int_radar__lotti: le regole che i mart Radar ereditano (esclusioni, ultima aggiudicazione,
+# ribasso fuori intervallo, tempi, esito, varianti e subappalti, membri 'ND').
+unit_tests:
+  - name: test_radar_lotti_esclusioni_e_ultima_aggiudicazione
+    description: "Lotto cancellato e lotto senza data di pubblicazione escono; l'ultima aggiudicazione (data, poi id) guida n_offerte e ribasso; il ribasso fuori 0-100 diventa NULL; i giorni sono il minimo tra le aggiudicazioni valide; un esito diverso da aggiudicata non è un'aggiudicazione; i membri ND diventano 'Non definita'."
+    model: int_radar__lotti
+    given:
+      - input: ref('fct_lotti')
+        format: csv
+        rows: |
+          cig,flag_annullato,data_pubblicazione,territorio_key,cpv_key,procedura_key,stazione_key,importo_lotto,flag_importo_sommabile
+          L1,false,2025-03-15,T1,C1,P1,S1,1000,true
+          L2,false,2025-03-20,T1,C1,P1,S1,500,true
+          L3,true,2025-03-20,T1,C1,P1,S1,1,false
+          L4,false,,T1,C1,P1,S1,1,true
+          L5,false,2026-01-31,ND,ND,ND,ND,70,false
+          L6,false,2025-05-01,T1,C1,P1,S1,90,true
+          L7,false,2025-05-01,T1,C1,P1,S1,90,true
+      - input: ref('fct_aggiudicazioni')
+        format: csv
+        rows: |
+          id_aggiudicazione,cig,data_aggiudicazione_definitiva,n_offerte,ribasso_aggiudicazione,flag_ribasso_fuori_range,giorni_pubblicazione_aggiudicazione,flag_esito_aggiudicato
+          1,L1,2025-04-01,5,10.0,false,17,true
+          2,L1,2025-05-01,2,120.0,true,47,true
+          10,L2,2025-04-10,3,20.0,false,21,true
+          11,L2,2025-04-10,4,25.0,false,21,true
+          20,L6,2025-06-01,0,0.0,false,31,true
+          30,L7,2025-06-01,9,5.0,false,31,false
+      - input: ref('fct_varianti')
+        format: csv
+        rows: |
+          id_variante,cig
+          1,L5
+          2,L5
+          3,L1
+      - input: ref('fct_subappalti')
+        format: csv
+        rows: |
+          id_subappalto,cig
+          1,L5
+          2,L5
+      - input: ref('dim_territorio')
+        format: csv
+        rows: |
+          territorio_key,regione
+          T1,Puglia
+          ND,Non definita
+      - input: ref('dim_cpv')
+        format: csv
+        rows: |
+          cpv_key,divisione_cpv,descrizione_divisione
+          C1,45,Lavori di costruzione
+          ND,,
+      - input: ref('dim_procedure')
+        format: csv
+        rows: |
+          procedura_key,famiglia_procedura,flag_competitiva
+          P1,aperta,true
+          ND,altro,false
+      - input: ref('dim_stazioni_appaltanti')
+        format: csv
+        rows: |
+          stazione_key,codice_ausa,denominazione,regione
+          S1,S1,Comune di Esempio,Puglia
+          ND,,Non definita,Non definita
+    expect:
+      format: csv
+      rows: |
+        cig,anno,mese,regione,divisione_cpv,descrizione_divisione,famiglia_procedura,importo_sommabile,flag_aggiudicato,giorni_aggiudicazione,n_offerte,ribasso_aggiudicazione,n_varianti,flag_con_subappalto
+        L1,2025,2025-03-01,Puglia,45,Lavori di costruzione,aperta,1000,true,17,2,,1,false
+        L2,2025,2025-03-01,Puglia,45,Lavori di costruzione,aperta,500,true,21,4,25.0,0,false
+        L5,2026,2026-01-01,Non definita,ND,Non definita,altro,,false,,,,2,true
+        L6,2025,2025-05-01,Puglia,45,Lavori di costruzione,aperta,90,true,31,0,0.0,0,false
+        L7,2025,2025-05-01,Puglia,45,Lavori di costruzione,aperta,90,false,,,,0,false
+
+  - name: test_radar_lotti_affidamento_diretto
+    description: "flag_affidamento_diretto vale solo per la famiglia 'affidamento diretto', non per le altre procedure non competitive."
+    model: int_radar__lotti
+    given:
+      - input: ref('fct_lotti')
+        format: csv
+        rows: |
+          cig,flag_annullato,data_pubblicazione,territorio_key,cpv_key,procedura_key,stazione_key
+          D1,false,2025-01-10,T1,C1,PD,S1
+          D2,false,2025-01-10,T1,C1,PN,S1
+      - input: ref('fct_aggiudicazioni')
+        rows: []
+      - input: ref('fct_varianti')
+        rows: []
+      - input: ref('fct_subappalti')
+        rows: []
+      - input: ref('dim_territorio')
+        format: csv
+        rows: |
+          territorio_key,regione
+          T1,Puglia
+      - input: ref('dim_cpv')
+        format: csv
+        rows: |
+          cpv_key,divisione_cpv,descrizione_divisione
+          C1,45,Lavori
+      - input: ref('dim_procedure')
+        format: csv
+        rows: |
+          procedura_key,famiglia_procedura,flag_competitiva
+          PD,affidamento diretto,false
+          PN,negoziata senza bando,false
+      - input: ref('dim_stazioni_appaltanti')
+        format: csv
+        rows: |
+          stazione_key,codice_ausa,denominazione,regione
+          S1,S1,Ente,Puglia
+    expect:
+      format: csv
+      rows: |
+        cig,flag_affidamento_diretto,flag_competitiva
+        D1,true,false
+        D2,false,false

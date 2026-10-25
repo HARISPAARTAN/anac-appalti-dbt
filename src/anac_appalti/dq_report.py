@@ -180,7 +180,7 @@ def _quota(parte: int, totale: int) -> str:
 
 
 def calcola_indicatori(imp: Impostazioni) -> dict[str, int]:
-    con = duckdb.connect(str(imp.warehouse_file))
+    con = duckdb.connect(str(imp.warehouse_file), read_only=True)
     try:
         return {chiave: int(con.execute(sql).fetchone()[0]) for chiave, sql in QUERY.items()}
     finally:

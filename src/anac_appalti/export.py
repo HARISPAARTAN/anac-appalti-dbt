@@ -33,12 +33,13 @@ def esporta_mart(imp: Impostazioni, destinazione: Path | None = None) -> list[Pa
         f"versione: '{VERSIONE}', data_riferimento: '{imp.data_riferimento}'}}"
     )
     scritti = []
-    con = duckdb.connect(str(imp.warehouse_file))
+    con = duckdb.connect(str(imp.warehouse_file), read_only=True)
     try:
         for mart in MART_RADAR:
             percorso = cartella / f"{mart}.parquet"
+            destinazione_sql = percorso.as_posix().replace("'", "''")
             con.execute(
-                f"COPY (SELECT * FROM radar.{mart} ORDER BY ALL) TO '{percorso.as_posix()}' "
+                f"COPY (SELECT * FROM radar.{mart} ORDER BY ALL) TO '{destinazione_sql}' "
                 f"(FORMAT parquet, COMPRESSION zstd, KV_METADATA {metadati})"
             )
             scritti.append(percorso)
