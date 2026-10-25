@@ -18,6 +18,7 @@ from pathlib import Path
 
 from anac_appalti.ckan import Fonte, Risorsa, risorse_da_package
 from anac_appalti.config import Impostazioni, Pacchetto
+from anac_appalti.intestazioni import url_download
 
 log = logging.getLogger(__name__)
 RE_DELTA = re.compile(r"^(\d{8})-")
@@ -275,3 +276,43 @@ def estrai_pacchetto(imp: Impostazioni, fonte: Fonte, pacchetto: Pacchetto) -> R
             righe_attese = righe_attese_tabella(imp, pacchetto.tabella, manifest)
     riepilogo.user_agent = fonte.user_agent_usato
     return riepilogo
+
+
+def registra_manuali(imp: Impostazioni) -> int:
+    """Registra nel manifest gli zip e i logCsv messi a mano in data/raw/anac/{pacchetto}/ (nomi originali ANAC).
+
+    Serve quando il portale blocca il download: `appalti run --da-archivio` atterra questi file.
+    """
+    manifest = leggi_manifest(imp.manifest_file)
+    noti = {v.percorso for v in manifest} | {v.sha256 for v in manifest}
+    nuovi = 0
+    for pacchetto in imp.pacchetti:
+        for nome in nomi_ckan(pacchetto, imp.anni):
+            cartella = imp.raw / "anac" / nome
+            if not cartella.is_dir():
+                continue
+            for file in sorted(cartella.iterdir()):
+                if not file.is_file() or not (file.suffix == ".zip" or e_log(file.name)):
+                    continue
+                percorso = file.relative_to(imp.area).as_posix()
+                sha = sha256_file(file)
+                if percorso in noti or sha in noti:
+                    continue
+                voce = VoceManifest(
+                    pacchetto=nome,
+                    tabella=pacchetto.tabella,
+                    risorsa=file.name,
+                    url=url_download(imp.base_url, nome, file.name),
+                    dimensione=file.stat().st_size,
+                    last_modified=datetime.fromtimestamp(file.stat().st_mtime)
+                    .replace(microsecond=0)
+                    .isoformat(),
+                    sha256=sha,
+                    percorso=percorso,
+                    scaricato_il=datetime.now().isoformat(timespec="seconds"),
+                    righe_attese="",
+                )
+                aggiungi_manifest(imp.manifest_file, voce)
+                noti |= {percorso, sha}
+                nuovi += 1
+    return nuovi

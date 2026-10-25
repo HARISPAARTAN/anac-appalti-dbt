@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import shutil
+
 import typer
 
 from anac_appalti.config import VERSIONE, carica_impostazioni
@@ -11,6 +14,11 @@ contratti_app = typer.Typer(help="Contratti di sorgente.", no_args_is_help=True)
 fixture_app = typer.Typer(help="Fixture sintetica per test e CI.", no_args_is_help=True)
 app.add_typer(contratti_app, name="contratti")
 app.add_typer(fixture_app, name="fixture")
+
+OPZIONE_FIXTURE = typer.Option(
+    False, "--fixtures", help="Usa la fixture sintetica (offline) in build/fixture/."
+)
+OPZIONE_MESE = typer.Option(1, "--mese", help="Mese della fixture: 1 o 2 (il 2 aggiunge un delta CIG).")
 
 
 @app.callback()
@@ -93,3 +101,107 @@ def landing(
         riuscito = riuscito and riepilogo.riuscito
     if not riuscito:
         raise typer.Exit(1)
+
+
+@app.command()
+def run(
+    fixtures: bool = OPZIONE_FIXTURE,
+    mese: int = OPZIONE_MESE,
+    solo_estrazione: bool = typer.Option(False, "--solo-estrazione", help="Solo raw e landing, senza dbt."),
+    pacchetti: str = typer.Option(
+        "", "--pacchetti", help="Pacchetti o tabelle separati da virgola (default: tutti)."
+    ),
+    da_archivio: bool = typer.Option(
+        False,
+        "--da-archivio",
+        help="Non scarica: registra i file messi a mano in data/raw/anac/ e li atterra.",
+    ),
+) -> None:
+    """Esegue la pipeline completa (asset Dagster in processo) e scrive il log di esecuzione."""
+    from anac_appalti.pipeline import esegui_pipeline
+
+    imp = carica_impostazioni(fixtures=fixtures, mese=mese)
+    scelti = [p.strip() for p in pacchetti.split(",") if p.strip()] or None
+    esito = esegui_pipeline(imp, solo_estrazione=solo_estrazione, pacchetti=scelti, da_archivio=da_archivio)
+    typer.echo(f"Esecuzione {esito.run_id}: {'successo' if esito.successo else 'errore'}. Log: {esito.log}")
+    for errore in esito.errori:
+        typer.echo(f"  - {errore}", err=True)
+    if not esito.successo:
+        raise typer.Exit(1)
+
+
+@app.command()
+def report(fixtures: bool = OPZIONE_FIXTURE, mese: int = OPZIONE_MESE) -> None:
+    """Scrive docs/qualita-dati.md e docs/ultima-esecuzione.md; sui dati reali aggiorna i numeri dei README."""
+    from anac_appalti.copertura import verifica_copertura
+    from anac_appalti.documenti import (
+        aggiorna_readme,
+        blocco_numeri,
+        gravita_test,
+        record_per_readme,
+        scrivi_ultima_esecuzione,
+    )
+    from anac_appalti.dq_report import calcola_indicatori, scrivi_report
+    from anac_appalti.log_esecuzioni import leggi_log, leggi_ultimo_log
+    from anac_appalti.pipeline import garantisci_manifest
+
+    imp = carica_impostazioni(fixtures=fixtures, mese=mese)
+    record = leggi_ultimo_log(imp)
+    if record is None:
+        typer.echo("Nessun log di esecuzione: esegui prima `appalti run`.", err=True)
+        raise typer.Exit(1)
+    indicatori = calcola_indicatori(imp)
+    typer.echo(f"Scritto {scrivi_report(imp, indicatori)}")
+    typer.echo(f"Scritto {scrivi_ultima_esecuzione(imp, record)}")
+    if not fixtures:
+        quota = verifica_copertura(imp).quota
+        gravita = gravita_test(json.loads(garantisci_manifest(imp).read_text(encoding="utf-8")))
+        record_readme = record_per_readme(leggi_log(imp))
+        for lingua, nome in (("it", "README.md"), ("en", "README.en.md")):
+            if aggiorna_readme(
+                imp.radice / nome, blocco_numeri(record_readme, indicatori, quota, gravita, lingua)
+            ):
+                typer.echo(f"Aggiornati i numeri in {nome}")
+
+
+@app.command()
+def export(fixtures: bool = OPZIONE_FIXTURE, mese: int = OPZIONE_MESE) -> None:
+    """Esporta i nove mart Radar in build/export/*.parquet con l'attribuzione CC BY-SA."""
+    from anac_appalti.export import esporta_mart
+
+    imp = carica_impostazioni(fixtures=fixtures, mese=mese)
+    for percorso in esporta_mart(imp):
+        typer.echo(f"Scritto {percorso}")
+
+
+@app.command("copertura-test")
+def copertura_test(fixtures: bool = OPZIONE_FIXTURE) -> None:
+    """Esce con 1 se un modello dbt non ha descrizione o test sulla chiave."""
+    from anac_appalti.copertura import verifica_copertura
+
+    esito = verifica_copertura(carica_impostazioni(fixtures=fixtures))
+    typer.echo(f"Modelli conformi: {esito.conformi}/{esito.modelli} ({esito.quota:.0%})")
+    for mancanza in esito.mancanze:
+        typer.echo(f"  - {mancanza}", err=True)
+    if esito.mancanze:
+        raise typer.Exit(1)
+
+
+@app.command()
+def docs(fixtures: bool = OPZIONE_FIXTURE, mese: int = OPZIONE_MESE) -> None:
+    """Genera il sito per GitHub Pages in build/sito/ (documentazione dbt statica e grafo Dagster)."""
+    from anac_appalti.definitions import nodi_asset
+    from anac_appalti.documenti import componi_indice_sito, componi_pagina_dagster
+    from anac_appalti.pipeline import cartella_target, esegui_dbt
+
+    imp = carica_impostazioni(fixtures=fixtures, mese=mese)
+    if esegui_dbt(imp, ["docs", "generate", "--static"]) != 0:
+        typer.echo("dbt docs generate non riuscito.", err=True)
+        raise typer.Exit(1)
+    sito = imp.radice / "build" / "sito"
+    (sito / "dbt").mkdir(parents=True, exist_ok=True)
+    (sito / "dagster").mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cartella_target(imp) / "static_index.html", sito / "dbt" / "index.html")
+    (sito / "dagster" / "index.html").write_text(componi_pagina_dagster(nodi_asset()), encoding="utf-8")
+    (sito / "index.html").write_text(componi_indice_sito(VERSIONE), encoding="utf-8")
+    typer.echo(f"Sito scritto in {sito}")
