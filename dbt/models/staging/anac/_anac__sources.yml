@@ -141,13 +141,13 @@ sources:
     - name: numero_gara
       description: Numero della gara che raggruppa i lotti.
     - name: oggetto_gara
-      description: Oggetto della gara.
+      description: 'Oggetto della gara. Testo libero: i codici fiscali di persona fisica trovati nel testo sono sostituiti da [CF] al landing; i nomi di persona nel testo non sono riconosciuti.'
     - name: importo_complessivo_gara
       description: Importo complessivo della gara in euro.
     - name: n_lotti_componenti
       description: Numero di lotti della gara.
     - name: oggetto_lotto
-      description: Oggetto del lotto.
+      description: 'Oggetto del lotto. Testo libero: i codici fiscali di persona fisica trovati nel testo sono sostituiti da [CF] al landing; i nomi di persona nel testo non sono riconosciuti.'
     - name: importo_lotto
       description: Importo del lotto in euro.
     - name: oggetto_principale_contratto
@@ -201,7 +201,7 @@ sources:
     - name: cod_motivo_cancellazione
       description: Codice del motivo di cancellazione.
     - name: motivo_cancellazione
-      description: Motivo di cancellazione del CIG.
+      description: 'Motivo di cancellazione del CIG. Testo libero: i codici fiscali di persona fisica trovati nel testo sono sostituiti da [CF] al landing; i nomi di persona nel testo non sono riconosciuti.'
     - name: data_cancellazione
       description: Data di cancellazione del CIG.
     - name: data_ultimo_perfezionamento
@@ -355,7 +355,7 @@ sources:
           config:
             severity: warn
     - name: oggetto
-      description: Oggetto del subappalto.
+      description: 'Oggetto del subappalto. Testo libero: i codici fiscali di persona fisica trovati nel testo sono sostituiti da [CF] al landing; i nomi di persona nel testo non sono riconosciuti.'
     - name: cod_categoria
       description: Categoria di opere (OG, OS).
     - name: descrizione_categoria
@@ -437,7 +437,7 @@ sources:
     - name: cod_motivo_variante
       description: Codice del motivo della variante.
     - name: motivo_variante
-      description: Motivo della variante.
+      description: 'Motivo della variante. Testo libero: i codici fiscali di persona fisica trovati nel testo sono sostituiti da [CF] al landing; i nomi di persona nel testo non sono riconosciuti.'
     - name: data_approvazione_variante
       description: Data di approvazione della variante.
       data_tests:

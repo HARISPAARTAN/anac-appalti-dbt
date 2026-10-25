@@ -23,3 +23,5 @@ sources:
             description: "ok o differenza (confronto con il logCsv ANAC), ok_fisico o differenza_fisica (confronto con i record contati nel CSV), non_disponibile (landing in errore)."
           - name: esito
             description: "atterrato, letto_con_scarti, sostituito o errore."
+          - name: cf_mascherati
+            description: "Codici fiscali personali sostituiti da [CF] nelle colonne di testo libero del file (vuoto se la tabella non ha testo libero)."

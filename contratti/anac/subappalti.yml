@@ -7,7 +7,7 @@ colonne:
   - {nome: id_subappalto, sorgente: "id_subappalto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Identificativo del subappalto."}
   - {nome: cf_subappaltante, sorgente: "cf_subappaltante", tipo: varchar, tenere: true, dato_personale: true, descrizione: "Codice fiscale dell'appaltatore che subappalta."}
   - {nome: data_autorizzazione, sorgente: "data_autorizzazione", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di autorizzazione del subappalto."}
-  - {nome: oggetto, sorgente: "oggetto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto del subappalto."}
+  - {nome: oggetto, sorgente: "oggetto", tipo: varchar, tenere: true, dato_personale: false, testo_libero: true, descrizione: "Oggetto del subappalto."}
   - {nome: cod_categoria, sorgente: "cod_categoria", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Categoria di opere (OG, OS)."}
   - {nome: descrizione_categoria, sorgente: "descrizione_categoria", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Descrizione della categoria."}
   - {nome: classe_importo, sorgente: "classe_importo", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Classe di importo del subappalto."}

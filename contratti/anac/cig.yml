@@ -6,10 +6,10 @@ colonne:
   - {nome: cig, sorgente: "cig", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice Identificativo Gara del lotto (10 caratteri)."}
   - {nome: cig_accordo_quadro, sorgente: "cig_accordo_quadro", tipo: varchar, tenere: true, dato_personale: false, descrizione: "CIG dell'accordo quadro o convenzione da cui deriva il lotto."}
   - {nome: numero_gara, sorgente: "numero_gara", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Numero della gara che raggruppa i lotti."}
-  - {nome: oggetto_gara, sorgente: "oggetto_gara", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto della gara."}
+  - {nome: oggetto_gara, sorgente: "oggetto_gara", tipo: varchar, tenere: true, dato_personale: false, testo_libero: true, descrizione: "Oggetto della gara."}
   - {nome: importo_complessivo_gara, sorgente: "importo_complessivo_gara", tipo: "decimal(18,2)", tenere: true, dato_personale: false, descrizione: "Importo complessivo della gara in euro."}
   - {nome: n_lotti_componenti, sorgente: "n_lotti_componenti", tipo: integer, tenere: true, dato_personale: false, descrizione: "Numero di lotti della gara."}
-  - {nome: oggetto_lotto, sorgente: "oggetto_lotto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto del lotto."}
+  - {nome: oggetto_lotto, sorgente: "oggetto_lotto", tipo: varchar, tenere: true, dato_personale: false, testo_libero: true, descrizione: "Oggetto del lotto."}
   - {nome: importo_lotto, sorgente: "importo_lotto", tipo: "decimal(18,2)", tenere: true, dato_personale: false, descrizione: "Importo del lotto in euro."}
   - {nome: oggetto_principale_contratto, sorgente: "oggetto_principale_contratto", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Oggetto principale: LAVORI, SERVIZI o FORNITURE."}
   - {nome: stato, sorgente: "stato", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Stato del CIG (ATTIVO o cancellato)."}
@@ -34,7 +34,7 @@ colonne:
   - {nome: descrizione_cpv, sorgente: "descrizione_cpv", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Descrizione del codice CPV."}
   - {nome: flag_prevalente, sorgente: "flag_prevalente", tipo: boolean, tenere: true, dato_personale: false, descrizione: "Vero se il CPV della riga è quello prevalente del lotto."}
   - {nome: cod_motivo_cancellazione, sorgente: "COD_MOTIVO_CANCELLAZIONE", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice del motivo di cancellazione."}
-  - {nome: motivo_cancellazione, sorgente: "MOTIVO_CANCELLAZIONE", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Motivo di cancellazione del CIG."}
+  - {nome: motivo_cancellazione, sorgente: "MOTIVO_CANCELLAZIONE", tipo: varchar, tenere: true, dato_personale: false, testo_libero: true, descrizione: "Motivo di cancellazione del CIG."}
   - {nome: data_cancellazione, sorgente: "DATA_CANCELLAZIONE", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di cancellazione del CIG."}
   - {nome: data_ultimo_perfezionamento, sorgente: "DATA_ULTIMO_PERFEZIONAMENTO", tipo: date, tenere: true, dato_personale: false, descrizione: "Data dell'ultimo perfezionamento del CIG."}
   - {nome: cod_modalita_indizione_speciali, sorgente: "COD_MODALITA_INDIZIONE_SPECIALI", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Codice della modalità di indizione nei settori speciali."}

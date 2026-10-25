@@ -56,7 +56,7 @@ from anac_appalti.archivio import (
 )
 from anac_appalti.config import Impostazioni, Pacchetto
 from anac_appalti.contratti import Colonna, Contratto, colonne_classe, confronta_schema, e_codice_fiscale
-from anac_appalti.privacy import MODELLO_CF_PERSONA, MODELLO_PIVA
+from anac_appalti.privacy import MODELLO_CF_PERSONA, MODELLO_PIVA, TOKEN_CF_MASCHERATO
 
 log = logging.getLogger(__name__)
 ESITI_VALIDI = {"atterrato", "letto_con_scarti"}
@@ -136,6 +136,9 @@ class VoceRegistro:
     caricato_il: str
     esito: str
     messaggio: str
+    # Codici fiscali personali mascherati con [CF] nel testo libero: totale e dettaglio "colonna=n|colonna=n".
+    cf_mascherati: str = ""
+    cf_mascherati_dettaglio: str = ""
 
 
 CAMPI_REGISTRO = [f.name for f in fields(VoceRegistro)]
@@ -183,6 +186,19 @@ def _contiene_cf_persona(riferimento: str) -> str:
     return f"regexp_matches(upper({riferimento}), {_letterale(modello)})"
 
 
+def maschera_cf_sql(riferimento: str) -> str:
+    """Espressione SQL che sostituisce con `[CF]` ogni codice fiscale di persona fisica nel testo (gemello di
+    `privacy.maschera_cf_in_testo`). RE2 non ha lookaround: il delimitatore finale di un codice è consumato dalla
+    sostituzione, quindi due codici separati da un solo carattere hanno bisogno di due passate."""
+    modello = f"(^|[^A-Za-z0-9]){MODELLO_CF_PERSONA}([^A-Za-z0-9]|$)"
+    sostituzione = "\\1" + TOKEN_CF_MASCHERATO + "\\2"
+
+    def passata(argomento: str) -> str:
+        return f"regexp_replace({argomento}, {_letterale(modello)}, {_letterale(sostituzione)}, 'gi')"
+
+    return passata(passata(riferimento))
+
+
 def espressione_classe(riferimento: str) -> str:
     """Espressione SQL gemella di `privacy.classifica_codice_fiscale`."""
     valore = f"nullif({_normalizzato(riferimento)}, '')"
@@ -205,7 +221,7 @@ def espressione_privacy(contratto: Contratto, colonna: Colonna) -> str:
     """
     riferimento = f"b.{_quota(colonna.sorgente)}"
     if not colonna.dato_personale:
-        return riferimento
+        return maschera_cf_sql(riferimento) if colonna.testo_libero else riferimento
     if e_codice_fiscale(colonna):
         return f"CASE WHEN {_e_persona_giuridica(riferimento)} THEN {riferimento} END"
     garante = next(
@@ -291,6 +307,22 @@ def _connetti(imp: Impostazioni) -> duckdb.DuckDBPyConnection:
     return con
 
 
+def conta_cf_mascherati(
+    con: duckdb.DuckDBPyConnection, parquet: Path, contratto: Contratto
+) -> dict[str, int]:
+    """Quanti `[CF]` ci sono nelle colonne di testo libero del Parquet appena scritto (una voce per colonna)."""
+    token = _letterale(TOKEN_CF_MASCHERATO)
+    conteggi: dict[str, int] = {}
+    for colonna in (c for c in contratto.tenute if c.testo_libero):
+        nome = _quota(colonna.nome)
+        n = con.execute(
+            f"SELECT coalesce(sum((length({nome}) - length(replace({nome}, {token}, ''))) // "
+            f"{len(TOKEN_CF_MASCHERATO)}), 0) FROM read_parquet({_letterale(parquet.as_posix())})"
+        ).fetchone()[0]
+        conteggi[colonna.nome] = int(n)
+    return conteggi
+
+
 def atterra_file(
     imp: Impostazioni, voce: VoceManifest, contratto: Contratto, righe_attese: dict[str, int]
 ) -> VoceRegistro:
@@ -336,6 +368,7 @@ def atterra_file(
             righe = con.execute(
                 f"SELECT count(*) FROM read_parquet({_letterale(parquet.as_posix())})"
             ).fetchone()[0]
+            mascherati = conta_cf_mascherati(con, parquet, contratto)
         finally:
             con.close()
         if attese is None:
@@ -356,6 +389,10 @@ def atterra_file(
         messaggi.append(
             "righe attese = record contati nel CSV, il logCsv ANAC non dichiara il numero di righe"
         )
+    if sum(mascherati.values()):
+        messaggi.append(
+            f"{sum(mascherati.values())} codici fiscali personali mascherati con {TOKEN_CF_MASCHERATO} nel testo libero"
+        )
     return VoceRegistro(
         sha256=sha,
         tabella=contratto.tabella,
@@ -370,6 +407,8 @@ def atterra_file(
         caricato_il=caricato_il.isoformat(sep=" "),
         esito=esito,
         messaggio="; ".join(messaggi),
+        cf_mascherati=str(sum(mascherati.values())) if mascherati else "",
+        cf_mascherati_dettaglio="|".join(f"{nome}={n}" for nome, n in mascherati.items()),
     )
 
 
@@ -383,6 +422,8 @@ class RiepilogoLanding:
     errori: list[str] = field(default_factory=list)
     differenze: int = 0
     con_scarti: int = 0
+    # Codici fiscali personali mascherati con [CF] nel testo libero dei file atterrati in questa esecuzione.
+    cf_mascherati: dict[str, int] = field(default_factory=dict)
 
     @property
     def riuscito(self) -> bool:
@@ -460,6 +501,9 @@ def atterra_pacchetto(imp: Impostazioni, pacchetto: Pacchetto, contratto: Contra
         registro.append(nuova)
         riepilogo.atterrati += 1
         riepilogo.righe[nuova.risorsa] = int(nuova.righe)
+        for voce_colonna in filter(None, nuova.cf_mascherati_dettaglio.split("|")):
+            colonna, _, n = voce_colonna.partition("=")
+            riepilogo.cf_mascherati[colonna] = riepilogo.cf_mascherati.get(colonna, 0) + int(n)
         if nuova.colonne_nuove:
             riepilogo.avvisi.append(f"{nuova.risorsa}: colonne nuove non atterrate: {nuova.colonne_nuove}")
         _segnala(riepilogo, nuova)

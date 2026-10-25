@@ -15,11 +15,13 @@ RE_CF_PERSONA = re.compile(MODELLO_CF_PERSONA)
 RE_CF_IN_TESTO = re.compile(r"(?<![A-Z0-9])" + MODELLO_CF_PERSONA + r"(?![A-Z0-9])")
 
 
-# Forme giuridiche dell'anagrafe delle stazioni appaltanti che indicano una persona fisica (codice e descrizione).
-# Gemello della macro dbt `stazione_persona_fisica`; il test tests/unit/test_privacy_sql.py li confronta.
+# Forme giuridiche che indicano una persona fisica: codice e descrizione dell'anagrafe delle stazioni appaltanti, e
+# descrizione anche per il tipo_soggetto degli operatori. Gemelle delle macro dbt `stazione_persona_fisica` e
+# `tipo_soggetto_individuale`; il test tests/unit/test_privacy_sql.py le confronta.
 NATURE_GIURIDICHE_INDIVIDUALI_CODICI = ("56", "58", "59", "60", "61", "A070")
 NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI = (
     "ALTRI LAVORATORI AUTONOMI",
+    "DITTA INDIVIDUALE",
     "DITTE INDIVIDUALI",
     "IMPRESE INDIVIDUALI ARTIGIANE",
     "IMPRESE INDIVIDUALI COMMERCIALI",
@@ -29,6 +31,17 @@ NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI = (
 # Denominazione che sostituisce il nome di una persona fisica (stessa dicitura del membro anonimo degli operatori).
 DENOMINAZIONE_PERSONA_FISICA = "Persona fisica (identità non pubblicata)"
 CHIAVE_PERSONA_FISICA = "PERSONA_FISICA"
+
+
+# Maschera dei codici fiscali personali nel testo libero (oggetto della gara, del lotto, del subappalto, motivi):
+# il landing sostituisce ogni codice trovato con questo token. Gemello SQL: landing.maschera_cf_sql.
+TOKEN_CF_MASCHERATO = "[CF]"
+RE_CF_DA_MASCHERARE = re.compile(r"(?<![A-Za-z0-9])" + MODELLO_CF_PERSONA + r"(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def maschera_cf_in_testo(testo: str) -> tuple[str, int]:
+    """Il testo con ogni codice fiscale di persona fisica sostituito da `[CF]` e il numero di sostituzioni."""
+    return RE_CF_DA_MASCHERARE.subn(TOKEN_CF_MASCHERATO, testo)
 
 
 def classifica_codice_fiscale(cf: str | None) -> str:
@@ -60,3 +73,9 @@ def e_stazione_persona_fisica(
         codice in NATURE_GIURIDICHE_INDIVIDUALI_CODICI
         or descrizione in NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI
     )
+
+
+def e_tipo_soggetto_individuale(tipo_soggetto: str | None) -> bool:
+    """Vero se il tipo_soggetto di un operatore è una forma giuridica individuale (nome e partita IVA sono dati
+    personali). Gemello della macro dbt `tipo_soggetto_individuale`."""
+    return (tipo_soggetto or "").strip().upper() in NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI

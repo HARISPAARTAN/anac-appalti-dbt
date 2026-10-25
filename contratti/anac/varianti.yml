@@ -5,7 +5,7 @@ descrizione: "Varianti contrattuali. ANAC non pubblica l'importo della variante 
 colonne:
   - {nome: id_variante, sorgente: "id_variante", tipo: bigint, tenere: true, dato_personale: false, descrizione: "Identificativo della variante."}
   - {nome: cod_motivo_variante, sorgente: "cod_motivo_variante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice del motivo della variante."}
-  - {nome: motivo_variante, sorgente: "motivo_variante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Motivo della variante."}
+  - {nome: motivo_variante, sorgente: "motivo_variante", tipo: varchar, tenere: true, dato_personale: false, testo_libero: true, descrizione: "Motivo della variante."}
   - {nome: data_approvazione_variante, sorgente: "data_approvazione_variante", tipo: date, tenere: true, dato_personale: false, descrizione: "Data di approvazione della variante."}
   - {nome: cig, sorgente: "cig", tipo: varchar, tenere: true, dato_personale: false, descrizione: "CIG del lotto."}
   - {nome: id_aggiudicazione, sorgente: "id_aggiudicazione", tipo: bigint, tenere: true, dato_personale: false, descrizione: "Identificativo dell'aggiudicazione."}

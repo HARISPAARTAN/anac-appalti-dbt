@@ -7,8 +7,8 @@ import pytest
 
 from anac_appalti.config import carica_impostazioni
 from anac_appalti.contratti import Colonna, Contratto
-from anac_appalti.landing import espressione_classe, sql_landing
-from anac_appalti.privacy import classifica_codice_fiscale
+from anac_appalti.landing import espressione_classe, maschera_cf_sql, sql_landing
+from anac_appalti.privacy import classifica_codice_fiscale, maschera_cf_in_testo
 from tests.unit.landing_aiuti import CONTRATTI, atterra, intestazione, leggi_parquet, registra_csv, riga
 
 CF_A = "RSSMRA80A01H501U"
@@ -322,3 +322,88 @@ def test_virgolette_con_backslash_non_assorbono_le_righe_seguenti(tmp_path: Path
     righe = leggi_parquet(imp, voce)
     assert [r["id_aggiudicazione"] for r in righe] == ["5000001", "5000002", "5000003", "5000004"]
     assert righe[0]["denominazione"] == 'FONDAZIONE "CIRCOLO ESEMPIO" ETS'
+
+
+TESTI_CON_CODICI = [
+    None,
+    "",
+    "Fornitura di carta",
+    f"Lavori per conto di {CF_A}",
+    f"{CF_A}",
+    f"({CF_A.lower()}).",
+    f"{CF_A} {CF_B} {CF_A}",  # tre codici separati da un solo spazio: servono due passate
+    f"{CF_A};{CF_B}",
+    f"X{CF_A}X",  # dentro una parola: non è un codice
+    f"{CF_A}9",
+    "ABCDEFGHIJKLMNOP",  # 16 caratteri ma non nel modello del codice fiscale
+    f"Cod. {PIVA_1} e {CF_B}",
+]
+
+
+def test_maschera_sql_come_il_python():
+    con = duckdb.connect()
+    con.execute("create table t (n integer, testo varchar)")
+    con.executemany("insert into t values (?, ?)", list(enumerate(TESTI_CON_CODICI)))
+    sql = {n: valore for n, valore in con.execute(f"select n, {maschera_cf_sql('testo')} from t").fetchall()}
+    con.close()
+    for n, testo in enumerate(TESTI_CON_CODICI):
+        atteso = None if testo is None else maschera_cf_in_testo(testo)[0]
+        assert sql[n] == atteso, repr(testo)
+    assert sql[6] == "[CF] [CF] [CF]"
+    assert sql[8] == f"X{CF_A}X"
+    assert sql[11] == f"Cod. {PIVA_1} e [CF]"
+
+
+def test_landing_maschera_i_codici_nel_testo_libero_e_li_conta(tmp_path: Path):
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    contratto = CONTRATTI["cig"]
+    registra_csv(
+        imp,
+        "cig",
+        [
+            riga(
+                contratto,
+                cig="FX00000001",
+                oggetto_gara="Gara per RSSMRA80A01H501U",
+                oggetto_lotto=f"Lotto di {CF_A} e di {CF_B}",
+                flag_prevalente="1",
+            ),
+            riga(
+                contratto,
+                cig="FX00000002",
+                oggetto_gara="Fornitura di carta",
+                oggetto_lotto="Carta",
+                flag_prevalente="1",
+            ),
+        ],
+    )
+    riepilogo, voce = atterra(imp, "cig")
+    assert riepilogo.errori == []
+    righe = leggi_parquet(imp, voce)
+    assert righe[0]["oggetto_gara"] == "Gara per [CF]"
+    assert righe[0]["oggetto_lotto"] == "Lotto di [CF] e di [CF]"
+    assert righe[1]["oggetto_gara"] == "Fornitura di carta"
+    assert (voce.cf_mascherati, voce.cf_mascherati_dettaglio) == (
+        "3",
+        "oggetto_gara=1|oggetto_lotto=2|motivo_cancellazione=0",
+    )
+    assert riepilogo.cf_mascherati == {"oggetto_gara": 1, "oggetto_lotto": 2, "motivo_cancellazione": 0}
+    assert "3 codici fiscali personali mascherati" in voce.messaggio
+    # nessun codice, in nessuna forma, resta nel Parquet
+    assert CF_A not in repr(righe) and CF_B not in repr(righe)
+
+
+def test_il_testo_libero_del_contratto_e_dichiarato():
+    libero = {
+        (tabella, c.nome)
+        for tabella, contratto in CONTRATTI.items()
+        for c in contratto.tenute
+        if c.testo_libero
+    }
+    assert libero == {
+        ("cig", "oggetto_gara"),
+        ("cig", "oggetto_lotto"),
+        ("cig", "motivo_cancellazione"),
+        ("subappalti", "oggetto"),
+        ("varianti", "motivo_variante"),
+    }

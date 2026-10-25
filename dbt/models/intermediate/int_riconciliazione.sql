@@ -9,6 +9,7 @@ select
     riconciliazione,
     esito,
     try_cast(data_snapshot as date) as data_snapshot,
-    nullif(colonne_nuove, '') as colonne_nuove
+    nullif(colonne_nuove, '') as colonne_nuove,
+    coalesce(try_cast(nullif(cf_mascherati, '') as bigint), 0) as n_cf_mascherati
 from {{ source('landing_meta', 'registro') }}
 where esito in ('atterrato', 'letto_con_scarti')

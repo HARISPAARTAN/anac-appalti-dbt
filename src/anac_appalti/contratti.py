@@ -15,6 +15,10 @@ INTESTAZIONE_SOURCES = (
     "# Generato da `appalti contratti sync` a partire da contratti/anac/*.yml. Non modificare a mano.\n"
 )
 NOTA_PERSONALE = " Può contenere dati di persone fisiche: in staging è annullato quando il codice fiscale non è di 11 cifre."
+NOTA_TESTO_LIBERO = (
+    " Testo libero: i codici fiscali di persona fisica trovati nel testo sono sostituiti da [CF] al landing; "
+    "i nomi di persona nel testo non sono riconosciuti."
+)
 COLONNE_META: tuple[tuple[str, str], ...] = (
     ("_risorsa", "Nome del file ANAC senza estensione da cui proviene la riga."),
     (
@@ -66,6 +70,8 @@ class Colonna:
     tenere: bool
     dato_personale: bool
     descrizione: str
+    # Testo libero scritto a mano da chi compila: al landing i codici fiscali personali sono sostituiti da `[CF]`.
+    testo_libero: bool = False
 
 
 @dataclass(frozen=True)
@@ -131,6 +137,7 @@ def carica_contratto(percorso: Path) -> Contratto:
                 tenere=bool(c["tenere"]),
                 dato_personale=bool(c["dato_personale"]),
                 descrizione=str(c["descrizione"]),
+                testo_libero=bool(c.get("testo_libero", False)),
             )
             for c in dati["colonne"]
         ),
@@ -167,7 +174,9 @@ def confronta_schema(contratto: Contratto, intestazione: list[str]) -> EsitoSche
 def _colonna_sources(tabella: str, col: Colonna) -> dict:
     voce: dict = {
         "name": col.nome,
-        "description": col.descrizione + (NOTA_PERSONALE if col.dato_personale else ""),
+        "description": col.descrizione
+        + (NOTA_PERSONALE if col.dato_personale else "")
+        + (NOTA_TESTO_LIBERO if col.testo_libero else ""),
     }
     if (tabella, col.nome) in CONTROLLI_PARSING:
         voce["data_tests"] = [
