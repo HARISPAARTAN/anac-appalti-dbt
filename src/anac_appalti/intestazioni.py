@@ -6,6 +6,7 @@ import csv
 import json
 import struct
 import zlib
+from contextlib import closing
 from datetime import date
 from pathlib import Path
 
@@ -58,7 +59,7 @@ def intestazione_da_zip_parziale(dati: bytes) -> dict:
         codifica = "utf-8"
     except UnicodeDecodeError:
         codifica = "latin-1"
-    prima = testo.split(b"\n", 1)[0].rstrip(b"\r").decode(codifica).lstrip("﻿")
+    prima = testo.split(b"\n", 1)[0].rstrip(b"\r").decode(codifica).lstrip("\ufeff")
     delimitatore = ";" if prima.count(";") >= prima.count(",") else ","
     colonne = next(csv.reader([prima], delimiter=delimitatore, quotechar='"'))
     return {
@@ -94,9 +95,9 @@ def rileva_intestazioni(fonte: Fonte, base_url: str) -> dict:
 
 def scrivi_intestazioni(imp: Impostazioni) -> Path:
     """Registra le intestazioni reali e scarica per intero un file piccolo (vocabolario, 1,2 KB)."""
-    fonte = crea_fonte(imp)
-    dati = rileva_intestazioni(fonte, imp.base_url)
-    fonte.scarica(url_download(imp.base_url, *FILE_PICCOLO), imp.raw / "_campioni" / FILE_PICCOLO[1])
+    with closing(crea_fonte(imp)) as fonte:
+        dati = rileva_intestazioni(fonte, imp.base_url)
+        fonte.scarica(url_download(imp.base_url, *FILE_PICCOLO), imp.raw / "_campioni" / FILE_PICCOLO[1])
     destinazione = imp.contratti_dir / "_intestazioni_reali.json"
     destinazione.parent.mkdir(parents=True, exist_ok=True)
     destinazione.write_text(

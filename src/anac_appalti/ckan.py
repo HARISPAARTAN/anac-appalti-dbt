@@ -1,7 +1,8 @@
 """Client CKAN per dati.anticorruzione.it: rilevamento del WAF, User-Agent di riserva, ritentativi.
 
-Il WAF del portale risponde HTTP 200 con una pagina HTML "Request Rejected": il rifiuto si riconosce dal
-corpo, non dallo stato. `SpecchioLocale` legge invece uno specchio su disco (fixture, CI senza rete).
+Il WAF del portale risponde HTTP 200 con una pagina HTML "Request Rejected": il rifiuto si riconosce dai
+marcatori nel corpo (support ID), non dallo stato e non da un HTML qualunque. `SpecchioLocale` legge invece
+uno specchio su disco (fixture, CI senza rete).
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ import logging
 import re
 import shutil
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,31 +26,52 @@ from anac_appalti.config import UA_BROWSER, Impostazioni
 log = logging.getLogger(__name__)
 
 RE_SUPPORT_ID = re.compile(rb"support ID is[:\s]*([0-9A-Za-z-]+)", re.IGNORECASE)
+MARCATORE_WAF = b"<title>request rejected</title>"
 STATI_RIPROVABILI = {429, 500, 502, 503, 504}
-
-
-class WafRifiuto(RuntimeError):
-    """Il WAF del portale ANAC ha rifiutato la richiesta anche con lo User-Agent di riserva."""
-
-    def __init__(self, url: str, support_id: str) -> None:
-        super().__init__(f"Il portale ANAC ha rifiutato la richiesta {url} (support ID {support_id}).")
-        self.url = url
-        self.support_id = support_id
+N_TESTA = 4096
 
 
 class ErroreCkan(RuntimeError):
     """Risposta CKAN inattesa o tentativi esauriti."""
 
 
+class ErroreHttp(ErroreCkan):
+    """Risposta HTTP di errore non riprovabile (4xx) che non è un rifiuto del WAF."""
+
+    def __init__(self, stato: int, url: str) -> None:
+        super().__init__(f"HTTP {stato} su {url}")
+        self.stato = stato
+        self.url = url
+
+
+class NonTrovato(ErroreHttp):
+    """HTTP 404: la risorsa o il pacchetto non esiste."""
+
+
+class WafRifiuto(RuntimeError):
+    """Il WAF del portale ANAC ha rifiutato la richiesta anche con lo User-Agent di riserva."""
+
+    def __init__(self, url: str, support_id: str, user_agent: str | None = None) -> None:
+        dettaglio = f"support ID {support_id}" + (f", User-Agent {user_agent!r}" if user_agent else "")
+        super().__init__(f"Il portale ANAC ha rifiutato la richiesta {url} ({dettaglio}).")
+        self.url = url
+        self.support_id = support_id
+        self.user_agent = user_agent
+
+
 def rileva_waf(corpo: bytes) -> str | None:
-    """Restituisce il support ID se il corpo è la pagina di rifiuto del WAF, altrimenti None."""
-    inizio = corpo[:4096].lstrip().lower()
-    if not (
-        inizio.startswith(b"<html") or inizio.startswith(b"<!doctype html") or b"request rejected" in inizio
-    ):
-        return None
-    trovato = RE_SUPPORT_ID.search(corpo)
-    return trovato.group(1).decode("ascii", "replace") if trovato else "sconosciuto"
+    """Support ID se il corpo è la pagina di rifiuto del WAF, altrimenti None.
+
+    Il verdetto richiede i marcatori del WAF ("Your support ID is ..." o il titolo "Request Rejected"):
+    una pagina HTML qualunque (per esempio un 404) non è un rifiuto del WAF.
+    """
+    inizio = corpo[:N_TESTA]
+    trovato = RE_SUPPORT_ID.search(inizio)
+    if trovato:
+        return trovato.group(1).decode("ascii", "replace")
+    if MARCATORE_WAF in inizio.lower():
+        return "sconosciuto"
+    return None
 
 
 @dataclass(frozen=True)
@@ -98,16 +120,44 @@ class Fonte(Protocol):
 
     def metadata_modificati(self) -> dict[str, str]: ...
 
+    def close(self) -> None: ...
 
-def _json(risposta: httpx.Response, cosa: str) -> dict:
+
+@dataclass(frozen=True)
+class _Risposta:
+    stato: int
+    corpo: bytes
+
+
+def _errore_http(stato: int, url: str) -> ErroreHttp:
+    return (NonTrovato if stato == 404 else ErroreHttp)(stato, url)
+
+
+def _json(risposta: _Risposta, cosa: str, url: str) -> dict:
+    """Corpo JSON di una risposta; un errore HTTP senza JSON (per esempio una pagina HTML 404) è un errore HTTP."""
     try:
-        return risposta.json()
+        dati = json.loads(risposta.corpo)
     except ValueError as exc:
+        if risposta.stato >= 400:
+            raise _errore_http(risposta.stato, url) from exc
         raise ErroreCkan(f"Risposta non JSON per {cosa}") from exc
+    if not isinstance(dati, dict):
+        raise ErroreCkan(f"Risposta JSON inattesa per {cosa}")
+    return dati
+
+
+def _leggi_testa(blocchi: Iterator[bytes], n_byte: int) -> bytes:
+    """Legge dal flusso almeno `n_byte` (o fino alla fine) senza chiuderlo: il resto si legge dopo."""
+    testa = b""
+    for blocco in blocchi:
+        testa += blocco
+        if len(testa) >= n_byte:
+            break
+    return testa
 
 
 class ClientCkan:
-    """Client HTTP del portale CKAN di ANAC."""
+    """Client HTTP del portale CKAN di ANAC (da usare come context manager, oppure chiamare `close`)."""
 
     def __init__(
         self,
@@ -128,6 +178,15 @@ class ClientCkan:
         self._attesa = attesa
         self._http = httpx.Client(timeout=timeout_s, transport=transport, follow_redirects=True)
 
+    def close(self) -> None:
+        self._http.close()
+
+    def __enter__(self) -> ClientCkan:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
     def _passa_a_riserva(self, support_id: str) -> bool:
         if self._riserva_usata:
             return False
@@ -140,30 +199,58 @@ class ClientCkan:
         self._riserva_usata = True
         return True
 
-    def _get(self, url: str, intestazioni: dict[str, str] | None = None) -> httpx.Response:
+    def _richiedi[T](
+        self,
+        url: str,
+        consuma: Callable[[httpx.Response, bytes, Iterator[bytes]], T],
+        intestazioni: dict[str, str] | None = None,
+        *,
+        testa_206: int = N_TESTA,
+    ) -> T:
+        """GET in streaming con ritentativi e User-Agent di riserva.
+
+        Per ogni risposta non riprovabile legge la testa del corpo, la confronta con i marcatori del WAF e poi
+        passa risposta, testa e resto del flusso a `consuma`. Il cambio di User-Agent dopo un rifiuto del WAF
+        ripete lo stesso tentativo: non ne consuma uno.
+        """
         ultimo: Exception | None = None
-        for tentativo in range(self._tentativi):
+        numero = 0
+        while numero < self._tentativi:
             try:
-                risposta = self._http.get(
-                    url, headers={"User-Agent": self.user_agent_usato, **(intestazioni or {})}
-                )
+                with self._http.stream(
+                    "GET", url, headers={"User-Agent": self.user_agent_usato, **(intestazioni or {})}
+                ) as risposta:
+                    if risposta.status_code in STATI_RIPROVABILI:
+                        ultimo = ErroreCkan(f"HTTP {risposta.status_code} su {url}")
+                    else:
+                        blocchi = risposta.iter_bytes()
+                        n_testa = min(N_TESTA, testa_206) if risposta.status_code == 206 else N_TESTA
+                        testa = _leggi_testa(blocchi, n_testa)
+                        support_id = rileva_waf(testa)
+                        if support_id is None:
+                            return consuma(risposta, testa, blocchi)
+                        if self._passa_a_riserva(support_id):
+                            continue
+                        raise WafRifiuto(url, support_id, self.user_agent_usato)
             except httpx.TransportError as exc:
                 ultimo = exc
-            else:
-                if risposta.status_code not in STATI_RIPROVABILI:
-                    support_id = rileva_waf(risposta.content)
-                    if support_id is None:
-                        return risposta
-                    if self._passa_a_riserva(support_id):
-                        continue
-                    raise WafRifiuto(url, support_id)
-                ultimo = ErroreCkan(f"HTTP {risposta.status_code} su {url}")
-            if tentativo < self._tentativi - 1:
-                self._attesa(2**tentativo)
-        raise ErroreCkan(f"Richiesta non riuscita dopo {self._tentativi} tentativi: {url} ({ultimo})")
+            numero += 1
+            if numero < self._tentativi:
+                self._attesa(2 ** (numero - 1))
+        raise ErroreCkan(
+            f"Richiesta non riuscita dopo {self._tentativi} tentativi: {url} "
+            f"({ultimo}; ultimo User-Agent {self.user_agent_usato!r})"
+        )
+
+    def _get(self, url: str) -> _Risposta:
+        def consuma(risposta: httpx.Response, testa: bytes, blocchi: Iterator[bytes]) -> _Risposta:
+            return _Risposta(risposta.status_code, testa + b"".join(blocchi))
+
+        return self._richiedi(url, consuma)
 
     def package_show(self, nome: str) -> dict | None:
-        dati = _json(self._get(f"{self.base_url}/api/3/action/package_show?id={nome}"), nome)
+        url = f"{self.base_url}/api/3/action/package_show?id={nome}"
+        dati = _json(self._get(url), nome, url)
         if dati.get("success"):
             return dati["result"]
         if (dati.get("error") or {}).get("__type") == "Not Found Error":
@@ -172,44 +259,54 @@ class ClientCkan:
 
     def metadata_modificati(self) -> dict[str, str]:
         url = f"{self.base_url}/api/3/action/package_search?rows=1000&fl=name,metadata_modified"
-        dati = _json(self._get(url), "package_search")
+        dati = _json(self._get(url), "package_search", url)
         return {r["name"]: r.get("metadata_modified", "") for r in dati["result"]["results"]}
 
     def leggi_inizio(self, url: str, n_byte: int) -> bytes:
-        risposta = self._get(url, {"Range": f"bytes=0-{n_byte - 1}"})
-        risposta.raise_for_status()
-        return risposta.content[:n_byte]
+        """Primi `n_byte` byte con una richiesta Range: serve un 206 e non si leggono mai più byte del dovuto."""
+
+        def consuma(risposta: httpx.Response, testa: bytes, blocchi: Iterator[bytes]) -> bytes:
+            if risposta.status_code >= 400:
+                raise _errore_http(risposta.status_code, url)
+            if risposta.status_code != 206:
+                raise ErroreCkan(
+                    f"Il portale ha ignorato la richiesta Range (HTTP {risposta.status_code}, atteso 206): {url}"
+                )
+            dati = testa
+            while len(dati) < n_byte:
+                blocco = next(blocchi, None)
+                if blocco is None:
+                    break
+                dati += blocco
+            return dati[:n_byte]
+
+        return self._richiedi(url, consuma, {"Range": f"bytes=0-{n_byte - 1}"}, testa_206=n_byte)
 
     def scarica(self, url: str, destinazione: Path) -> int:
         """Download in streaming su un file `.part`, rinominato solo a download completo."""
         destinazione.parent.mkdir(parents=True, exist_ok=True)
         parziale = destinazione.with_name(destinazione.name + ".part")
-        ultimo: Exception | None = None
-        for tentativo in range(self._tentativi):
+
+        def consuma(risposta: httpx.Response, testa: bytes, blocchi: Iterator[bytes]) -> int:
+            if risposta.status_code >= 400:
+                raise _errore_http(risposta.status_code, url)
+            if "html" in risposta.headers.get("content-type", "").lower():
+                raise ErroreCkan(f"Risposta HTML inattesa (non è un rifiuto del WAF): {url}")
+            if destinazione.suffix.lower() == ".zip" and not testa.startswith(b"PK"):
+                raise ErroreCkan(f"Il contenuto scaricato non è uno zip: {url}")
+            scritti = len(testa)
+            with parziale.open("wb") as f:
+                f.write(testa)
+                for blocco in blocchi:
+                    f.write(blocco)
+                    scritti += len(blocco)
+            parziale.replace(destinazione)
+            return scritti
+
+        try:
+            return self._richiedi(url, consuma)
+        finally:
             parziale.unlink(missing_ok=True)
-            try:
-                with self._http.stream("GET", url, headers={"User-Agent": self.user_agent_usato}) as risposta:
-                    if risposta.status_code in STATI_RIPROVABILI:
-                        raise ErroreCkan(f"HTTP {risposta.status_code} su {url}")
-                    if "html" in risposta.headers.get("content-type", "").lower():
-                        support_id = rileva_waf(risposta.read()) or "sconosciuto"
-                        if self._passa_a_riserva(support_id):
-                            continue
-                        raise WafRifiuto(url, support_id)
-                    risposta.raise_for_status()
-                    scritti = 0
-                    with parziale.open("wb") as f:
-                        for blocco in risposta.iter_bytes(1 << 20):
-                            f.write(blocco)
-                            scritti += len(blocco)
-                parziale.replace(destinazione)
-                return scritti
-            except (httpx.TransportError, ErroreCkan) as exc:
-                ultimo = exc
-                if tentativo < self._tentativi - 1:
-                    self._attesa(2**tentativo)
-        parziale.unlink(missing_ok=True)
-        raise ErroreCkan(f"Download non riuscito dopo {self._tentativi} tentativi: {url} ({ultimo})")
 
 
 class SpecchioLocale:
@@ -218,6 +315,15 @@ class SpecchioLocale:
     def __init__(self, cartella: Path) -> None:
         self.cartella = cartella
         self.user_agent_usato = "specchio-locale"
+
+    def close(self) -> None:
+        """Niente da chiudere: stessa interfaccia di `ClientCkan`."""
+
+    def __enter__(self) -> SpecchioLocale:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
 
     def _file(self, url: str) -> Path:
         parti = urlparse(url).path.split("/")

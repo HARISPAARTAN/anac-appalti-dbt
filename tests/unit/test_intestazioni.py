@@ -37,6 +37,12 @@ def test_intestazione_dai_primi_byte():
     ]
 
 
+def test_intestazione_con_bom_iniziale():
+    dati = zip_in_memoria("a_csv.csv", "\ufeff" + INTESTAZIONE + "\n")
+    info = intestazione_da_zip_parziale(dati)
+    assert info["colonne"][0] == "cig"
+
+
 def test_rileva_intestazioni_con_fonte_finta():
     class FonteFinta:
         user_agent_usato = "prova"
