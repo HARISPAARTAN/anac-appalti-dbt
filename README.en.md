@@ -280,9 +280,11 @@ The ADRs are written in Italian.
 ## Limitations
 
 - Privacy, with a declared scope (details and numbers in [ADR-004](docs/decisioni/ADR-004-privacy.md), written in
-  Italian). The published marts contain no names or tax codes of natural persons, and `appalti export` checks it
-  before writing the files (codes in every text column, plus the names that match the personal codes of the
-  register; the name check is a heuristic). Personal tax codes (16 characters) of winners, bidders and
+  Italian). The published marts contain no personal tax codes and no names of persons identified by the tax-code,
+  legal-form or manual-review rules, and `appalti export` checks it before writing the files (codes in every text
+  column, plus the names that match the personal codes of the register; the name check is a heuristic and the manual
+  review covers the 2-3 word names of the register's unclassified entries, so a person outside those rules cannot
+  be excluded). Personal tax codes (16 characters) of winners, bidders and
   subcontracts lose code and name already in the landing zone and are never matched across files. Contracting
   authorities that are natural persons (personal code or individual legal form: sole traders, freelancers) and the
   names of sole-trader operators are anonymised in staging, not in the landing zone. Under the GDPR a sole trader

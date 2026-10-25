@@ -37,9 +37,12 @@ MIT licence as the code.
 ## Dati personali: cosa si pubblica e cosa resta in locale
 
 **Nei file pubblicati** (i nove mart aggregati delle release, il repository, la documentazione) non compare nessuna
-persona fisica identificata: `appalti export` scansiona ogni colonna di testo dei Parquet alla ricerca di codici
-fiscali personali e di nomi che corrispondono ai codici personali dell'anagrafe delle stazioni appaltanti e, se
-trova qualcosa, non scrive i file. Le stazioni appaltanti che sono persone fisiche sono un solo membro anonimo.
+persona fisica individuata dalle regole del codice fiscale, della forma giuridica e della revisione manuale:
+`appalti export` scansiona ogni colonna di testo dei Parquet alla ricerca di codici fiscali personali e di nomi che
+corrispondono ai codici personali dell'anagrafe delle stazioni appaltanti e, se trova qualcosa, non scrive i file. Le
+stazioni appaltanti che sono persone fisiche sono un solo membro anonimo. Il controllo dei nomi è euristico e la
+revisione manuale copre i nomi di 2-3 parole delle voci non classificate dell'anagrafe: una persona fuori da queste
+regole non si può escludere.
 
 **In locale** (archivio raw, landing, warehouse: non pubblicati) la protezione ha un perimetro, descritto per
 colonne e misurato (dettaglio e numeri in `docs/decisioni/ADR-004-privacy.md`):
@@ -74,9 +77,11 @@ colonne e misurato (dettaglio e numeri in `docs/decisioni/ADR-004-privacy.md`):
 ### English
 
 **In the published files** (the nine aggregate marts in the releases, the repository, the documentation) no
-identified natural person appears: `appalti export` scans every text column of the Parquet files for personal tax
-codes and for names that match the personal codes of the contracting-authority register, and writes nothing if it
-finds any. Contracting authorities that are natural persons are one anonymous member.
+natural person identified by the tax-code, legal-form or manual-review rules appears: `appalti export` scans every
+text column of the Parquet files for personal tax codes and for names that match the personal codes of the
+contracting-authority register, and writes nothing if it finds any. Contracting authorities that are natural persons
+are one anonymous member. The name check is a heuristic and the manual review covers the 2-3 word names of the
+register's unclassified entries: a person outside those rules cannot be excluded.
 
 **Locally** (raw archive, landing zone, warehouse: never published) protection has a scope, stated per column and
 measured (details and numbers in `docs/decisioni/ADR-004-privacy.md`, written in Italian):

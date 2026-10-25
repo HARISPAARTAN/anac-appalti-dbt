@@ -11,8 +11,9 @@ Due controlli, entrambi su ogni colonna di testo di ogni mart Parquet:
    sei parole e senza marcatori di ente.
 
 Il controllo dei nomi non può essere esaustivo (una persona con un codice fiscale che non è nell'anagrafe non si
-riconosce): la regola vera sta in staging, dove le stazioni che sono persone fisiche perdono il nome. Questa
-scansione è la prova che nel file rilasciato non è rimasto nulla.
+riconosce, e una persona con un codice segnaposto e forma giuridica non classificata nemmeno): le regole vere sono in
+staging (codice, forma giuridica) e nella revisione manuale dei candidati (`int_stazioni_da_verificare`). Questa
+scansione è la prova a valle che nel file rilasciato non è rimasto nulla di ciò che quelle regole riconoscono.
 """
 
 from __future__ import annotations

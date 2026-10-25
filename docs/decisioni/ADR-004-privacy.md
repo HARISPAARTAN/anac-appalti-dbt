@@ -66,18 +66,28 @@ permette.
    appaltanti, il codice del cognome e quello del nome (le consonanti, come nel calcolo del codice fiscale) in
    parole di uno stesso testo di non più di sei parole e senza marcatori di ente. Se trova qualcosa cancella i file
    e fallisce; solo se la scansione è pulita scrive `ATTRIBUTION.md` e `SHA256SUMS`. Il controllo dei nomi è
-   euristico (non trova una persona con una sola parola, né una il cui codice non è nell'anagrafe): la regola vera è
-   in staging, la scansione è la prova a valle.
+   euristico (non trova una persona con una sola parola, né una il cui codice non è nell'anagrafe): le regole vere sono
+   in staging e nella revisione manuale dei candidati (punto 9), la scansione è la prova a valle. Per questo l'affermazione
+   è sempre "nessuna persona individuata dalle regole del codice, della forma giuridica e della revisione manuale", mai
+   assoluta.
 9. **Stazioni appaltanti che sono persone fisiche (0.1.1).** Una stazione è una persona fisica se il suo codice
    fiscale è di 16 caratteri oppure se la sua forma giuridica dice che è un individuo (ditta individuale, impresa
    individuale artigiana o commerciale, libero professionista, lavoratore autonomo; codici 56, 58, 59, 60, 61,
    A070). In staging (`stg_anac__stazioni_appaltanti`) codice fiscale, partita IVA, comune e denominazione
    diventano NULL o la dicitura anonima; la stessa regola vale sui lotti (`stg_anac__cig`: codice fiscale e
    denominazione dell'amministrazione appaltante) e per le amministrazioni assenti dall'anagrafe, il cui codice
-   fiscale è personale nei lotti. Un seed (`ausa_persone_fisiche`, solo codici AUSA opachi, nessun nome) raccoglie i
-   rari casi che le due regole non vedono e che la scansione dei file esportati ha segnalato (nell'esecuzione
-   20261025T151521-610332: 1 stazione, un nome di persona con codice non verificabile e forma giuridica "non classificato"): si
-   classificano a mano e da lì in poi sono trattati come ogni altra stazione che è una persona fisica.
+   fiscale è personale nei lotti. Una terza regola, la revisione manuale, copre la classe che le due regole non vedono: nell'anagrafe
+   ci sono stazioni con un codice segnaposto (`CFAVCP-…`, non di 11 cifre), forma giuridica "non classificato" e il
+   nome e cognome di una persona. Il modello `int_stazioni_da_verificare` elenca ogni candidato (codice non di 11
+   cifre, forma giuridica non classificata, non definita o assente, nome di 2-3 parole senza cifre e senza parole di
+   ente) e il test `assert_candidati_stazioni_classificati` fallisce finché ogni candidato non è in uno di due seed
+   di soli codici AUSA opachi, mai nomi: `ausa_persone_fisiche` (persona, trattata come ogni altra stazione che è
+   una persona fisica) o `ausa_enti_verificati` (ente, con la data della revisione). Si legge il nome nella tabella
+   di audit del test, solo in locale; nel dubbio è una persona. Procedura a ogni nuova esecuzione: se il test
+   fallisce, classificare i nuovi candidati, aggiungere i codici al seed giusto e rieseguire. Origine dei casi nei
+   seed: un primo caso è stato trovato dalla scansione dei file esportati, gli altri dalla revisione dei candidati
+   (nell'esecuzione @@RUN@@: @@SEED_N@@). Limite: i nomi di quattro parole o più e le voci con una forma giuridica
+   nota o un codice di 11 cifre non entrano nella revisione.
    `int_stazioni` associa tutte queste stazioni a una sola chiave,
    `PERSONA_FISICA`, e quella chiave attraversa `dim_stazioni_appaltanti`, `fct_lotti`, `int_radar__lotti` e
    `mart_stazioni_appaltanti`: nei mart non c'è né il nome, né il codice AUSA, né il codice fiscale di una persona

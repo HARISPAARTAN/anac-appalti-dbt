@@ -285,9 +285,11 @@ Misure dell'esecuzione `20261025T151521-610332` (25 ottobre 2026, portatile Wind
 ## Limiti
 
 - Privacy, con il perimetro dichiarato (dettaglio e numeri in [ADR-004](docs/decisioni/ADR-004-privacy.md)). I mart
-  pubblicati non contengono nomi né codici fiscali di persone fisiche, e `appalti export` lo verifica prima di scrivere
-  i file (codici in ogni colonna di testo, più i nomi che corrispondono ai codici personali dell'anagrafe: il controllo
-  dei nomi è euristico). I codici fiscali personali (16 caratteri) di aggiudicatari, partecipanti e subappalti
+  pubblicati non contengono codici fiscali personali né nomi di persone individuate dalle regole del codice, della
+  forma giuridica e della revisione manuale, e `appalti export` lo verifica prima di scrivere i file (codici in ogni
+  colonna di testo, più i nomi che corrispondono ai codici personali dell'anagrafe: il controllo dei nomi è euristico
+  e la revisione manuale copre i nomi di 2-3 parole delle voci non classificate dell'anagrafe; una persona fuori da
+  queste regole non si può escludere). I codici fiscali personali (16 caratteri) di aggiudicatari, partecipanti e subappalti
   perdono codice e denominazione già nel landing e non si collegano tra file. Le stazioni appaltanti che sono
   persone fisiche (codice personale o forma giuridica individuale: ditte individuali, liberi professionisti) e il
   nome delle ditte individuali tra gli operatori sono anonimizzati in staging, non nel landing. Per il GDPR un

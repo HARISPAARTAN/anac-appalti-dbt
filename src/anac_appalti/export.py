@@ -97,11 +97,13 @@ def testo_attribuzione(imp: Impostazioni, run_id: str, mese_parziale: str | None
 
 - Data: nine aggregate marts derived from the ANAC open data (lots published 2024-2026), reference date
   {imp.data_riferimento}, run {run_id} of anac-appalti-dbt v{VERSIONE}. Aggregates only: no row-level data.{parziale_en}
-- Natural persons: the files do not name natural persons. Contracting authorities that are sole traders or
-  freelancers (individual legal form or a 16-character personal tax code) appear only as the single anonymous member
-  "Persona fisica (identità non pubblicata)". The files were scanned, in every text column, for 16-character personal
-  tax codes and for the names that match the personal tax codes of the ANAC register of contracting authorities
-  (the scan is heuristic for names; the rule is applied upstream, in the dbt staging layer).
+- Natural persons: the files do not name any natural person identified by the tax-code, legal-form or manual-review
+  rules. Contracting authorities that are sole traders or freelancers (a 16-character personal tax code, an
+  individual legal form, or a person found in the manual review of ambiguous register entries) appear only as the
+  single anonymous member "Persona fisica (identità non pubblicata)". The files were also scanned, in every text
+  column, for 16-character personal tax codes and for the names that match the personal tax codes of the ANAC
+  register of contracting authorities. The name check is heuristic and the manual review covers the 2-3 word names
+  of unclassified register entries: a person outside those rules cannot be excluded.
 - Licence of the data: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0),
   https://creativecommons.org/licenses/by-sa/4.0/ . Derived works must carry the same licence and this attribution.
 - Other sources: province names and codes of the ISTAT classification of the statistical units (ISTAT, CC BY 4.0);
@@ -112,12 +114,14 @@ def testo_attribuzione(imp: Impostazioni, run_id: str, mese_parziale: str | None
 
 - Dati: nove mart aggregati elaborati dai dati aperti ANAC (lotti pubblicati 2024-2026), data di riferimento
   {imp.data_riferimento}, esecuzione {run_id}. Solo aggregati: nessun dato di dettaglio.{parziale_it}
-- Persone fisiche: i file non nominano persone fisiche. Le stazioni appaltanti che sono ditte individuali o
-  professionisti (forma giuridica individuale o codice fiscale personale di 16 caratteri) compaiono solo come
-  l'unico membro anonimo "Persona fisica (identità non pubblicata)". I file sono stati scansionati, in ogni colonna di
-  testo, per cercare codici fiscali personali di 16 caratteri e i nomi che corrispondono ai codici fiscali personali
-  dell'anagrafe ANAC delle stazioni appaltanti (per i nomi la scansione è euristica; la regola è applicata a monte,
-  nello staging dbt).
+- Persone fisiche: i file non nominano nessuna persona fisica individuata dalle regole del codice fiscale, della
+  forma giuridica o della revisione manuale. Le stazioni appaltanti che sono ditte individuali o professionisti
+  (codice fiscale personale di 16 caratteri, forma giuridica individuale, o persona trovata nella revisione manuale
+  delle voci ambigue dell'anagrafe) compaiono solo come l'unico membro anonimo "Persona fisica (identità non
+  pubblicata)". I file sono stati inoltre scansionati, in ogni colonna di testo, per cercare codici fiscali
+  personali di 16 caratteri e i nomi che corrispondono ai codici fiscali personali dell'anagrafe ANAC. Il controllo
+  dei nomi è euristico e la revisione manuale copre i nomi di 2-3 parole delle voci non classificate: una persona
+  fuori da queste regole non si può escludere.
 - Licenza dei dati: Creative Commons Attribuzione – Condividi allo stesso modo 4.0 Internazionale (CC BY-SA 4.0).
 - Altre fonti: nomi e codici delle province dalla classificazione ISTAT delle unità statistiche (ISTAT, CC BY 4.0);
   nomi delle divisioni CPV dal Regolamento (CE) n. 213/2008 (c) Unione europea, riuso con citazione della fonte ai
