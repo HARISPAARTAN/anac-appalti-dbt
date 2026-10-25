@@ -4,10 +4,11 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 | Campo | Valore |
 |---|---|
-| Esecuzione | `20261025T125951-e7d029` |
-| Versione | 0.1.0 (commit `11b54f2f7977`) |
-| Inizio – fine | 2026-10-25T12:59:51 – 2026-10-25T13:11:58 |
-| Durata | 12 min 7 s |
+| Esecuzione | `20261025T151521-610332` |
+| Versione | 0.1.1 (commit `69ab6b31c4e7`, albero di lavoro pulito) |
+| Strumenti | dagster 1.13.26, dagster-dbt 0.29.26, dbt-core 1.12.6, dbt-duckdb 1.11.0, duckdb 1.5.6, python 3.13.11 |
+| Inizio – fine | 2026-10-25T15:15:21 – 2026-10-25T15:29:44 |
+| Durata | 14 min 24 s |
 | Esito | successo |
 | Anni in ambito | 2024, 2025, 2026 |
 | Data di riferimento | 2026-10-25 |
@@ -16,15 +17,23 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 | Fase | Durata |
 |---|---|
-| Estrazione | non disponibile in questa esecuzione |
-| Landing | 2 min 57 s |
-| dbt build | 8 min 43 s |
-| Totale | 12 min 7 s |
+| Estrazione | 6 min 25 s |
+| Landing | 2 min 16 s |
+| dbt build | 5 min 30 s |
+| Totale | 14 min 24 s |
 
 ## Estrazione
 
 | Tabella | File scaricati | Invariati | MB scaricati | User-Agent |
 |---|---:|---:|---:|---|
+| aggiudicatari | 9 | 0 | 211,6 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| aggiudicazioni | 9 | 0 | 195,2 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| cig | 34 | 0 | 1.198,5 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| partecipanti | 9 | 0 | 277,5 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| stazioni_appaltanti | 2 | 0 | 3,1 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| subappalti | 9 | 0 | 39,0 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| tipi_scelta_contraente | 2 | 0 | 0,0 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
+| varianti | 9 | 0 | 14,8 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 |
 
 ## Landing
 
@@ -41,13 +50,13 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 ## dbt
 
-Modelli: 40; test (dati e unit): 171.
+Modelli: 41; test (dati e unit): 185.
 
 | Esito | Nodi |
 |---|---:|
-| pass | 164 |
-| success | 43 |
-| warn | 7 |
+| pass | 176 |
+| success | 45 |
+| warn | 9 |
 
 ## Freschezza delle sorgenti
 
@@ -66,6 +75,6 @@ Modelli: 40; test (dati e unit): 171.
 |---|---:|
 | landing | 1,90 |
 | raw | 1,94 |
-| warehouse | 8,77 |
+| warehouse | 5,79 |
 
 Costo del warehouse: 0 EUR (DuckDB locale, nessun servizio a pagamento).
