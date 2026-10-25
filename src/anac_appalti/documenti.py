@@ -11,6 +11,7 @@ from anac_appalti.config import Impostazioni
 
 MARCATORE_INIZIO = "<!-- numeri:inizio -->"
 MARCATORE_FINE = "<!-- numeri:fine -->"
+ND_IT = "non disponibile in questa esecuzione"
 MERMAID = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
 
 
@@ -71,8 +72,8 @@ def componi_ultima_esecuzione(record: dict) -> str:
         "",
         "| Fase | Durata |",
         "|---|---|",
-        f"| Estrazione | {_durata(_somma(estrazione, 'durata_s'))} |",
-        f"| Landing | {_durata(_somma(landing, 'durata_s'))} |",
+        f"| Estrazione | {_durata(_somma(estrazione, 'durata_s')) if estrazione else ND_IT} |",
+        f"| Landing | {_durata(_somma(landing, 'durata_s')) if landing else ND_IT} |",
         f"| dbt build | {_durata(float(dbt.get('durata_s', 0) or 0))} |",
         f"| Totale | {_durata(record.get('durata_s', 0))} |",
         "",
@@ -139,24 +140,15 @@ def gravita_test(manifest: dict, progetto: str = "anac_appalti") -> dict[str, in
 
 
 def record_per_readme(registri: list[dict]) -> dict:
-    """Base: l'ultima esecuzione riuscita con modelli dbt. Estrazione, landing e durata vengono dall'ultima
-    esecuzione che ha scaricato file (la completa), anche se dopo è seguita una ricostruzione da archivio."""
+    """Il record da cui nascono tutti i numeri dei README: l'ultima esecuzione riuscita con modelli dbt.
+
+    Nessuna fusione con esecuzioni precedenti: una fase assente in questa esecuzione (per esempio l'estrazione
+    in una ricostruzione da archivio) resta assente e il blocco la dichiara non disponibile.
+    """
     if not registri:
         raise ValueError("Nessun log di esecuzione")
     riusciti = [r for r in registri if r.get("esito") == "successo" and r.get("modelli")] or registri
-    base = dict(riusciti[-1])
-    con_download = [
-        r for r in registri if any(v.get("scaricati", 0) for v in r.get("estrazione", {}).values())
-    ]
-    if con_download and con_download[-1]["run_id"] != base["run_id"]:
-        completo = con_download[-1]
-        base.update(
-            estrazione=completo["estrazione"],
-            landing=completo["landing"],
-            durata_s=completo["durata_s"],
-            esecuzione_download=completo["run_id"],
-        )
-    return base
+    return dict(riusciti[-1])
 
 
 def blocco_numeri(
@@ -177,6 +169,7 @@ def blocco_numeri(
     anni = record.get("anni", [])
     stati = Counter(record.get("freschezza", {}).values())
     righe_atterrate = sum(sum((v.get("righe") or {}).values()) for v in landing.values())
+    nd = ND_IT if it else "not available in this run"
 
     def num(valore: float) -> str:
         return _intero(int(valore), lingua)
@@ -191,12 +184,12 @@ def blocco_numeri(
         "non misurata" if it else "not measured"
     )
     durate = " · ".join(
-        _durata(x)
-        for x in (
-            _somma(estrazione, "durata_s"),
-            _somma(landing, "durata_s"),
-            float(dbt.get("durata_s", 0) or 0),
-            float(record.get("durata_s", 0) or 0),
+        _durata(secondi) if presente else nd
+        for presente, secondi in (
+            (bool(estrazione), _somma(estrazione, "durata_s")),
+            (bool(landing), _somma(landing, "durata_s")),
+            (bool(dbt), float(dbt.get("durata_s", 0) or 0)),
+            (True, float(record.get("durata_s", 0) or 0)),
         )
     )
     copertura = f"{quota_copertura * 100:.0f} %" if it else f"{quota_copertura * 100:.0f}%"
@@ -206,9 +199,11 @@ def blocco_numeri(
         (
             "File ANAC scaricati",
             "ANAC files downloaded",
-            f"{num(_somma(estrazione, 'scaricati'))} ({gb(_somma(estrazione, 'byte'))})",
+            f"{num(_somma(estrazione, 'scaricati'))} ({gb(_somma(estrazione, 'byte'))})"
+            if estrazione
+            else nd,
         ),
-        ("Righe atterrate", "Rows landed", num(righe_atterrate)),
+        ("Righe atterrate", "Rows landed", num(righe_atterrate) if landing else nd),
         (
             "Righe CIG → lotti correnti",
             "CIG rows → current lots",
@@ -262,16 +257,11 @@ def blocco_numeri(
         righe += ["", "| Mart | Righe |" if it else "| Mart | Rows |", "|---|---:|"]
         righe += [f"| `{nome}` | {num(n)} |" for nome, n in mart]
     piede = (
-        f"Data di riferimento {record.get('data_riferimento', '')}, esecuzione `{record['run_id']}`."
+        f"Data di riferimento {record.get('data_riferimento', '')}. Tutti i numeri vengono dall'esecuzione "
+        f"`{record['run_id']}`."
         if it
-        else f"Reference date {record.get('data_riferimento', '')}, run `{record['run_id']}`."
+        else f"Reference date {record.get('data_riferimento', '')}. All numbers come from run `{record['run_id']}`."
     )
-    if record.get("esecuzione_download"):
-        piede += (
-            f" Download, landing e durata totale dall'esecuzione `{record['esecuzione_download']}`."
-            if it
-            else f" Downloads, landing and total run time from run `{record['esecuzione_download']}`."
-        )
     return "\n".join([*righe, "", piede])
 
 

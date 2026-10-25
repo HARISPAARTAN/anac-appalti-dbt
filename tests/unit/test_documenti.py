@@ -118,7 +118,7 @@ def test_gravita_test():
     assert gravita_test(manifest) == {"error": 1, "warn": 1, "unit": 1}
 
 
-def test_record_per_readme():
+def test_record_per_readme_usa_una_sola_esecuzione():
     registri = [
         {
             "run_id": "a",
@@ -132,21 +132,45 @@ def test_record_per_readme():
             "run_id": "b",
             "esito": "successo",
             "modelli": {"x": 2},
-            "estrazione": {"cig": {"scaricati": 0}},
-            "landing": {"cig": {"atterrati": 0}},
+            "estrazione": {},
+            "landing": {"cig": {"atterrati": 5}},
             "durata_s": 10.0,
         },
-        {"run_id": "c", "esito": "successo", "modelli": {}, "estrazione": {}, "landing": {}, "durata_s": 1.0},
+        {"run_id": "c", "esito": "errore", "modelli": {}, "estrazione": {}, "landing": {}, "durata_s": 1.0},
     ]
     record = record_per_readme(registri)
     assert record["run_id"] == "b"
     assert record["modelli"] == {"x": 2}
-    assert record["estrazione"]["cig"]["scaricati"] == 3
-    assert record["durata_s"] == 100.0
-    assert record["esecuzione_download"] == "a"
-    assert "esecuzione_download" not in record_per_readme(registri[:1])
+    assert record["estrazione"] == {}
+    assert record["landing"] == {"cig": {"atterrati": 5}}
+    assert record["durata_s"] == 10.0
+    assert "esecuzione_download" not in record
     with pytest.raises(ValueError):
         record_per_readme([])
+
+
+def test_blocco_numeri_fase_assente_non_prende_in_prestito():
+    record = {**RECORD, "estrazione": {}}
+    gravita = {"error": 120, "warn": 8, "unit": 4}
+    italiano = blocco_numeri(record, INDICATORI, 1.0, gravita, "it")
+    inglese = blocco_numeri(record, INDICATORI, 1.0, gravita, "en")
+    assert "| File ANAC scaricati | non disponibile in questa esecuzione |" in italiano
+    assert "| ANAC files downloaded | not available in this run |" in inglese
+    assert (
+        "| Durata: estrazione · landing · dbt · totale | non disponibile in questa esecuzione · 30 min 0 s · 45 min 0 s · 2 h 30 min |"
+        in italiano
+    )
+    assert "| Rows landed | 3,000 |" in inglese
+    assert "esecuzione `20261025T221500-abc123`" in italiano
+    assert "run `20261025T221500-abc123`" in inglese
+
+
+def test_durata_del_blocco_coerente_con_una_sola_esecuzione():
+    italiano = blocco_numeri(RECORD, INDICATORI, 1.0, {"error": 1, "warn": 1, "unit": 1}, "it")
+    assert (
+        "| Durata: estrazione · landing · dbt · totale | 40 min 0 s · 30 min 0 s · 45 min 0 s · 2 h 30 min |"
+        in italiano
+    )
 
 
 def test_aggiorna_readme(tmp_path: Path):

@@ -142,8 +142,8 @@ The table below holds the measures of the first full run on real data (`uv run a
 |---|---:|
 | Current lots (CIG) | 3,734,851 |
 | Publication years | 2024–2026 |
-| ANAC files downloaded | 83 (1.94 GB) |
-| Rows landed | 34,714,153 |
+| ANAC files downloaded | not available in this run |
+| Rows landed | 34,720,158 |
 | CIG rows → current lots | 6,334,426 → 3,734,851 |
 | Exact duplicates removed | 1,663 (0.03%) |
 | dbt models | 40 |
@@ -154,7 +154,7 @@ The table below holds the measures of the first full run on real data (`uv run a
 | Lots with amount outliers (excluded from sums) | 150,243 (4.02%) |
 | Natural-person rows without identity | 1,631,723 |
 | Source freshness | pass 6 |
-| Run time: extract · landing · dbt · total | 6 min 50 s · 2 min 12 s · 8 min 43 s · 14 min 19 s |
+| Run time: extract · landing · dbt · total | not available in this run · 2 min 57 s · 8 min 43 s · 12 min 7 s |
 | Disk: raw · landing · warehouse | 1.94 GB · 1.90 GB · 8.77 GB |
 | Warehouse cost | EUR 0 |
 
@@ -170,15 +170,16 @@ The table below holds the measures of the first full run on real data (`uv run a
 | `mart_tempi_aggiudicazione` | 3,719 |
 | `mart_varianti_subappalti` | 63 |
 
-Reference date 2026-10-25, run `20261025T125951-e7d029`. Downloads, landing and total run time from run `20261025T121119-3f3dd2`.
+Reference date 2026-10-25. All numbers come from run `20261025T125951-e7d029`.
 <!-- numeri:fine -->
 
-How to read the table: the download (83 files, 1.94 GB, 6 min 50 s) and the first landing come from the first run
-(`20261025T121119-3f3dd2`), which stopped in `dbt build` because of two defects in the real data that were fixed
-afterwards (see Limitations); the other figures, including the dbt time, come from run `20261025T125951-e7d029`,
-redone from the raw archive with the corrected code (landing 2 min 57 s, `dbt build` 8 min 43 s). A complete run
-from scratch therefore takes about 18 minutes, not the two to three hours estimated earlier. The synthetic fixture
-(1,500 lots, injected defects) is now used only for tests and CI.
+How to read the table: all numbers in the block come from a single run, `20261025T125951-e7d029`, redone from the raw
+archive with the corrected code (`--da-archivio`); that is why the download shows "not available in this run". The
+download (83 files, 1.94 GB, 6 min 50 s) was measured in the first run (`20261025T121119-3f3dd2`), which stopped in
+`dbt build` because of two defects in the real data that were fixed afterwards (see Limitations). Adding up the three
+measured stages (6 min 50 s download, 2 min 57 s landing, 8 min 43 s `dbt build`), a complete run from scratch takes
+about 18 minutes, not the two to three hours estimated earlier: this is an estimate composed from two runs, not a single
+measurement. The synthetic fixture (1,500 lots, injected defects) is now used only for tests and CI.
 
 Checks run on every `dbt build`:
 

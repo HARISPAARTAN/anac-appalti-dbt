@@ -147,8 +147,8 @@ La tabella qui sotto riporta le misure della prima esecuzione completa su dati r
 |---|---:|
 | Lotti (CIG) correnti | 3.734.851 |
 | Anni di pubblicazione | 2024–2026 |
-| File ANAC scaricati | 83 (1,94 GB) |
-| Righe atterrate | 34.714.153 |
+| File ANAC scaricati | non disponibile in questa esecuzione |
+| Righe atterrate | 34.720.158 |
 | Righe CIG → lotti correnti | 6.334.426 → 3.734.851 |
 | Duplicati esatti rimossi | 1.663 (0,03 %) |
 | Modelli dbt | 40 |
@@ -159,7 +159,7 @@ La tabella qui sotto riporta le misure della prima esecuzione completa su dati r
 | Lotti con importi anomali (esclusi dalle somme) | 150.243 (4,02 %) |
 | Righe di persone fisiche senza identità | 1.631.723 |
 | Freschezza delle sorgenti | pass 6 |
-| Durata: estrazione · landing · dbt · totale | 6 min 50 s · 2 min 12 s · 8 min 43 s · 14 min 19 s |
+| Durata: estrazione · landing · dbt · totale | non disponibile in questa esecuzione · 2 min 57 s · 8 min 43 s · 12 min 7 s |
 | Disco: raw · landing · warehouse | 1,94 GB · 1,90 GB · 8,77 GB |
 | Costo del warehouse | 0 EUR |
 
@@ -175,15 +175,16 @@ La tabella qui sotto riporta le misure della prima esecuzione completa su dati r
 | `mart_tempi_aggiudicazione` | 3.719 |
 | `mart_varianti_subappalti` | 63 |
 
-Data di riferimento 2026-10-25, esecuzione `20261025T125951-e7d029`. Download, landing e durata totale dall'esecuzione `20261025T121119-3f3dd2`.
+Data di riferimento 2026-10-25. Tutti i numeri vengono dall'esecuzione `20261025T125951-e7d029`.
 <!-- numeri:fine -->
 
-Come leggere la tabella: il download (83 file, 1,94 GB, 6 min 50 s) e la prima fase di landing vengono dalla prima
-esecuzione (`20261025T121119-3f3dd2`), che si è fermata in `dbt build` per due difetti dei dati reali poi corretti
-(vedi Limiti); le altre cifre, compresa la durata di dbt, vengono dall'esecuzione `20261025T125951-e7d029` rifatta
-dall'archivio raw con il codice corretto (landing 2 min 57 s, `dbt build` 8 min 43 s). Un'esecuzione completa da
-zero costa quindi circa 18 minuti, non le due o tre ore stimate prima. La fixture sintetica (1.500 lotti, difetti
-iniettati) resta solo per test e CI.
+Come leggere la tabella: tutti i numeri del blocco vengono da una sola esecuzione, `20261025T125951-e7d029`, rifatta
+dall'archivio raw con il codice corretto (`--da-archivio`); per questo il download risulta "non disponibile in questa
+esecuzione". Il download (83 file, 1,94 GB, 6 min 50 s) è stato misurato nella prima esecuzione
+(`20261025T121119-3f3dd2`), che si è fermata in `dbt build` per due difetti dei dati reali poi corretti (vedi Limiti).
+Sommando le tre fasi misurate (6 min 50 s di download, 2 min 57 s di landing, 8 min 43 s di `dbt build`) un'esecuzione
+completa da zero costa circa 18 minuti, non le due o tre ore stimate prima: è una stima composta da due esecuzioni, non
+una misura unica. La fixture sintetica (1.500 lotti, difetti iniettati) resta solo per test e CI.
 
 Controlli eseguiti a ogni `dbt build`:
 

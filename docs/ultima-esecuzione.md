@@ -16,7 +16,7 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 | Fase | Durata |
 |---|---|
-| Estrazione | 0 s |
+| Estrazione | non disponibile in questa esecuzione |
 | Landing | 2 min 57 s |
 | dbt build | 8 min 43 s |
 | Totale | 12 min 7 s |

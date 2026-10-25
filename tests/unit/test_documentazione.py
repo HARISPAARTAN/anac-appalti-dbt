@@ -73,6 +73,28 @@ def test_blocco_numeri_aggiornabile(nome, tmp_path):
     assert "| prova | 1 |" in copia.read_text(encoding="utf-8")
 
 
+def blocco_numeri_readme(nome: str) -> str:
+    testo = leggi(nome)
+    return testo[testo.index(MARCATORE_INIZIO) : testo.index(MARCATORE_FINE)]
+
+
+def test_blocchi_numeri_dei_due_readme_coincidono():
+    """Le cifre (senza separatori di migliaia e decimali) sono le stesse riga per riga in italiano e inglese."""
+    righe_it = blocco_numeri_readme("README.md").splitlines()
+    righe_en = blocco_numeri_readme("README.en.md").splitlines()
+    assert len(righe_it) == len(righe_en)
+    cifre_it = [re.findall(r"\d+", riga) for riga in righe_it]
+    cifre_en = [re.findall(r"\d+", riga) for riga in righe_en]
+    assert cifre_it == cifre_en
+    assert any(cifre_it)
+
+
+@pytest.mark.parametrize("nome", ["README.md", "README.en.md"])
+def test_blocco_numeri_nomina_una_sola_esecuzione(nome):
+    blocco = blocco_numeri_readme(nome)
+    assert len(set(re.findall(r"\d{8}T\d{6}-[0-9a-f]{6}", blocco))) == 1
+
+
 @pytest.mark.parametrize("nome", ["README.md", "README.en.md", "docs/glossario.md"])
 def test_link_relativi_esistono(nome):
     for destinazione in re.findall(r"\]\(([^)\s]+)\)", leggi(nome)):
