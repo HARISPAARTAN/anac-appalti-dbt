@@ -10,11 +10,20 @@ IMP = carica_impostazioni()
 COMMESSA = IMP.radice / "data" / "fixtures"
 
 
+def impronta(percorso: Path) -> str:
+    """SHA-256 del file; per gli zip dei nomi e dei contenuti interni, perché i byte compressi dipendono dalla zlib."""
+    if percorso.suffix != ".zip":
+        return hashlib.sha256(percorso.read_bytes()).hexdigest()
+    h = hashlib.sha256()
+    with zipfile.ZipFile(percorso) as z:
+        for nome in sorted(z.namelist()):
+            h.update(nome.encode() + b"\0" + z.read(nome) + b"\0")
+    return h.hexdigest()
+
+
 def impronte(cartella: Path) -> dict[str, str]:
     return {
-        p.relative_to(cartella).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-        for p in sorted(cartella.rglob("*"))
-        if p.is_file()
+        p.relative_to(cartella).as_posix(): impronta(p) for p in sorted(cartella.rglob("*")) if p.is_file()
     }
 
 
