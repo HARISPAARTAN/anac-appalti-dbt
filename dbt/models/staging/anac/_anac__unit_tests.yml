@@ -86,7 +86,7 @@ unit_tests:
         - {cig: ABC0000006, data_aggiudicazione_definitiva: "2025-12-05", n_offerte_ammesse: 2, n_offerte_escluse: 0, importo_aggiudicazione: null, importo_aggiudicazione_raw: "1,234", ribasso_aggiudicazione: 1.234, ribasso_aggiudicazione_raw: "1,234", n_imprese_offerenti: 2, id_aggiudicazione: 5000006, cod_esito: 1, flag_subappalto: false}
 
   - name: test_privacy_partecipanti
-    description: "Seconda linea di difesa sui partecipanti: un codice personale ancora presente perde codice e denominazione; un codice già annullato dal landing conserva la classe del landing."
+    description: "Seconda linea di difesa sui partecipanti: un codice personale ancora presente perde codice e denominazione; un codice già annullato dal landing conserva la classe del landing; una ditta individuale con partita IVA perde il nome e tiene il codice."
     model: stg_anac__partecipanti
     given:
       - input: source('anac', 'partecipanti')
@@ -105,15 +105,26 @@ unit_tests:
           select 'FX00000006', 'MANDANTE', null, null, 'IMPRESA', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h6', 6
           union all
           select 'FX00000007', 'MANDANTE', ' 01199250158 ', 'IMPRESA ESEMPIO S.R.L.', 'IMPRESA', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h7', 7
+          union all
+          select 'FX00000008', 'MANDANTE', '02345678901', 'ESEMPIO PAOLO', 'DITTA INDIVIDUALE', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h8', 8
+          union all
+          select 'FX00000009', 'MANDANTE', '03456789012', 'ESEMPIO LAURA', ' ditte individuali ', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h9', 9
+          union all
+          select 'FX00000010', 'MANDANTE', '04567890123', 'ESEMPIO COSTRUZIONI S.R.L.', 'IMPRESA SINGOLA (IMPRENDITORI INDIVIDUALI, ANCHE ARTIGIANI, SOCIETA'' COMMERCIALI)', null, 'r', date '2026-01-23', timestamp '2026-01-23 10:00:00', 's', 'h10', 10
     expect:
       rows:
-        - {cig: FX00000001, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 1}
-        - {cig: FX00000002, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica, _ordinale_riga: 2}
-        - {cig: FX00000003, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: non_verificabile, _ordinale_riga: 3}
-        - {cig: FX00000004, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: persona_fisica, _ordinale_riga: 4}
-        - {cig: FX00000005, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: non_verificabile, _ordinale_riga: 5}
-        - {cig: FX00000006, codice_fiscale: null, denominazione: null, tipo_soggetto_privacy: assente, _ordinale_riga: 6}
-        - {cig: FX00000007, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 7}
+        - {cig: FX00000001, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", flag_ditta_individuale: false, tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 1}
+        - {cig: FX00000002, codice_fiscale: null, denominazione: null, flag_ditta_individuale: false, tipo_soggetto_privacy: persona_fisica, _ordinale_riga: 2}
+        - {cig: FX00000003, codice_fiscale: null, denominazione: null, flag_ditta_individuale: false, tipo_soggetto_privacy: non_verificabile, _ordinale_riga: 3}
+        - {cig: FX00000004, codice_fiscale: null, denominazione: null, flag_ditta_individuale: false, tipo_soggetto_privacy: persona_fisica, _ordinale_riga: 4}
+        - {cig: FX00000005, codice_fiscale: null, denominazione: null, flag_ditta_individuale: false, tipo_soggetto_privacy: non_verificabile, _ordinale_riga: 5}
+        - {cig: FX00000006, codice_fiscale: null, denominazione: null, flag_ditta_individuale: false, tipo_soggetto_privacy: assente, _ordinale_riga: 6}
+        - {cig: FX00000007, codice_fiscale: "01199250158", denominazione: "IMPRESA ESEMPIO S.R.L.", flag_ditta_individuale: false, tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 7}
+        # ditta individuale con partita IVA: il codice resta come chiave locale, il nome è annullato
+        - {cig: FX00000008, codice_fiscale: "02345678901", denominazione: null, flag_ditta_individuale: true, tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 8}
+        - {cig: FX00000009, codice_fiscale: "03456789012", denominazione: null, flag_ditta_individuale: true, tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 9}
+        # la dicitura che mescola imprenditori individuali e società non è una forma individuale
+        - {cig: FX00000010, codice_fiscale: "04567890123", denominazione: "ESEMPIO COSTRUZIONI S.R.L.", flag_ditta_individuale: false, tipo_soggetto_privacy: persona_giuridica, _ordinale_riga: 10}
 
   - name: test_privacy_subappalti
     description: "Seconda linea di difesa sui subappalti, su subappaltatore (codice_fiscale) e subappaltante (cf_subappaltante) separatamente: un codice personale accanto a uno societario e viceversa; la classe del landing è quella della colonna giusta."

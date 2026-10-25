@@ -212,3 +212,25 @@ unit_tests:
         - {stazione_key: PERSONA_FISICA, codice_ausa: A3, codice_fiscale: null, denominazione: Persona fisica (identità non pubblicata), codice_provincia: null, flag_persona_fisica: true, flag_in_anagrafe: true}
         - {stazione_key: A8, codice_ausa: A8, codice_fiscale: "11111111111", denominazione: Impresa Esempio S.R.L., codice_provincia: null, flag_persona_fisica: false, flag_in_anagrafe: false}
         - {stazione_key: PERSONA_FISICA, codice_ausa: A9, codice_fiscale: null, denominazione: Persona fisica (identità non pubblicata), codice_provincia: null, flag_persona_fisica: true, flag_in_anagrafe: false}
+
+  - name: test_operatori_ditte_individuali
+    description: "Una ditta individuale (tipo_soggetto individuale in almeno un'occorrenza, anche solo in una delle tre tabelle) tiene il codice come chiave locale ma perde il nome in int_operatori, anche se un'altra occorrenza lo portava; una società tiene il nome; il subappaltante compare senza nome."
+    model: int_operatori
+    given:
+      - input: ref('int_aggiudicatari__corrente')
+        rows:
+          - {codice_fiscale: "11111111111", denominazione: IMPRESA A S.R.L., tipo_soggetto_privacy: persona_giuridica, flag_ditta_individuale: false, _data_snapshot: "2026-01-01", _risorsa: r1}
+          - {codice_fiscale: "22222222222", denominazione: null, tipo_soggetto_privacy: persona_giuridica, flag_ditta_individuale: true, _data_snapshot: "2026-01-01", _risorsa: r1}
+      - input: ref('int_partecipanti__corrente')
+        rows:
+          - {codice_fiscale: "22222222222", denominazione: ESEMPIO PAOLO, tipo_soggetto_privacy: persona_giuridica, flag_ditta_individuale: false, _data_snapshot: "2026-02-01", _risorsa: r2}
+          - {codice_fiscale: "33333333333", denominazione: IMPRESA C S.R.L., tipo_soggetto_privacy: persona_giuridica, flag_ditta_individuale: false, _data_snapshot: "2026-02-01", _risorsa: r2}
+      - input: ref('int_subappalti__corrente')
+        rows:
+          - {codice_fiscale: "11111111111", denominazione: IMPRESA A S.R.L., tipo_soggetto_privacy: persona_giuridica, flag_ditta_individuale: false, cf_subappaltante: "44444444444", tipo_subappaltante_privacy: persona_giuridica, _data_snapshot: "2026-03-01", _risorsa: r3}
+    expect:
+      rows:
+        - {codice_fiscale: "11111111111", denominazione: IMPRESA A S.R.L., flag_ditta_individuale: false, n_occorrenze: 2}
+        - {codice_fiscale: "22222222222", denominazione: null, flag_ditta_individuale: true, n_occorrenze: 2}
+        - {codice_fiscale: "33333333333", denominazione: IMPRESA C S.R.L., flag_ditta_individuale: false, n_occorrenze: 1}
+        - {codice_fiscale: "44444444444", denominazione: null, flag_ditta_individuale: false, n_occorrenze: 1}

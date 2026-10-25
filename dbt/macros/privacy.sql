@@ -27,6 +27,21 @@ end
 coalesce(regexp_matches(upper({{ colonna }}), '(^|[^A-Z0-9])[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]([^A-Z0-9]|$)'), false)
 {%- endmacro %}
 
+{#- Forme giuridiche che dicono "individuo" (anagrafe delle stazioni appaltanti e tipo_soggetto degli operatori). Una
+    sola lista per i due usi; gemella di privacy.NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI. "IMPRESA SINGOLA
+    (IMPRENDITORI INDIVIDUALI, ... SOCIETA' COMMERCIALI ...)" non è in lista: mescola persone e società. -#}
+{% macro forme_giuridiche_individuali() -%}
+(
+    'ALTRI LAVORATORI AUTONOMI',
+    'DITTA INDIVIDUALE',
+    'DITTE INDIVIDUALI',
+    'IMPRESE INDIVIDUALI ARTIGIANE',
+    'IMPRESE INDIVIDUALI COMMERCIALI',
+    'LAVORATORI AUTONOMI - PROFESSIONISTI',
+    'LIBERO PROFESSIONISTA'
+)
+{%- endmacro %}
+
 {#- Vero se la stazione appaltante è una persona fisica: codice fiscale personale (16 caratteri) oppure forma giuridica
     individuale dell'anagrafe (ditta individuale, libero professionista, lavoratore autonomo). Gemello di
     privacy.e_stazione_persona_fisica, verificato da tests/unit/test_privacy_sql.py. Le tre colonne sono già
@@ -35,15 +50,15 @@ coalesce(regexp_matches(upper({{ colonna }}), '(^|[^A-Z0-9])[A-Z]{6}[0-9LMNPQRST
 (
     coalesce(regexp_full_match({{ codice_fiscale }}, '[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]'), false)
     or coalesce({{ natura_codice }} in ('56', '58', '59', '60', '61', 'A070'), false)
-    or coalesce(upper({{ natura_descrizione }}) in (
-        'ALTRI LAVORATORI AUTONOMI',
-        'DITTE INDIVIDUALI',
-        'IMPRESE INDIVIDUALI ARTIGIANE',
-        'IMPRESE INDIVIDUALI COMMERCIALI',
-        'LAVORATORI AUTONOMI - PROFESSIONISTI',
-        'LIBERO PROFESSIONISTA'
-    ), false)
+    or coalesce(upper({{ natura_descrizione }}) in {{ forme_giuridiche_individuali() }}, false)
 )
+{%- endmacro %}
+
+{#- Vero se il tipo_soggetto dell'operatore è una forma giuridica individuale (ditta individuale, libero professionista...):
+    il suo nome e la sua partita IVA sono dati personali, quindi la denominazione è annullata anche se il codice è di
+    11 cifre. Il codice resta come chiave locale. Gemello di privacy.e_tipo_soggetto_individuale. -#}
+{% macro tipo_soggetto_individuale(colonna) -%}
+coalesce(upper(trim({{ colonna }})) in {{ forme_giuridiche_individuali() }}, false)
 {%- endmacro %}
 
 {#- Codici AUSA delle stazioni che l'anagrafe dichiara persone fisiche (codice fiscale di 16 caratteri o forma giuridica

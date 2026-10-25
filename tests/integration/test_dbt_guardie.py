@@ -98,6 +98,8 @@ STAZIONI_PERSONE = {
 CF_CONTI, CF_GRECO, CF_MARTINI = STAZIONI_PERSONE
 AUSA_CONTI, AUSA_GRECO, AUSA_MARTINI = "0000990001", "0000990002", "0000990003"
 LOTTI_STAZIONI = {5: AUSA_CONTI, 6: AUSA_GRECO, 7: AUSA_MARTINI}
+# Una ditta individuale con partita IVA: il codice resta come chiave locale, il nome no.
+PIVA_DITTA, NOME_DITTA = "10203040506", "BRUNI CARLO"
 LOTTO = 3  # aggiudicato, procedura competitiva, nel perimetro del Radar
 
 
@@ -188,6 +190,19 @@ def area_persone(tmp_path_factory) -> Impostazioni:
                 },
             )
             for cf in (CF_ROSSI, CF_BIANCHI)
+        ]
+        + [
+            componi(
+                CONTRATTI["aggiudicatari"],
+                {
+                    "cig": cig_lotto,
+                    "ruolo": "MANDANTE",
+                    "codice_fiscale": PIVA_DITTA,
+                    "denominazione": NOME_DITTA,
+                    "tipo_soggetto": "DITTA INDIVIDUALE",
+                    "id_aggiudicazione": id_agg,
+                },
+            )
         ],
     )
     aggiungi_file(
@@ -235,7 +250,8 @@ def area_persone(tmp_path_factory) -> Impostazioni:
 
 def valori_identificativi(con_stazioni: bool = False) -> list[str]:
     persone = PERSONE | STAZIONI_PERSONE if con_stazioni else PERSONE
-    return [valore.lower() for coppia in persone.items() for valore in coppia]
+    nomi = [NOME_DITTA.lower()] if con_stazioni else []
+    return [valore.lower() for coppia in persone.items() for valore in coppia] + nomi
 
 
 def contiene_identita(testo: str) -> list[str]:
@@ -358,6 +374,33 @@ def test_stazioni_persone_fisiche_non_hanno_chiave_ne_nome_nei_mart(area_persone
             "(select stazione_key from core.dim_stazioni_appaltanti)",
         )
         == 0
+    )
+
+
+def test_ditta_individuale_tiene_il_codice_ma_non_il_nome(area_persone):
+    imp = area_persone
+    assert interroga(
+        imp,
+        "select operatore_key, codice_fiscale, denominazione, flag_ditta_individuale, tipo_soggetto_privacy "
+        f"from core.dim_operatori where operatore_key = '{PIVA_DITTA}'",
+    ) == [
+        (PIVA_DITTA, PIVA_DITTA, "Persona fisica (identità non pubblicata)", True, "persona_giuridica"),
+    ]
+    assert interroga(
+        imp,
+        "select codice_fiscale, denominazione, flag_ditta_individuale from staging.stg_anac__aggiudicatari "
+        f"where codice_fiscale = '{PIVA_DITTA}'",
+    ) == [(PIVA_DITTA, None, True)]
+    # le altre imprese della fixture tengono il nome; la ditta compare nei fatti con la sua chiave
+    assert uno(imp, "select count(*) from core.dim_operatori where flag_ditta_individuale") == 1
+    assert uno(imp, f"select count(*) from core.fct_partecipazioni where operatore_key = '{PIVA_DITTA}'") == 1
+    assert (
+        uno(
+            imp,
+            "select count(*) from core.dim_operatori where denominazione like 'IMPRESA ESEMPIO%' "
+            "and not flag_ditta_individuale",
+        )
+        > 30
     )
 
 

@@ -64,8 +64,10 @@ models:
           - not_null
 
   - name: stg_anac__aggiudicatari
-    description: "Aggiudicatari tipizzati con la regola persone fisiche: codice_fiscale e denominazione sono NULL se il codice non è di 11 cifre."
+    description: "Aggiudicatari tipizzati con la regola persone fisiche: codice_fiscale e denominazione sono NULL se il codice non è di 11 cifre; la denominazione è NULL anche per le ditte individuali (flag_ditta_individuale), che tengono il codice come chiave locale."
     columns:
+      - name: flag_ditta_individuale
+        description: "Vero se tipo_soggetto è una forma giuridica individuale (ditta individuale, libero professionista, lavoratore autonomo): il nome è annullato anche se il codice è di 11 cifre."
       - name: codice_fiscale
         description: "Codice fiscale o partita IVA di 11 cifre; NULL per persone fisiche e codici non verificabili."
       - name: tipo_soggetto_privacy
@@ -85,8 +87,10 @@ models:
         description: "Posizione della riga nel file di origine; vale solo dentro lo stesso file."
 
   - name: stg_anac__partecipanti
-    description: "Partecipanti tipizzati con la regola persone fisiche."
+    description: "Partecipanti tipizzati con la regola persone fisiche; le ditte individuali perdono il nome e tengono il codice."
     columns:
+      - name: flag_ditta_individuale
+        description: "Vero se tipo_soggetto è una forma giuridica individuale: il nome è annullato anche se il codice è di 11 cifre."
       - name: tipo_soggetto_privacy
         description: "persona_giuridica, persona_fisica, non_verificabile o assente. Se il landing ha già annullato il codice, è la classe che il landing ha conservato (_classe_cf)."
         data_tests:
@@ -112,8 +116,10 @@ models:
           - not_null
 
   - name: stg_anac__subappalti
-    description: "Subappalti autorizzati tipizzati, con la regola persone fisiche su subappaltatore e subappaltante. ANAC pubblica solo la classe di importo."
+    description: "Subappalti autorizzati tipizzati, con la regola persone fisiche su subappaltatore e subappaltante. ANAC pubblica solo la classe di importo. Le ditte individuali subappaltatrici perdono il nome e tengono il codice."
     columns:
+      - name: flag_ditta_individuale
+        description: "Vero se tipo_soggetto del subappaltatore è una forma giuridica individuale: il nome è annullato anche se il codice è di 11 cifre."
       - name: tipo_soggetto_privacy
         description: "Classificazione del codice del subappaltatore."
         data_tests:

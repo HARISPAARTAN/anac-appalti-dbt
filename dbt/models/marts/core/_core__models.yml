@@ -70,7 +70,7 @@ models:
         description: "Vero per aperta, ristretta e negoziata con bando."
 
   - name: dim_operatori
-    description: "Operatori economici persone giuridiche, più i membri anonimi PERSONA_FISICA e NON_VERIFICABILE."
+    description: "Operatori economici con codice di 11 cifre, più i membri anonimi PERSONA_FISICA e NON_VERIFICABILE. Le ditte individuali (flag_ditta_individuale) tengono il codice come chiave locale ma il nome è la dicitura anonima: sono dati personali, restano solo nel warehouse locale e nessun mart li pubblica."
     config:
       meta:
         chiave: operatore_key
@@ -79,6 +79,10 @@ models:
         description: "Codice di 11 cifre, PERSONA_FISICA o NON_VERIFICABILE."
         data_tests:
           - unique
+          - not_null
+      - name: flag_ditta_individuale
+        description: "Vero per le ditte individuali, professionisti e lavoratori autonomi (tipo_soggetto individuale): denominazione anonima."
+        data_tests:
           - not_null
 
   - name: fct_lotti

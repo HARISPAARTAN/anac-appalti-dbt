@@ -123,7 +123,9 @@ models:
           - unique
           - not_null
       - name: denominazione
-        description: "Denominazione dall'occorrenza più recente."
+        description: "Denominazione dall'occorrenza più recente; NULL per le ditte individuali."
+      - name: flag_ditta_individuale
+        description: "Vero se in almeno un'occorrenza il tipo_soggetto è una forma giuridica individuale: nome annullato, codice tenuto come chiave locale."
 
   - name: int_lotti__qualita
     description: "Una riga per lotto corrente con tutti i flag di qualità dei dati. I flag non cancellano righe; flag_importo_anomalo esclude il lotto dalle somme."
@@ -178,6 +180,8 @@ models:
         data_tests:
           - unique
           - not_null
+      - name: n_cf_mascherati
+        description: "Codici fiscali personali sostituiti da [CF] nel testo libero del file (oggetti di gara, lotto, subappalto, motivi) al landing."
       - name: riconciliazione
         description: "ok o differenza (righe confrontate con il logCsv ANAC), ok_fisico o differenza_fisica (righe confrontate con i record contati nel CSV, quando il logCsv non dichiara il numero di righe), non_disponibile (landing in errore)."
         data_tests:

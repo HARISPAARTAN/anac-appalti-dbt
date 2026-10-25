@@ -237,6 +237,21 @@ def blocco_numeri(
             "Natural-person rows without identity",
             num(i.get("righe_persone_fisiche", 0)),
         ),
+        (
+            "Stazioni appaltanti persone fisiche (anonime)",
+            "Contracting authorities that are natural persons (anonymous)",
+            num(i.get("stazioni_persone_fisiche", 0)),
+        ),
+        (
+            "Operatori ditte individuali con nome annullato",
+            "Sole-trader operators with the name blanked",
+            num(i.get("operatori_ditte_individuali", 0)),
+        ),
+        (
+            "Codici fiscali personali mascherati nel testo libero",
+            "Personal tax codes masked in free text",
+            num(i.get("cf_mascherati_testo", 0)),
+        ),
         ("Freschezza delle sorgenti", "Source freshness", freschezza),
         ("Durata: estrazione · landing · dbt · totale", "Run time: extract · landing · dbt · total", durate),
         (

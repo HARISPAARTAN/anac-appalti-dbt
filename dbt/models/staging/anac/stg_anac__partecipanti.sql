@@ -18,8 +18,13 @@ select
     {{ codice('cig') }} as cig,
     {{ codice('ruolo') }} as ruolo,
     case when classe_codice_presente = 'persona_giuridica' then trim(codice_fiscale) end as codice_fiscale,
-    case when classe_codice_presente = 'persona_giuridica' and not {{ contiene_cf_persona('denominazione') }}
-        then {{ testo('denominazione') }} end as denominazione,
+    case
+        when classe_codice_presente = 'persona_giuridica'
+            and not {{ contiene_cf_persona('denominazione') }}
+            and not {{ tipo_soggetto_individuale('tipo_soggetto') }}
+            then {{ testo('denominazione') }}
+    end as denominazione,
+    {{ tipo_soggetto_individuale('tipo_soggetto') }} as flag_ditta_individuale,
     {{ codice('tipo_soggetto') }} as tipo_soggetto,
     tipo_soggetto_privacy,
     _risorsa,

@@ -10,6 +10,7 @@ from anac_appalti.privacy import (
     cerca_cf_personali,
     classifica_codice_fiscale,
     e_stazione_persona_fisica,
+    e_tipo_soggetto_individuale,
 )
 
 MACRO = (carica_impostazioni().dbt_dir / "macros" / "privacy.sql").read_text(encoding="utf-8")
@@ -127,3 +128,28 @@ def test_stesse_forme_giuridiche_del_python():
         assert f"'{codice}'" in MACRO
     for descrizione in NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI:
         assert f"'{descrizione}'" in MACRO
+
+
+TIPI_SOGGETTO = [
+    "DITTA INDIVIDUALE",
+    " ditte individuali ",
+    "IMPRESE INDIVIDUALI ARTIGIANE",
+    "LIBERO PROFESSIONISTA",
+    "IMPRESA",
+    "IMPRESA SINGOLA (IMPRENDITORI INDIVIDUALI, ANCHE ARTIGIANI, SOCIETA' COMMERCIALI, SOCIETA' COOPERATIVE)",
+    "ASSOCIAZIONI TRA PROFESSIONISTI",
+    "",
+    None,
+]
+
+
+def test_tipo_soggetto_individuale_come_il_python():
+    espressione = jinja2.Environment().from_string(MACRO + "{{ tipo_soggetto_individuale('t') }}").render()
+    con = duckdb.connect()
+    con.execute("create table x (n integer, t varchar)")
+    con.executemany("insert into x values (?, ?)", list(enumerate(TIPI_SOGGETTO)))
+    risultati = dict(con.execute(f"select n, {espressione} from x").fetchall())
+    con.close()
+    for n, tipo in enumerate(TIPI_SOGGETTO):
+        assert risultati[n] == e_tipo_soggetto_individuale(tipo), repr(tipo)
+    assert sum(risultati.values()) == 4

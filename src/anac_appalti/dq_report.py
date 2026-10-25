@@ -68,6 +68,9 @@ QUERY: dict[str, str] = {
     "file_non_verificabili": (
         "select count(*) from intermediate.int_riconciliazione where riconciliazione = 'non_disponibile'"
     ),
+    "stazioni_persone_fisiche": "select count(*) from intermediate.int_stazioni where flag_persona_fisica",
+    "operatori_ditte_individuali": "select count(*) from core.dim_operatori where flag_ditta_individuale",
+    "cf_mascherati_testo": "select coalesce(sum(n_cf_mascherati), 0) from intermediate.int_riconciliazione",
     "righe_operatori": (
         "select (select count(*) from staging.stg_anac__aggiudicatari)"
         " + (select count(*) from staging.stg_anac__partecipanti)"
@@ -171,6 +174,30 @@ RIGHE_REPORT = (
         "Codice fiscale di 16 caratteri: identità annullata al landing (e di nuovo in staging), conteggio conservato",
         "privacy",
         "righe_operatori",
+    ),
+    (
+        "stazioni_persone_fisiche",
+        "Stazioni appaltanti persone fisiche",
+        "Codice fiscale di 16 caratteri o forma giuridica individuale: nome e codici annullati in staging, "
+        "chiave unica PERSONA_FISICA nei mart",
+        "privacy",
+        None,
+    ),
+    (
+        "operatori_ditte_individuali",
+        "Operatori ditte individuali",
+        "tipo_soggetto individuale: nome annullato in staging, codice di 11 cifre tenuto come chiave locale "
+        "(mai pubblicato)",
+        "privacy",
+        None,
+    ),
+    (
+        "cf_mascherati_testo",
+        "Codici nel testo libero",
+        "Codice fiscale di 16 caratteri trovato nel testo libero (oggetto di gara, lotto, subappalto, motivi): "
+        "sostituito da [CF] al landing; i nomi di persona nel testo non sono riconosciuti",
+        "privacy",
+        None,
     ),
 )
 
