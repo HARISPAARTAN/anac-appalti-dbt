@@ -4,7 +4,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [Sem
 
 ## [0.1.1] - 2026-10-25
 
-Correzioni dalla revisione finale della 0.1.0, misurate sull'esecuzione completa da zero `20261025T151521-610332` (14 min 24 s:
+Correzioni dalla revisione finale della 0.1.0, misurate sull'esecuzione completa da zero `20261025T160014-be23e3` (15 min 3 s:
 download di 83 file e 1,94 GB, landing, `dbt build`, export). Il mart delle stazioni appaltanti della 0.1.0 nominava
 persone fisiche ed è stato ritirato dalla release 0.1.0: la 0.1.1 lo sostituisce.
 
@@ -12,9 +12,14 @@ persone fisiche ed è stato ritirato dalla release 0.1.0: la 0.1.1 lo sostituisc
 
 - Le stazioni appaltanti che sono persone fisiche (codice fiscale di 16 caratteri o forma giuridica individuale) non
   hanno più nome, codice fiscale, partita IVA né codice AUSA nei mart: staging annulla i valori, anche sui lotti e per
-  le amministrazioni assenti dall'anagrafe, e `int_stazioni` le riduce alla chiave `PERSONA_FISICA` (384 stazioni:
-  382 dell'anagrafe e 2 viste solo nei lotti). Un seed di codici AUSA opachi (`ausa_persone_fisiche`) copre il caso che
-  la scansione di export ha trovato e le regole non vedono.
+  le amministrazioni assenti dall'anagrafe, e `int_stazioni` le riduce alla chiave `PERSONA_FISICA` (401 stazioni:
+  399 dell'anagrafe e 2 viste solo nei lotti). Due seed di codici AUSA opachi, mai nomi, coprono la classe che le regole
+  non vedono (nome di persona, codice segnaposto, forma giuridica non classificata): `ausa_persone_fisiche` (18 persone,
+  una trovata dalla scansione di export, 17 dalla revisione dei candidati) e `ausa_enti_verificati` (40 enti).
+- Revisione dei candidati: `int_stazioni_da_verificare` elenca le stazioni con codice non di 11 cifre, forma giuridica
+  non classificata o assente e nome di 2-3 parole senza parole di ente (57 la prima volta: 17 persone, 40 enti); il test
+  `assert_candidati_stazioni_classificati` fallisce finché ognuna non è in uno dei due seed. Il nome si legge solo in
+  locale; nel dubbio è una persona.
 - Test nuovo per join sulla sorgente (`assert_nessuna_stazione_personale_nei_mart`), controllo dei 16 caratteri anche
   sulla dimensione, test unitari e di integrazione con stazioni che sono persone fisiche.
 - `appalti export` scansiona ogni colonna di testo dei nove Parquet (codici fiscali personali e nomi che
@@ -33,7 +38,7 @@ persone fisiche ed è stato ritirato dalla release 0.1.0: la 0.1.1 lo sostituisc
 
 - Riconciliazione fisica: per i file senza conteggio nel logCsv (i `cig-AAAA`) il landing conta i record fuori dalle
   virgolette del CSV e registra `ok_fisico` o `differenza_fisica` (`differenza_fisica` fa fallire il test dbt
-  `assert_riconciliazione`). Nell'esecuzione `20261025T151521-610332`: 73 file, 49 `ok`, 24 `ok_fisico` (2.704.490 righe), nessuna
+  `assert_riconciliazione`). Nell'esecuzione `20261025T160014-be23e3`: 73 file, 49 `ok`, 24 `ok_fisico` (2.704.490 righe), nessuna
   differenza.
 - Test di avviso `dq_subappalti_collassati` e `dq_varianti_collassate`: contano le righe con lo stesso id scartate da
   `int_subappalti__corrente` e `int_varianti__corrente` (13.826 e 18.378 righe; la correzione strutturale è in
@@ -46,8 +51,8 @@ persone fisiche ed è stato ritirato dalla release 0.1.0: la 0.1.1 lo sostituisc
 
 ### Modificato
 
-- `dim_stazioni_appaltanti` ha il membro `PERSONA_FISICA`; il mart ha 71.973 righe (71.987 nella 0.1.0). Nuovo
-  modello `int_stazioni` (41 modelli); tie-break su `_hash_riga` nella scelta della riga dell'anagrafe.
+- `dim_stazioni_appaltanti` ha il membro `PERSONA_FISICA`; il mart ha 71.971 righe (71.987 nella 0.1.0). Nuovi
+  modelli `int_stazioni` e `int_stazioni_da_verificare` (42 modelli); tie-break su `_hash_riga` nella scelta della riga dell'anagrafe.
 - `appalti report` scrive ogni numero dei README da una sola esecuzione (l'ultima riuscita) e dichiara "non
   disponibile in questa esecuzione" una fase assente.
 - README: tabella dei mart con granularità e base, diagramma ER dichiarato semplificato, "offline" e "ogni

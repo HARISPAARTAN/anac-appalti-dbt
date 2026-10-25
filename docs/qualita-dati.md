@@ -36,7 +36,7 @@ Politica: si segnala, non si cancella. Ogni controllo è un test dbt (avviso o e
 | Varianti collassate | Righe diverse con lo stesso id_variante nello stesso file: ne resta una in fct_varianti | avviso | 18.378 | – |
 | Ribasso fuori intervallo | Ribasso fuori da 0–100 % | avviso | 19.654 | – |
 | Persone fisiche | Codice fiscale di 16 caratteri: identità annullata al landing (e di nuovo in staging), conteggio conservato | privacy | 1.631.723 | 7,65 % |
-| Stazioni appaltanti persone fisiche | Codice fiscale di 16 caratteri o forma giuridica individuale: nome e codici annullati in staging, chiave unica PERSONA_FISICA nei mart | privacy | 384 | – |
+| Stazioni appaltanti persone fisiche | Codice fiscale di 16 caratteri o forma giuridica individuale: nome e codici annullati in staging, chiave unica PERSONA_FISICA nei mart | privacy | 401 | – |
 | Operatori ditte individuali | tipo_soggetto individuale: nome annullato in staging, codice di 11 cifre tenuto come chiave locale (mai pubblicato) | privacy | 12.424 | – |
 | Codici nel testo libero | Codice fiscale di 16 caratteri trovato nel testo libero (oggetto di gara, lotto, subappalto, motivi): sostituito da [CF] al landing; i nomi di persona nel testo non sono riconosciuti | privacy | 794 | – |
 
@@ -45,6 +45,8 @@ Dettaglio importi anomali: non positivi 15.426, oltre il totale di gara 3.841, o
 Date impossibili sui dati reali: la regola "scadenza prima della pubblicazione" scatta soprattutto sugli affidamenti diretti, dove la data di scadenza dell'offerta può precedere la pubblicazione senza che ci sia un errore. Misura: 97,68 % dei lotti segnalati sono affidamenti diretti, e la scadenza prima della pubblicazione spiega 85,56 % delle segnalazioni (negli affidamenti diretti di questo tipo la scadenza precede la pubblicazione in media di 11 giorni); il resto sono aggiudicazioni anteriori alla pubblicazione o date fuori dall'intervallo plausibile. Il controllo è informativo e non esclude lotti dai mart.
 
 Subappalti e varianti collassati: `int_subappalti__corrente` e `int_varianti__corrente` tengono una riga per id, quindi le altre righe diverse con lo stesso id nello stesso file non arrivano ai fatti. In questa esecuzione: 13.826 righe di subappalto scartate (10.592 id, di cui 4.702 con più subappaltatori identificabili) e 18.378 righe di variante (14.749 id). I test dbt `dq_subappalti_collassati` e `dq_varianti_collassate` (avviso) le contano a ogni esecuzione; la correzione (grana id più ordinale) è in roadmap per la 0.2.0.
+
+Revisione manuale delle stazioni appaltanti: nell'anagrafe ci sono stazioni con un codice segnaposto, forma giuridica non classificata e il nome di una persona, che le regole del codice fiscale e della forma giuridica non vedono. `int_stazioni_da_verificare` elenca i candidati (codice non di 11 cifre, forma giuridica non classificata, non definita o assente, nome di 2-3 parole senza cifre e senza parole di ente) e il test `assert_candidati_stazioni_classificati` fallisce finché ciascuno non è nel seed delle persone o in quello degli enti verificati. In questa esecuzione: 40 candidati rimasti in elenco (enti già verificati: se il test passa non ne manca nessuno), 18 codici nel seed delle persone, 40 nel seed degli enti verificati.
 
 Regole sulle somme: gli importi si sommano solo sui lotti non derivati da accordo quadro, non anomali e non cancellati, così un accordo quadro e i suoi contratti attuativi non sono contati due volte. I lotti esclusi restano nei conteggi.
 

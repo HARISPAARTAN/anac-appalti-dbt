@@ -17,7 +17,7 @@ con tempi, righe, impronte dei modelli, commit e versioni degli strumenti; `appa
 di qualità dei dati. Dagster orchestra gli stessi passi come grafo di asset.
 
 > **Stato dei numeri.** I numeri della sezione "Qualità dei dati" sono una sola misura: un'esecuzione completa
-> da zero su dati reali ANAC (2024–2026, run `20261025T151521-610332`, 25 ottobre 2026, in una cartella di lavoro vuota,
+> da zero su dati reali ANAC (2024–2026, run `20261025T160014-be23e3`, 25 ottobre 2026, in una cartella di lavoro vuota,
 > con download, landing, dbt build ed export); `docs/qualita-dati.md` è il report di quella esecuzione. Le pagine
 > di documentazione su GitHub Pages sono invece generate dalla CI sulla fixture sintetica, non sui dati reali.
 
@@ -120,13 +120,13 @@ erDiagram
   fct_subappalti }o--|| dim_operatori : subappaltante_key
 ```
 
-Il progetto dbt ha 41 modelli (più 4 seed):
+Il progetto dbt ha 42 modelli (più 5 seed):
 
 - **Staging** (`stg_anac__*`, 8 modelli): un modello per tabella sorgente, tipi espliciti, codici normalizzati,
   `tipo_soggetto_privacy` per ogni operatore.
-- **Intermediate** (`int_*`, 13 modelli): `int_cig__versioni` conserva ogni versione di lotto per file;
+- **Intermediate** (`int_*`, 14 modelli): `int_cig__versioni` conserva ogni versione di lotto per file;
   `int_cig__corrente` tiene la più recente; `int_stazioni` unisce l'anagrafe e le stazioni viste solo nei lotti e
-  riduce le persone fisiche alla chiave `PERSONA_FISICA`; `int_lotti__qualita` porta i flag di qualità;
+  riduce le persone fisiche alla chiave `PERSONA_FISICA`; `int_stazioni_da_verificare` elenca le stazioni da rivedere a mano; `int_lotti__qualita` porta i flag di qualità;
   `int_perdite_parsing` conta i valori che la tipizzazione non sa leggere; `int_riconciliazione` confronta le
   righe atterrate con i logCsv di ANAC.
 - **Core** (6 dimensioni, 5 fatti): ogni dimensione ha una riga `ND` per i valori mancanti. `dim_operatori`
@@ -165,19 +165,19 @@ La tabella qui sotto riporta le misure della prima esecuzione completa su dati r
 | Righe atterrate | 34.720.158 |
 | Righe CIG → lotti correnti | 6.334.426 → 3.734.851 |
 | Duplicati esatti rimossi | 1.663 (0,03 %) |
-| Modelli dbt | 41 |
-| Test dbt: gravità error / warn / unit test | 138 / 19 / 28 |
-| Esiti dell'ultimo dbt build | pass 176, success 45, warn 9 |
+| Modelli dbt | 42 |
+| Test dbt: gravità error / warn / unit test | 144 / 19 / 29 |
+| Esiti dell'ultimo dbt build | pass 183, success 47, warn 9 |
 | Modelli con test sulla chiave | 100 % |
 | Lotti con date impossibili | 2.520.462 (67,48 %) |
 | Lotti con importi anomali (esclusi dalle somme) | 150.243 (4,02 %) |
 | Righe di persone fisiche senza identità | 1.631.723 |
-| Stazioni appaltanti persone fisiche (anonime) | 384 |
+| Stazioni appaltanti persone fisiche (anonime) | 401 |
 | Operatori ditte individuali con nome annullato | 12.424 |
 | Codici fiscali personali mascherati nel testo libero | 794 |
 | Freschezza delle sorgenti | pass 6 |
-| Durata: estrazione · landing · dbt · totale | 6 min 25 s · 2 min 16 s · 5 min 30 s · 14 min 24 s |
-| Disco: raw · landing · warehouse | 1,94 GB · 1,90 GB · 5,79 GB |
+| Durata: estrazione · landing · dbt · totale | 7 min 13 s · 2 min 5 s · 5 min 32 s · 15 min 3 s |
+| Disco: raw · landing · warehouse | 1,94 GB · 1,90 GB · 5,72 GB |
 | Costo del warehouse | 0 EUR |
 
 | Mart | Righe |
@@ -187,18 +187,18 @@ La tabella qui sotto riporta le misure della prima esecuzione completa su dati r
 | `mart_concorrenza` | 2.087 |
 | `mart_procedure` | 378 |
 | `mart_ribassi` | 57 |
-| `mart_stazioni_appaltanti` | 71.973 |
+| `mart_stazioni_appaltanti` | 71.971 |
 | `mart_tasso_aggiudicazione` | 3.678 |
 | `mart_tempi_aggiudicazione` | 3.719 |
 | `mart_varianti_subappalti` | 63 |
 
-Data di riferimento 2026-10-25. Tutti i numeri vengono dall'esecuzione `20261025T151521-610332`.
+Data di riferimento 2026-10-25. Tutti i numeri vengono dall'esecuzione `20261025T160014-be23e3`.
 <!-- numeri:fine -->
 
-Come leggere la tabella: tutti i numeri del blocco vengono da una sola esecuzione, `20261025T151521-610332`, un'esecuzione completa
-da zero con `APPALTI_HOME` in una cartella vuota: download di 83 file (1,94 GB) in 6 min 25 s, landing in 2 min 16 s,
-`dbt build` in 5 min 30 s, 14 min 24 s in tutto, poi `appalti report` e `appalti export`. È stata fatta sul commit
-`69ab6b3` con l'albero di lavoro pulito (nel log: dbt-core 1.12.6, dbt-duckdb 1.11.0, DuckDB 1.5.6, Dagster 1.13.26,
+Come leggere la tabella: tutti i numeri del blocco vengono da una sola esecuzione, `20261025T160014-be23e3`, un'esecuzione completa
+da zero con `APPALTI_HOME` in una cartella vuota: download di 83 file (1,94 GB) in 7 min 13 s, landing in 2 min 5 s,
+`dbt build` in 5 min 32 s, 15 min 3 s in tutto, poi `appalti report` e `appalti export`. È stata fatta sul commit
+`e76ea81` con l'albero di lavoro pulito (nel log: dbt-core 1.12.6, dbt-duckdb 1.11.0, DuckDB 1.5.6, Dagster 1.13.26,
 Python 3.13.11). Sostituisce la stima composta da due esecuzioni (circa 18 minuti) della 0.1.0. L'ultimo mese dei mart
 (2026-10) è parziale: vedi Limiti. La fixture sintetica (1.500 lotti, difetti iniettati) resta solo per test e CI.
 
@@ -242,13 +242,13 @@ uv run appalti report    # aggiorna docs/ e la tabella dei numeri qui sopra
 uv run appalti export    # nove mart in build/export/*.parquet, scansione di privacy, ATTRIBUTION.md e SHA256SUMS
 ```
 
-Misure dell'esecuzione `20261025T151521-610332` (25 ottobre 2026, portatile Windows, DuckDB con `memory_limit` 2 GB e 4 thread):
+Misure dell'esecuzione `20261025T160014-be23e3` (25 ottobre 2026, portatile Windows, DuckDB con `memory_limit` 2 GB e 4 thread):
 
-- Download: 83 file e 1,94 GB di zip (stimati 2 GB; CKAN dichiara circa 9 GB di CSV non compressi), in 6 min 25 s
+- Download: 83 file e 1,94 GB di zip (stimati 2 GB; CKAN dichiara circa 9 GB di CSV non compressi), in 7 min 13 s
   (somma delle durate degli asset di estrazione). Le esecuzioni mensili successive scaricano solo i delta nuovi.
-- Disco: raw 1,94 GB, landing 1,90 GB, warehouse 5,79 GB. L'estrazione si ferma se lo spazio libero scende sotto 30 GB
+- Disco: raw 1,94 GB, landing 1,90 GB, warehouse 5,72 GB. L'estrazione si ferma se lo spazio libero scende sotto 30 GB
   (`spazio_libero_min_gb` in `appalti.toml`).
-- Tempo: landing 2 min 16 s, `dbt build` 5 min 30 s (41 modelli, 185 test); 14 min 24 s da zero.
+- Tempo: landing 2 min 5 s, `dbt build` 5 min 32 s (42 modelli, 192 test); 15 min 3 s da zero.
 - Costo del warehouse: 0 EUR (DuckDB locale).
 - `APPALTI_HOME` sposta `data/`, `build/` e `logs/` in un'altra cartella (vedi `.env.example`).
 - Se il portale blocca i download automatici, i file si possono scaricare dal browser e mettere in
@@ -309,7 +309,7 @@ Misure dell'esecuzione `20261025T151521-610332` (25 ottobre 2026, portatile Wind
 - I logCsv dei file annuali CIG riportano solo il totale, quindi quei file non hanno un conteggio dichiarato. Dalla
   0.1.1 il landing li riconcilia con i record contati nel CSV (stati `ok_fisico` e `differenza_fisica`, distinti da
   `ok` e `differenza` del logCsv; `righe_attese` contiene allora i record contati, non una cifra di ANAC). La 0.1.0 li
-  ha atterrati come `non_disponibile`; nell'esecuzione `20261025T151521-610332` i 24 file annuali sono `ok_fisico`. Misura del 25 ottobre 2026 sull'archivio raw, con uno script indipendente dal
+  ha atterrati come `non_disponibile`; nell'esecuzione `20261025T160014-be23e3` i 24 file annuali sono `ok_fisico`. Misura del 25 ottobre 2026 sull'archivio raw, con uno script indipendente dal
   lettore: i record fuori dalle virgolette coincidono con le righe atterrate in tutti i 49 file con conteggio nel
   logCsv e nei 24 file annuali (2.704.490 righe), quindi nei file annuali non è andata persa nessuna riga. Il semplice
   conteggio degli a capo sbaglia in 7 dei 49 file (delta CIG con a capo dentro i campi): per questo si contano i
@@ -321,7 +321,7 @@ Misure dell'esecuzione `20261025T151521-610332` (25 ottobre 2026, portatile Wind
   (`\\`, lette come un solo backslash: così ANAC scrive un backslash letterale) più 394 virgolette protette (`\"`).
   Nessun backslash è isolato, quindi il lettore ne elimina 0; il comportamento è fissato da
   `tests/unit/test_landing_escape.py`.
-- Verificato sull'esecuzione reale `20261025T151521-610332` (25 ottobre 2026; gli stessi numeri della prima esecuzione):
+- Verificato sull'esecuzione reale `20261025T160014-be23e3` (25 ottobre 2026; gli stessi numeri della prima esecuzione):
   - `cod_esito = 1` è `AGGIUDICATA`: sulle 6.035.083 aggiudicazioni correnti vale 1 nel 99,51 % dei casi (6.005.792);
     gli altri codici sono 7 e 6 (annullata o revocata, 0,18 % e 0,13 %), 99 (non aggiudicata, 0,12 %), 98 (nessun
     vincitore, 0,05 %), 90 (gara in corso, 0,01 %) e 2, 3, 4, 5 (meno di 60 righe in tutto). Nessun `cod_esito`

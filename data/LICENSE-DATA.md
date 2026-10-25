@@ -63,7 +63,7 @@ colonne e misurato (dettaglio e numeri in `docs/decisioni/ADR-004-privacy.md`):
   conteggio dei partecipanti si basa su questo. Le persone fisiche non sono mai abbinate tra file diversi, due righe
   identiche di persone fisiche non sono riconosciute come duplicati esatti, e le righe annullate formano il gruppo
   "persona fisica / non identificata", che non si collega a nessuna dimensione degli operatori.
-- **Non coperti dal landing, misurati nell'esecuzione 20261025T151521-610332**: l'anagrafe `stazioni_appaltanti` conserva
+- **Non coperti dal landing, misurati nell'esecuzione 20261025T160014-be23e3**: l'anagrafe `stazioni_appaltanti` conserva
   361 codici fiscali personali con i nomi come ANAC li pubblica; il landing dei lotti conserva
   91 righe (11 codici) con il codice fiscale personale dell'amministrazione
   appaltante; il nome delle ditte individuali con partita IVA resta nel landing degli operatori. Lo staging dbt
@@ -71,7 +71,7 @@ colonne e misurato (dettaglio e numeri in `docs/decisioni/ADR-004-privacy.md`):
   degli operatori una seconda volta.
 - **Testo libero**: nelle colonne `oggetto_gara`, `oggetto_lotto`, `motivo_cancellazione`, `oggetto` (subappalti) e
   `motivo_variante` i codici fiscali personali di 16 caratteri sono sostituiti da `[CF]` al landing (794
-  sostituzioni nell'esecuzione 20261025T151521-610332). I nomi di persona nel testo libero non sono riconosciuti.
+  sostituzioni nell'esecuzione 20261025T160014-be23e3). I nomi di persona nel testo libero non sono riconosciuti.
 - Nei pacchetti in ambito non esiste una colonna RUP.
 
 ### English
@@ -99,7 +99,7 @@ measured (details and numbers in `docs/decisioni/ADR-004-privacy.md`, written in
   and participant counts rely on this. Natural persons are never matched across files, identical rows of natural
   persons are not recognised as exact duplicates, and blanked rows form a "natural person / not identified" bucket
   that cannot be joined to an operator dimension.
-- **Not covered by the landing zone, measured in run 20261025T151521-610332**: the `stazioni_appaltanti` register keeps
+- **Not covered by the landing zone, measured in run 20261025T160014-be23e3**: the `stazioni_appaltanti` register keeps
   361 personal tax codes with names as ANAC publishes them; the lots landing zone keeps
   91 rows (11 codes) with the personal tax code of the contracting authority; the
   name of sole traders with a VAT number stays in the operators' landing zone. dbt staging blanks these values
@@ -107,5 +107,5 @@ measured (details and numbers in `docs/decisioni/ADR-004-privacy.md`, written in
   time.
 - **Free text**: in the columns `oggetto_gara`, `oggetto_lotto`, `motivo_cancellazione`, `oggetto` (subcontracts)
   and `motivo_variante`, personal tax codes of 16 characters are replaced by `[CF]` at landing (794
-  replacements in run 20261025T151521-610332). Personal names in free text are not recognised.
+  replacements in run 20261025T160014-be23e3). Personal names in free text are not recognised.
 - No in-scope package has a RUP column.

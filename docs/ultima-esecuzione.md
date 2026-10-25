@@ -4,11 +4,11 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 | Campo | Valore |
 |---|---|
-| Esecuzione | `20261025T151521-610332` |
-| Versione | 0.1.1 (commit `69ab6b31c4e7`, albero di lavoro pulito) |
+| Esecuzione | `20261025T160014-be23e3` |
+| Versione | 0.1.1 (commit `e76ea81e48f9`, albero di lavoro pulito) |
 | Strumenti | dagster 1.13.26, dagster-dbt 0.29.26, dbt-core 1.12.6, dbt-duckdb 1.11.0, duckdb 1.5.6, python 3.13.11 |
-| Inizio – fine | 2026-10-25T15:15:21 – 2026-10-25T15:29:44 |
-| Durata | 14 min 24 s |
+| Inizio – fine | 2026-10-25T16:00:14 – 2026-10-25T16:15:17 |
+| Durata | 15 min 3 s |
 | Esito | successo |
 | Anni in ambito | 2024, 2025, 2026 |
 | Data di riferimento | 2026-10-25 |
@@ -17,10 +17,10 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 | Fase | Durata |
 |---|---|
-| Estrazione | 6 min 25 s |
-| Landing | 2 min 16 s |
-| dbt build | 5 min 30 s |
-| Totale | 14 min 24 s |
+| Estrazione | 7 min 13 s |
+| Landing | 2 min 5 s |
+| dbt build | 5 min 32 s |
+| Totale | 15 min 3 s |
 
 ## Estrazione
 
@@ -50,12 +50,12 @@ Generato da `appalti report` dal log dell'ultima esecuzione.
 
 ## dbt
 
-Modelli: 41; test (dati e unit): 185.
+Modelli: 42; test (dati e unit): 192.
 
 | Esito | Nodi |
 |---|---:|
-| pass | 176 |
-| success | 45 |
+| pass | 183 |
+| success | 47 |
 | warn | 9 |
 
 ## Freschezza delle sorgenti
@@ -75,6 +75,6 @@ Modelli: 41; test (dati e unit): 185.
 |---|---:|
 | landing | 1,90 |
 | raw | 1,94 |
-| warehouse | 5,79 |
+| warehouse | 5,72 |
 
 Costo del warehouse: 0 EUR (DuckDB locale, nessun servizio a pagamento).

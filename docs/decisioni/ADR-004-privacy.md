@@ -86,12 +86,12 @@ permette.
    di audit del test, solo in locale; nel dubbio è una persona. Procedura a ogni nuova esecuzione: se il test
    fallisce, classificare i nuovi candidati, aggiungere i codici al seed giusto e rieseguire. Origine dei casi nei
    seed: un primo caso è stato trovato dalla scansione dei file esportati, gli altri dalla revisione dei candidati
-   (nell'esecuzione @@RUN@@: @@SEED_N@@). Limite: i nomi di quattro parole o più e le voci con una forma giuridica
+   (nell'esecuzione 20261025T160014-be23e3: 18 persone nel seed, 40 enti verificati; il primo caso è la scansione, i 17 successivi la revisione). Limite: i nomi di quattro parole o più e le voci con una forma giuridica
    nota o un codice di 11 cifre non entrano nella revisione.
    `int_stazioni` associa tutte queste stazioni a una sola chiave,
    `PERSONA_FISICA`, e quella chiave attraversa `dim_stazioni_appaltanti`, `fct_lotti`, `int_radar__lotti` e
    `mart_stazioni_appaltanti`: nei mart non c'è né il nome, né il codice AUSA, né il codice fiscale di una persona
-   fisica. In questa esecuzione 384 (382 dell'anagrafe e 2 viste solo nei lotti) stazioni dell'anagrafe e dei lotti sono state anonimizzate.
+   fisica. In questa esecuzione 401 (399 dell'anagrafe e 2 viste solo nei lotti) stazioni dell'anagrafe e dei lotti sono state anonimizzate.
 10. **Ditte individuali con partita IVA (0.1.1, decisione del proprietario, reversibile).** Per il GDPR (art. 4,
     par. 1) un imprenditore individuale è una persona fisica: il suo nome commerciale e anche la sua partita IVA
     sono dati personali; la Corte di giustizia (cause C-92/09 e C-93/09) tutela le persone giuridiche solo quando
@@ -115,7 +115,7 @@ permette.
     sostituzioni). I **nomi** nel testo libero non sono riconosciuti: non si possono misurare e ce ne sono di
     sicuro più dei codici. Il testo libero non entra in nessun mart.
 12. **Perimetro e limiti misurati.** Il progetto non pubblica il landing, il warehouse né l'archivio raw. In
-    locale restano questi casi, misurati nell'esecuzione 20261025T151521-610332: (a) l'archivio raw (`data/raw/`) conserva i file
+    locale restano questi casi, misurati nell'esecuzione 20261025T160014-be23e3: (a) l'archivio raw (`data/raw/`) conserva i file
     ANAC originali, compresi i dati personali, perché è l'unica copia storica dei delta superati (vedi ADR-003);
     (b) il landing dell'anagrafe `stazioni_appaltanti` conserva i 361 codici fiscali personali con i
     nomi come ANAC li pubblica (l'annullamento avviene in staging); (c) il landing dei lotti conserva

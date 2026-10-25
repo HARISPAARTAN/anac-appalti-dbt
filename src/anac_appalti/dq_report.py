@@ -369,8 +369,8 @@ def componi_report(
         "giuridica non classificata, non definita o assente, nome di 2-3 parole senza cifre e senza parole di ente) e "
         "il test `assert_candidati_stazioni_classificati` fallisce finché ciascuno non è nel seed delle persone o in "
         "quello degli enti verificati. In questa esecuzione: "
-        f"{_numero(i['stazioni_candidate'])} candidati ancora da classificare (esiti: tutti classificati se il test "
-        f"passa), {_numero(i['stazioni_seed_persone'])} codici nel seed delle persone, "
+        f"{_numero(i['stazioni_candidate'])} candidati rimasti in elenco (enti già verificati: se il test passa non ne manca nessuno), "
+        f"{_numero(i['stazioni_seed_persone'])} codici nel seed delle persone, "
         f"{_numero(i['stazioni_seed_enti'])} nel seed degli enti verificati.",
         "",
         "Regole sulle somme: gli importi si sommano solo sui lotti non derivati da accordo quadro, non anomali e "
