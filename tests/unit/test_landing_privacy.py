@@ -289,6 +289,19 @@ def test_denominazione_che_e_un_codice_fiscale_personale_viene_annullata(tmp_pat
     assert not any(CF_A.lower() in str(v).lower() for r in righe for v in r.values() if v is not None)
 
 
+def test_righe_identiche_con_denominazione_codice_fiscale_hanno_impronte_distinte(tmp_path: Path):
+    """Contratto dell'impronta: dopo l'annullamento due righe identiche si distinguono per l'ordinale di riga."""
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    identica = agg(codice_fiscale=PIVA_1, denominazione=CF_A, tipo_soggetto="IMPRESA INDIVIDUALE")
+    registra_csv(imp, "aggiudicatari", [identica, identica])
+    _, voce = atterra(imp, "aggiudicatari")
+    righe = leggi_parquet(imp, voce)
+    assert [r["denominazione"] for r in righe] == [None, None]
+    assert [r["_ordinale_riga"] for r in righe] == [1, 2]
+    assert len({r["_hash_riga"] for r in righe}) == 2
+    assert not any(CF_A.lower() in str(v).lower() for r in righe for v in r.values() if v is not None)
+
+
 def test_virgolette_con_backslash_non_assorbono_le_righe_seguenti(tmp_path: Path):
     """Dati reali: ANAC scrive `\\"` dentro un valore. Con escape = '"' la riga assorbiva quelle successive."""
     imp = carica_impostazioni(fixtures=True, area=tmp_path)
