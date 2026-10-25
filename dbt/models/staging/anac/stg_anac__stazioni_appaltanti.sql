@@ -21,7 +21,8 @@ classificata as (
     select
         *,
         {{ stazione_persona_fisica('codice_fiscale', 'natura_giuridica_codice', 'natura_giuridica_descrizione') }}
-            or {{ contiene_cf_persona('denominazione') }} as flag_persona_fisica
+            or {{ contiene_cf_persona('denominazione') }}
+            or codice_ausa in (select upper(trim(codice_ausa)) from {{ ref('ausa_persone_fisiche') }}) as flag_persona_fisica
     from sorgente
 )
 

@@ -62,7 +62,7 @@ coalesce(upper(trim({{ colonna }})) in {{ forme_giuridiche_individuali() }}, fal
 {%- endmacro %}
 
 {#- Codici AUSA delle stazioni che l'anagrafe dichiara persone fisiche (codice fiscale di 16 caratteri o forma giuridica
-    individuale), letti dalla sorgente. Servono a togliere il nome anche dalle righe dei lotti (stg_anac__cig) e al test
+    individuale), letti dalla sorgente, più la classificazione manuale del seed ausa_persone_fisiche. Servono a togliere il nome anche dalle righe dei lotti (stg_anac__cig) e al test
     che confronta le chiavi dei mart con l'anagrafe (assert_nessuna_stazione_personale_nei_mart). -#}
 {% macro ausa_stazioni_personali() -%}
 select distinct upper(trim(codice_ausa)) as codice_ausa
@@ -73,4 +73,7 @@ where upper(trim(codice_ausa)) is not null
         "regexp_replace(upper(trim(natura_giuridica_codice)), '\\.0+$', '')",
         "trim(natura_giuridica_descrizione)"
     ) }}
+union
+select upper(trim(codice_ausa)) as codice_ausa
+from {{ ref('ausa_persone_fisiche') }}
 {%- endmacro %}

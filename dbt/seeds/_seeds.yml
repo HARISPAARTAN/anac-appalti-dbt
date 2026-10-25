@@ -65,3 +65,18 @@ seeds:
           - not_null
       - name: descrizione_divisione
         description: "Denominazione della divisione."
+
+  - name: ausa_persone_fisiche
+    description: "Codici AUSA (identificativi opachi, nessun nome) di stazioni appaltanti che la scansione di export ha riconosciuto come persone fisiche pur non avendo un codice fiscale di 16 caratteri né una forma giuridica individuale (per esempio un nome di persona con codice non verificabile e forma 'NON CLASSIFICATO'). Classificazione manuale: ogni rilievo della scansione che è davvero una persona si aggiunge qui e viene trattato come ogni altra stazione che è una persona fisica."
+    config:
+      column_types:
+        codice_ausa: varchar
+        motivo: varchar
+    columns:
+      - name: codice_ausa
+        description: "Codice AUSA della stazione."
+        data_tests:
+          - unique
+          - not_null
+      - name: motivo
+        description: "Perché la stazione è trattata come persona fisica."
