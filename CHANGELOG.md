@@ -2,6 +2,27 @@
 
 Formato: [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [SemVer](https://semver.org/lang/it/).
 
+## [Non rilasciato]
+
+Correzioni dalla revisione della 0.1.0.
+
+### Aggiunto
+
+- Riconciliazione fisica: per i file senza conteggio nel logCsv (i `cig-AAAA`) il landing conta i record fuori dalle
+  virgolette del CSV e registra `ok_fisico` o `differenza_fisica` (`differenza_fisica` fa fallire il test dbt
+  `assert_riconciliazione`). Misurato sull'archivio della 0.1.0: tutti i 24 file annuali coincidono (2.704.490 righe).
+- Test che fissano il comportamento del lettore con `escape = '\'` (backslash isolato eliminato, coppia `\\` letta
+  come un backslash) e test del conteggio fisico.
+
+### Corretto
+
+- `appalti report` scrive ogni numero dei README da una sola esecuzione (l'ultima riuscita) e dichiara "non
+  disponibile in questa esecuzione" una fase assente: righe atterrate 34.720.158 e riga delle durate coerente
+  (prima mescolava due esecuzioni).
+- Seed delle province: descrizione corretta (classificazione 2021 più i codici sardi 112-119); sigla vuota per i
+  codici 113 e 119, senza sigla ufficiale.
+- Il filtro `filterwarnings` toglie dall'output dei test solo l'avviso di deprecazione di `sqlglotrs`.
+
 ## [0.1.0] - 2026-10-25
 
 Prima versione, misurata sulla prima esecuzione completa sui dati reali 2024–2026 (run `20261025T125951-e7d029`):

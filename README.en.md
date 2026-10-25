@@ -263,16 +263,28 @@ The ADRs are written in Italian.
 - Privacy: personal tax codes (16 characters) lose code and name already in the landing zone and are never
   matched across files. Sole traders with an 11-digit VAT number keep their business name, which can contain
   the owner's name: ANAC publishes them as company data and the project treats them the same way (a name that
-  is a personal tax code is blanked). Free-text
-  fields are not scanned. The local raw archive keeps the original files (personal data included) and is
-  git-ignored.
+  is a personal tax code is blanked). Free-text fields are not scanned. The local raw archive keeps the original
+  files (personal data included) and is git-ignored.
 - ANAC's contract-modification and subcontract files contain no amounts: the marts report counts, not values.
 - Geography stops at region (NUTS 2) and province; there is no NUTS 3 mapping.
 - History: anything before the first local run comes only from ANAC's yearly full files, because superseded
   monthly deltas disappear from the portal; from then on the raw archive keeps them.
 - The `cig-2026` package does not exist: 2026 lots come from the monthly deltas of the `cig` package.
-- The logCsv files of the yearly CIG files list only a total: those files show `non_disponibile` in the
-  reconciliation.
+- The logCsv files of the yearly CIG files list only a total, so those files have no declared row count. From
+  0.1.1 the landing reconciles them against the records counted in the CSV (statuses `ok_fisico` and
+  `differenza_fisica`, kept apart from the logCsv statuses `ok` and `differenza`; `righe_attese` then holds the
+  counted records, not an ANAC figure). Release 0.1.0 landed them as `non_disponibile`. Measured on 25 October 2026
+  on the raw archive with a script independent of the reader: the records outside quoted fields equal the landed
+  rows in all 49 files that have a logCsv count and in all 24 yearly files (2,704,490 rows), so no row was lost in
+  the yearly files. A plain newline count is wrong in 7 of the 49 files (CIG deltas with newlines inside fields),
+  which is why records outside quotes are counted. The count shares the backslash rule with the reader, so it is
+  not guaranteed to reveal a lone backslash (next point).
+- Backslashes: the reader uses the backslash as escape character, so a lone backslash is dropped silently
+  (`A\B` becomes `AB`) and one right before the closing quote swallows the following rows or fails the read. Measured
+  on the raw archive (73 files): 2,120 backslashes in total, 1,724 of them not followed by a double quote; all of
+  those belong to 863 doubled pairs (`\\`, read as one backslash, which is how ANAC writes a literal backslash),
+  and the other 394 escape a quote (`\"`). There is no lone backslash, so the reader drops 0 of them; the behaviour
+  is pinned by `tests/unit/test_landing_escape.py`.
 - Verified on the first real run (25 October 2026):
   - `cod_esito = 1` is `AGGIUDICATA`: across the 6,035,083 current awards it equals 1 in 99.51% of cases
     (6,005,792); the other codes are 7 and 6 (cancelled or revoked, 0.18% and 0.13%), 99 (not awarded, 0.12%),
@@ -289,8 +301,9 @@ The ADRs are written in Italian.
     its body) and the pipeline switches to the browser User-Agent, once per package (8 times); with it every
     download and every Range read (206 required) succeeded, with no other rejection and no retry.
   - Reconciliation: 73 files landed, 49 with row counts equal to the logCsv, 24 `non_disponibile` (the yearly
-    `cig-2024` and `cig-2025` files), no `differenza`. No false positive from a stale logCsv on a republished
-    zip: the first run's `differenza` rows were real losses (next point).
+    `cig-2024` and `cig-2025` files, whose records counted in the CSV all equal the landed rows), no `differenza`.
+    No false positive from a stale logCsv on a republished zip: the first run's `differenza` rows were real losses
+    (next point).
 - Defects found by the first run and fixed in 0.1.0: (1) ANAC files write quotes inside a value with a backslash
   (`\"`), not by doubling them: with a doubled-quote reader one damaged line swallowed the following lines (19 to
   1,335 rows lost in 13 of the 73 files, the deltas from April 2026) and the logCsv reconciliation caught it; the

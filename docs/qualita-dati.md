@@ -14,13 +14,13 @@ Politica: si segnala, non si cancella. Ogni controllo è un test dbt (avviso o e
 | Lotti nei mart Radar | 3.734.842 |
 | Lotti derivati da accordo quadro (esclusi dalle somme) | 907.159 |
 | Lotti cancellati (esclusi dal Radar) | 9 |
-| File atterrati / riconciliati / non verificabili | 73 / 49 / 24 |
+| File atterrati / riconciliati con il logCsv / riconciliati con i record contati / non verificabili | 73 / 49 / 0 / 24 |
 
 ## Controlli
 
 | Controllo | Regola | Gravità | Valore | Quota |
 |---|---|---|---:|---:|
-| Riconciliazione | Righe atterrate per file = numero_righe del logCsv ANAC | errore | 0 | 0,00 % |
+| Riconciliazione | Righe atterrate per file = numero_righe del logCsv ANAC (o record contati nel CSV) | errore | 0 | 0,00 % |
 | Duplicati esatti | Righe identiche nello stesso file (contate, una versione tenuta) | avviso | 1.663 | 0,03 % |
 | Duplicati in conflitto | Stesso CIG, righe prevalenti diverse nello stesso file | avviso | 0 | 0,00 % |
 | Date impossibili | Scadenza o aggiudicazione prima della pubblicazione; date prima del 2007 o oltre due anni | avviso | 2.520.462 | 67,48 % |
@@ -43,6 +43,8 @@ Regole sulle somme: gli importi si sommano solo sui lotti non derivati da accord
 
 Le perdite di lettura (date e conteggi) sono contate su tutte le righe atterrate, anche sulle versioni superate; il dettaglio per colonna è in `intermediate.int_perdite_parsing` e ogni colonna ha un test dbt `perdita_parsing` di livello avviso sulla source.
 
-I file annuali `cig-AAAA` non hanno un conteggio CSV nel logCsv ANAC (solo TTL): la loro riconciliazione è `non_disponibile`.
+I file annuali `cig-AAAA` non hanno un conteggio CSV nel logCsv ANAC (solo TTL). Dalla 0.1.1 il landing li riconcilia con i record contati nel CSV (stati `ok_fisico` e `differenza_fisica`, distinti da `ok` e `differenza` del logCsv); i file atterrati prima restano `non_disponibile` finché non vengono rielaborati.
+
+Misura del 25 ottobre 2026 sull'archivio raw (73 file, script esterno al lettore): i record fuori dalle virgolette coincidono con le righe atterrate in tutti i 49 file con conteggio nel logCsv e nei 24 file annuali `cig-2024` e `cig-2025` (2.704.490 righe), quindi nessuna riga è andata persa; il semplice conteggio degli a capo sbaglia in 7 file dei delta CIG, che hanno a capo dentro i campi. Il conteggio condivide con il lettore la regola del backslash e non garantisce di rilevare un backslash isolato (nei 73 file ce ne sono 0; ANAC raddoppia i backslash letterali, 863 coppie `\\`).
 
 Fonte: ANAC – Autorità Nazionale Anticorruzione, dati.anticorruzione.it, licenza CC BY-SA 4.0; dati elaborati

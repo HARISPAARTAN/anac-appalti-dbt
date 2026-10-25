@@ -267,15 +267,28 @@ Misure della prima esecuzione reale (25 ottobre 2026, portatile Windows, DuckDB 
 - Privacy: i codici fiscali personali (16 caratteri) perdono codice e denominazione già nel landing e non si
   collegano tra file. Le ditte individuali con partita IVA di 11 cifre restano con la loro denominazione, che
   può contenere il nome del titolare: ANAC le pubblica come dati d'impresa e il progetto le tratta allo stesso
-  modo (se la denominazione è un codice fiscale personale viene annullata). I campi di testo libero non sono analizzati. L'archivio raw locale conserva i file originali
-  (compresi i dati personali) ed è fuori da git.
+  modo (se la denominazione è un codice fiscale personale viene annullata). I campi di testo libero non sono
+  analizzati. L'archivio raw locale conserva i file originali (compresi i dati personali) ed è fuori da git.
 - I file ANAC di varianti e subappalti non contengono importi: i mart riportano conteggi, non valori.
 - Il territorio arriva a regione (NUTS 2) e provincia; non c'è una mappatura NUTS 3.
 - Storia: ciò che precede la prima esecuzione locale proviene solo dai file completi annuali di ANAC, perché i
   delta mensili superati scompaiono dal portale; da allora l'archivio raw li conserva.
 - Il pacchetto `cig-2026` non esiste: i lotti 2026 arrivano dai delta mensili del pacchetto `cig`.
-- I logCsv dei file annuali CIG riportano solo il totale: quei file risultano `non_disponibile` nella
-  riconciliazione.
+- I logCsv dei file annuali CIG riportano solo il totale, quindi quei file non hanno un conteggio dichiarato. Dalla
+  0.1.1 il landing li riconcilia con i record contati nel CSV (stati `ok_fisico` e `differenza_fisica`, distinti da
+  `ok` e `differenza` del logCsv; `righe_attese` contiene allora i record contati, non una cifra di ANAC). La 0.1.0 li
+  ha atterrati come `non_disponibile`. Misura del 25 ottobre 2026 sull'archivio raw, con uno script indipendente dal
+  lettore: i record fuori dalle virgolette coincidono con le righe atterrate in tutti i 49 file con conteggio nel
+  logCsv e nei 24 file annuali (2.704.490 righe), quindi nei file annuali non è andata persa nessuna riga. Il semplice
+  conteggio degli a capo sbaglia in 7 dei 49 file (delta CIG con a capo dentro i campi): per questo si contano i
+  record fuori dalle virgolette. Il conteggio condivide con il lettore la regola del backslash, quindi non è
+  garantito che riveli un backslash isolato (punto seguente).
+- Backslash: il lettore usa il backslash come carattere di escape, quindi un backslash isolato viene eliminato in
+  silenzio (`A\B` diventa `AB`) e uno subito prima della virgoletta di chiusura fa assorbire le righe seguenti o fa
+  fallire la lettura. Misura sull'archivio raw (73 file): 2.120 backslash in tutto, 1.724 dei quali non seguiti da
+  una virgoletta; tutti fanno parte di 863 coppie raddoppiate (`\\`, lette come un solo backslash: così ANAC scrive
+  un backslash letterale) e gli altri 394 proteggono una virgoletta (`\"`). Nessun backslash è isolato, quindi il
+  lettore ne elimina 0; il comportamento è fissato da `tests/unit/test_landing_escape.py`.
 - Verificato sulla prima esecuzione reale (25 ottobre 2026):
   - `cod_esito = 1` è `AGGIUDICATA`: sulle 6.035.083 aggiudicazioni correnti vale 1 nel 99,51 % dei casi (6.005.792);
     gli altri codici sono 7 e 6 (annullata o revocata, 0,18 % e 0,13 %), 99 (non aggiudicata, 0,12 %), 98 (nessun
@@ -292,8 +305,9 @@ Misure della prima esecuzione reale (25 ottobre 2026, portatile Windows, DuckDB 
     dal corpo) e la pipeline passa allo User-Agent da browser, una volta per pacchetto (8 volte); con quello tutti i
     download e le letture con Range (che richiedono 206) sono riusciti, senza altri rifiuti e senza ripetizioni.
   - Riconciliazione: 73 file atterrati, 49 con righe uguali al logCsv, 24 `non_disponibile` (i file annuali
-    `cig-2024` e `cig-2025`), nessuna `differenza`. Nessun falso positivo da logCsv non aggiornato per uno zip
-    ripubblicato: le `differenze` della prima esecuzione erano perdite vere (punto successivo).
+    `cig-2024` e `cig-2025`, per i quali i record contati nel CSV coincidono con le righe atterrate), nessuna
+    `differenza`. Nessun falso positivo da logCsv non aggiornato per uno zip ripubblicato: le `differenze` della
+    prima esecuzione erano perdite vere (punto successivo).
 - Difetti trovati dalla prima esecuzione e corretti nella 0.1.0: (1) i file ANAC scrivono le virgolette dentro un valore
   con il backslash (`\"`) e non raddoppiandole: con il lettore a virgolette raddoppiate una riga rovinata assorbiva le
   righe seguenti (da 19 a 1.335 righe perse in 13 dei 73 file, quelli dei delta da aprile 2026) e la riconciliazione dei
