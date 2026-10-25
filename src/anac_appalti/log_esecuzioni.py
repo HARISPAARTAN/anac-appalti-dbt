@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import platform
 import subprocess
 import uuid
 from datetime import datetime
+from importlib import metadata
 from pathlib import Path
 
 import duckdb
@@ -27,6 +29,32 @@ def git_sha(radice: Path) -> str:
     except OSError:
         return ""
     return esito.stdout.strip() if esito.returncode == 0 else ""
+
+
+def git_modificato(radice: Path) -> bool | None:
+    """Vero se l'albero di lavoro ha modifiche non committate (anche file nuovi non ignorati), None se git non
+    risponde. Il numero di un'esecuzione con l'albero modificato non è riproducibile dal solo commit."""
+    try:
+        esito = subprocess.run(
+            ["git", "-C", str(radice), "status", "--porcelain"], capture_output=True, text=True, check=False
+        )
+    except OSError:
+        return None
+    return bool(esito.stdout.strip()) if esito.returncode == 0 else None
+
+
+STRUMENTI = ("dbt-core", "dbt-duckdb", "duckdb", "dagster", "dagster-dbt")
+
+
+def versioni_strumenti() -> dict[str, str]:
+    """Versione di Python e dei pacchetti che producono i numeri (dbt, DuckDB, Dagster)."""
+    versioni = {"python": platform.python_version()}
+    for nome in STRUMENTI:
+        try:
+            versioni[nome] = metadata.version(nome)
+        except metadata.PackageNotFoundError:
+            versioni[nome] = "non installato"
+    return versioni
 
 
 def hash_modelli(percorso_db: Path) -> dict[str, dict[str, object]]:

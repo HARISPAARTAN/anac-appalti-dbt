@@ -12,6 +12,8 @@ CHIAVI_LOG = {
     "run_id",
     "versione",
     "git_sha",
+    "git_modificato",
+    "strumenti",
     "inizio",
     "fine",
     "durata_s",
@@ -45,6 +47,7 @@ def test_pipeline_idempotente_e_delta(tmp_path):
         1,
     )
     assert len(record["git_sha"]) == 40 and record["versione"]
+    assert isinstance(record["git_modificato"], bool) and record["strumenti"]["dbt-core"]
     assert set(record["dbt"]) == {"esiti", "errori", "n_modelli", "n_test", "durata_s"}
     assert record["dbt"]["errori"] == [] and record["dbt"]["n_modelli"] == 41
     assert all(record["disco"][k] > 0 for k in ("raw", "landing", "warehouse"))

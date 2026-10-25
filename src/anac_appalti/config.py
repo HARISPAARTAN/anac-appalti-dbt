@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-VERSIONE = "0.1.0"
+VERSIONE = "0.1.1"
 UA_PROGETTO = "anac-appalti-dbt/0.1 (+https://github.com/HARISPAARTAN/anac-appalti-dbt)"
 UA_BROWSER = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "

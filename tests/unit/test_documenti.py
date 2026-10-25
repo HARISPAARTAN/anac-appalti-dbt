@@ -18,6 +18,8 @@ RECORD = {
     "run_id": "20261025T221500-abc123",
     "versione": "0.1.0",
     "git_sha": "0123456789abcdef",
+    "git_modificato": False,
+    "strumenti": {"python": "3.13.11", "dbt-core": "1.12.6", "duckdb": "1.5.6"},
     "inizio": "2026-10-25T22:15:00",
     "fine": "2026-10-26T00:45:30",
     "durata_s": 9030.0,
@@ -74,6 +76,17 @@ def test_ultima_esecuzione():
     assert testo == componi_ultima_esecuzione(RECORD)
     assert testo.startswith("# Ultima esecuzione")
     assert "2 h 30 min" in testo
+    assert "(commit `0123456789ab`, albero di lavoro pulito)" in testo
+    assert "| Strumenti | python 3.13.11, dbt-core 1.12.6, duckdb 1.5.6 |" in testo
+    sporco = componi_ultima_esecuzione(RECORD | {"git_modificato": True})
+    assert "albero di lavoro modificato, non riproducibile dal solo commit" in sporco
+    vecchio = componi_ultima_esecuzione(
+        {k: v for k, v in RECORD.items() if k not in ("git_modificato", "strumenti")}
+    )
+    assert (
+        "stato dell'albero di lavoro non registrato" in vecchio
+        and "| Strumenti | non registrati |" in vecchio
+    )
     assert "| cig | 33 | 0 | 1.130,0 |" in testo
     assert "0 EUR" in testo
 

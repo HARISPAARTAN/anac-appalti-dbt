@@ -14,6 +14,20 @@ _AGG_NON_LEGGIBILE = (
     "(importo_aggiudicazione is null and importo_aggiudicazione_raw is not null)"
     " or (ribasso_aggiudicazione is null and ribasso_aggiudicazione_raw is not null)"
 )
+
+
+def _collassate(modello: str, id_colonna: str, misura: str) -> str:
+    """Righe (o id) scartate da int_*__corrente: stesso id, stesso file della riga tenuta, contenuto diverso (come i
+    test dbt dq_subappalti_collassati e dq_varianti_collassate)."""
+    return (
+        f"with righe as (select distinct {id_colonna}, _data_snapshot, _risorsa, _hash_riga "
+        f"from staging.{modello} where {id_colonna} is not null and cig is not null), "
+        f"o as (select *, row_number() over w as ordine, first_value(_risorsa) over w as risorsa_tenuta from righe "
+        f"window w as (partition by {id_colonna} order by _data_snapshot desc, _risorsa desc, _hash_riga desc)) "
+        f"select {misura} from o where ordine > 1 and _risorsa = risorsa_tenuta"
+    )
+
+
 QUERY: dict[str, str] = {
     "righe_cig": "select count(*) from staging.stg_anac__cig",
     "versioni_lotti": "select count(*) from intermediate.int_cig__versioni",
@@ -68,6 +82,20 @@ QUERY: dict[str, str] = {
     "file_non_verificabili": (
         "select count(*) from intermediate.int_riconciliazione where riconciliazione = 'non_disponibile'"
     ),
+    "subappalti_righe_collassate": _collassate("stg_anac__subappalti", "id_subappalto", "count(*)"),
+    "subappalti_id_collassati": _collassate(
+        "stg_anac__subappalti", "id_subappalto", "count(distinct id_subappalto)"
+    ),
+    "subappalti_id_subappaltatori_diversi": (
+        "with righe as (select distinct id_subappalto, _data_snapshot, _risorsa, _hash_riga, codice_fiscale "
+        "from staging.stg_anac__subappalti where id_subappalto is not null and cig is not null), "
+        "o as (select *, first_value(_risorsa) over w as risorsa_tenuta from righe "
+        "window w as (partition by id_subappalto order by _data_snapshot desc, _risorsa desc, _hash_riga desc)) "
+        "select count(*) from (select id_subappalto from o where _risorsa = risorsa_tenuta "
+        "group by id_subappalto having count(distinct codice_fiscale) > 1)"
+    ),
+    "varianti_righe_collassate": _collassate("stg_anac__varianti", "id_variante", "count(*)"),
+    "varianti_id_collassati": _collassate("stg_anac__varianti", "id_variante", "count(distinct id_variante)"),
     "stazioni_persone_fisiche": "select count(*) from intermediate.int_stazioni where flag_persona_fisica",
     "operatori_ditte_individuali": "select count(*) from core.dim_operatori where flag_ditta_individuale",
     "cf_mascherati_testo": "select coalesce(sum(n_cf_mascherati), 0) from intermediate.int_riconciliazione",
@@ -164,6 +192,20 @@ RIGHE_REPORT = (
         "aggiudicazioni_orfane",
         "Aggiudicazione orfana",
         "CIG dell'aggiudicazione assente dai dati CIG in ambito (atteso per lotti pubblicati prima dell'anno minimo)",
+        "avviso",
+        None,
+    ),
+    (
+        "subappalti_righe_collassate",
+        "Subappalti collassati",
+        "Righe diverse con lo stesso id_subappalto nello stesso file: ne resta una in fct_subappalti",
+        "avviso",
+        None,
+    ),
+    (
+        "varianti_righe_collassate",
+        "Varianti collassate",
+        "Righe diverse con lo stesso id_variante nello stesso file: ne resta una in fct_varianti",
         "avviso",
         None,
     ),

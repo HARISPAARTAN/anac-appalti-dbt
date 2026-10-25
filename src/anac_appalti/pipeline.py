@@ -234,7 +234,15 @@ def esegui_pipeline(
 
     from anac_appalti.archivio import registra_manuali
     from anac_appalti.definitions import ASSETS, risorse_per
-    from anac_appalti.log_esecuzioni import git_sha, hash_modelli, nuovo_run_id, scrivi_log, uso_disco
+    from anac_appalti.log_esecuzioni import (
+        git_modificato,
+        git_sha,
+        hash_modelli,
+        nuovo_run_id,
+        scrivi_log,
+        uso_disco,
+        versioni_strumenti,
+    )
 
     run_id = nuovo_run_id()
     inizio = datetime.now().replace(microsecond=0)
@@ -273,6 +281,8 @@ def esegui_pipeline(
         "run_id": run_id,
         "versione": VERSIONE,
         "git_sha": git_sha(imp.radice),
+        "git_modificato": git_modificato(imp.radice),
+        "strumenti": versioni_strumenti(),
         "inizio": inizio.isoformat(),
         "fine": datetime.now().replace(microsecond=0).isoformat(),
         "durata_s": round(time.perf_counter() - cronometro, 1),

@@ -49,6 +49,22 @@ def _somma(sezione: dict, campo: str) -> float:
     return sum(float(v.get(campo, 0) or 0) for v in sezione.values())
 
 
+def _stato_albero(modificato: bool | None) -> str:
+    if modificato is None:
+        return "stato dell'albero di lavoro non registrato"
+    return (
+        "albero di lavoro modificato, non riproducibile dal solo commit"
+        if modificato
+        else "albero di lavoro pulito"
+    )
+
+
+def _strumenti(strumenti: dict | None) -> str:
+    if not strumenti:
+        return "non registrati"
+    return ", ".join(f"{nome} {versione}" for nome, versione in strumenti.items())
+
+
 def componi_ultima_esecuzione(record: dict) -> str:
     estrazione = record.get("estrazione", {})
     landing = record.get("landing", {})
@@ -61,7 +77,9 @@ def componi_ultima_esecuzione(record: dict) -> str:
         "| Campo | Valore |",
         "|---|---|",
         f"| Esecuzione | `{record['run_id']}` |",
-        f"| Versione | {record.get('versione', '')} (commit `{str(record.get('git_sha', ''))[:12]}`) |",
+        f"| Versione | {record.get('versione', '')} (commit `{str(record.get('git_sha', ''))[:12]}`, "
+        f"{_stato_albero(record.get('git_modificato'))}) |",
+        f"| Strumenti | {_strumenti(record.get('strumenti'))} |",
         f"| Inizio – fine | {record['inizio']} – {record['fine']} |",
         f"| Durata | {_durata(record.get('durata_s', 0))} |",
         f"| Esito | {record['esito']} |",

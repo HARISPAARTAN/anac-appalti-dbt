@@ -9,7 +9,7 @@ def test_impostazioni_reali(monkeypatch):
     monkeypatch.delenv("APPALTI_HOME", raising=False)
     monkeypatch.delenv("APPALTI_USER_AGENT", raising=False)
     imp = carica_impostazioni()
-    assert VERSIONE == "0.1.0"
+    assert VERSIONE == "0.1.1"
     assert imp.anni == (2024, 2025, 2026)
     assert len(imp.pacchetti) == 8
     assert imp.pacchetto("cig").annuale is True

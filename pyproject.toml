@@ -1,6 +1,6 @@
 [project]
 name = "anac-appalti"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pipeline di analytics engineering sui dati aperti ANAC degli appalti pubblici: dbt-core su DuckDB, orchestrata con Dagster."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -39,7 +39,15 @@ testpaths = ["tests"]
 markers = ["integrazione: esegue DuckDB, dbt e Dagster sulla fixture (lento)"]
 # Solo il rumore di una dipendenza di terze parti: il pacchetto sqlglotrs (extra `rs` di sqlglot, richiesto da
 # dagster-dbt[rs]) dichiara di essere deprecato a ogni importazione. Nessun altro avviso è filtrato.
-filterwarnings = ["ignore:sqlglotrs is deprecated:DeprecationWarning"]
+#
+# Il secondo filtro riguarda dagster-dbt 0.29.26: `DbtCliResource.cli(..., context=context)` chiama
+# `context.op` dentro `dagster_dbt/asset_utils.py` (righe 543-544), che in dagster 1.13 è deprecato. Il progetto non
+# chiama mai `context.op`: è rumore di una dipendenza, filtrato solo per quel messaggio e quel modulo. Da togliere
+# quando dagster-dbt correggerà la chiamata.
+filterwarnings = [
+  "ignore:sqlglotrs is deprecated:DeprecationWarning",
+  "ignore:AssetExecutionContext.op is deprecated:DeprecationWarning:dagster_dbt.asset_utils",
+]
 
 [tool.ruff]
 line-length = 110

@@ -241,7 +241,45 @@ def area_persone(tmp_path_factory) -> Impostazioni:
                     "ruolo": "SUBAPPALTATORE",
                     "tipo_soggetto": "IMPRESA INDIVIDUALE",
                 },
+            ),
+            *[
+                componi(
+                    CONTRATTI["subappalti"],
+                    {
+                        "cig": cig_lotto,
+                        "id_subappalto": "ZZ|doppio",
+                        "data_autorizzazione": "2025-03-02",
+                        "oggetto": "OPERE ACCESSORIE",
+                        "cod_categoria": "OG 1",
+                        "classe_importo": "A",
+                        "codice_fiscale": piva,
+                        "denominazione": f"SUBAPPALTATORE {piva} S.R.L.",
+                        "ruolo": "SUBAPPALTATORE",
+                        "tipo_soggetto": "IMPRESA",
+                    },
+                )
+                for piva in ("10000104729", "10000209458")
+            ],
+        ],
+    )
+    # un subappalto e una variante con lo stesso id e due righe diverse nello stesso file: ne resta una sola
+    # (limite noto, contato dai test dq_*_collassat*)
+    aggiungi_file(
+        imp,
+        "varianti",
+        [
+            componi(
+                CONTRATTI["varianti"],
+                {
+                    "id_variante": "9000001",
+                    "cod_motivo_variante": codice,
+                    "motivo_variante": f"MOTIVO {codice}",
+                    "data_approvazione_variante": "2025-03-03",
+                    "cig": cig_lotto,
+                    "id_aggiudicazione": id_agg,
+                },
             )
+            for codice in ("1", "2")
         ],
     )
     assert esegui_dbt(imp, ["build"]) == 0, "dbt build non riuscito con persone fisiche nei dati"
@@ -316,6 +354,13 @@ def test_perdita_parsing_segnala_i_valori_illeggibili(area_persone):
         "source_perdita_parsing_anac_aggiudicazioni_numero_offerte_ammesse__intero": 1,
     }
     assert uno(area_persone, "select sum(n_perdite) from intermediate.int_perdite_parsing") == 2
+    # righe diverse con lo stesso id nello stesso file: una resta, le altre sono contate dai test di avviso
+    assert esiti["dq_subappalti_collassati"] == ("warn", 1)
+    assert esiti["dq_varianti_collassate"] == ("warn", 1)
+    assert (
+        uno(area_persone, "select count(*) from core.fct_subappalti where id_subappalto = 'ZZ|doppio'") == 1
+    )
+    assert uno(area_persone, "select count(*) from core.fct_varianti where id_variante = 9000001") == 1
     assert not [nome for nome, (stato, _) in esiti.items() if stato in ESITI_NEGATIVI | {"skipped"}]
     assert all(esiti[nome] == ("pass", 0) for nome in CONTROLLI_PRIVACY)
 
