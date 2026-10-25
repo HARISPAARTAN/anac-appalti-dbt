@@ -62,3 +62,34 @@ def fixture_genera() -> None:
     conteggi = genera_fixture(imp.contratti_dir, imp.radice / "data" / "fixtures")
     for file, righe in conteggi.items():
         typer.echo(f"{file}: {righe} righe")
+
+
+@app.command()
+def landing(
+    fixtures: bool = typer.Option(False, "--fixtures", help="Usa l'area della fixture (build/fixture)."),
+    mese: int = typer.Option(1, "--mese", help="Mese della fixture (1 o 2)."),
+    pacchetti: str = typer.Option(
+        "", "--pacchetti", help="Pacchetti o tabelle separati da virgola (default: tutti)."
+    ),
+) -> None:
+    """Atterra in Parquet i file già archiviati in data/raw (non scarica). Esce con 1 se un file è in errore,
+    è stato letto con scarti o la riconciliazione delle righe ha una differenza."""
+    from anac_appalti.contratti import carica_contratti
+    from anac_appalti.landing import atterra_pacchetto
+
+    imp = carica_impostazioni(fixtures=fixtures, mese=mese)
+    scelti = {p.strip() for p in pacchetti.split(",") if p.strip()}
+    contratti = carica_contratti(imp.contratti_dir)
+    riuscito = True
+    for pacchetto in imp.pacchetti:
+        if scelti and pacchetto.nome not in scelti and pacchetto.tabella not in scelti:
+            continue
+        riepilogo = atterra_pacchetto(imp, pacchetto, contratti[pacchetto.tabella])
+        typer.echo(f"{pacchetto.tabella}: atterrati {riepilogo.atterrati}, saltati {riepilogo.saltati}")
+        for avviso in riepilogo.avvisi:
+            typer.echo(f"  avviso: {avviso}", err=True)
+        for errore in riepilogo.errori:
+            typer.echo(f"  errore: {errore}", err=True)
+        riuscito = riuscito and riepilogo.riuscito
+    if not riuscito:
+        raise typer.Exit(1)

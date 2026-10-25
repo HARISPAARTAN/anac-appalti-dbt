@@ -76,6 +76,13 @@ def test_genera_sources():
     colonne_cig = [c["name"] for c in tabelle["cig"]["columns"]]
     assert "_hash_riga" in colonne_cig and "cui_programma" not in colonne_cig
     assert genera_sources_yml(CONTRATTI, 40, 75) == testo
+    # Colonne aggiunte dal landing: ordinale ovunque, classe del codice fiscale solo dove c'è un codice personale.
+    for tabella in tabelle.values():
+        assert "_ordinale_riga" in [c["name"] for c in tabella["columns"]]
+    assert "_classe_cf" in [c["name"] for c in tabelle["aggiudicatari"]["columns"]]
+    colonne_sub = [c["name"] for c in tabelle["subappalti"]["columns"]]
+    assert "_classe_cf" in colonne_sub and "_classe_cf_subappaltante" in colonne_sub
+    assert "_classe_cf" not in colonne_cig
 
 
 def test_contratto_con_nomi_duplicati(tmp_path: Path):

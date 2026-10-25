@@ -1,9 +1,11 @@
+from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
 
 import pytest
 
 from anac_appalti.archivio import (
+    ArchivioNonIntegro,
     SpazioInsufficiente,
     archivia,
     controlla_spazio,
@@ -132,3 +134,49 @@ def test_archivio_append_only_e_manifest(tmp_path: Path):
 def test_spazio_insufficiente(tmp_path: Path):
     with pytest.raises(SpazioInsufficiente):
         controlla_spazio(tmp_path, 10**9)
+
+
+def archivia_v1(tmp_path: Path):
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    p = Pacchetto("varianti", "varianti")
+    manifest: list = []
+    risorsa = r("varianti", "varianti_csv.zip", "2026-01-21T00:00:00")
+    voce, _ = archivia(FonteFinta(b"versione-1"), risorsa, imp, p, manifest, {})
+    return imp, p, manifest, risorsa, voce
+
+
+def test_archivia_con_copia_alterata_tiene_il_download_e_solleva(tmp_path: Path):
+    imp, p, manifest, risorsa, voce = archivia_v1(tmp_path)
+    (tmp_path / voce.percorso).write_bytes(b"versione-1 alterata")
+    ripubblicata = r("varianti", "varianti_csv.zip", "2026-02-01T00:00:00")
+    with pytest.raises(ArchivioNonIntegro, match="ha un contenuto diverso"):
+        archivia(FonteFinta(b"versione-1"), ripubblicata, imp, p, manifest, {})
+    quarantena = list((imp.tmp / "quarantena").glob("varianti_csv__*.zip"))
+    assert [f.read_bytes() for f in quarantena] == [b"versione-1"]
+    assert len(leggi_manifest(imp.manifest_file)) == 1 and len(manifest) == 1
+
+
+def test_archivia_con_copia_mancante_tiene_il_download_e_solleva(tmp_path: Path):
+    imp, p, manifest, risorsa, voce = archivia_v1(tmp_path)
+    (tmp_path / voce.percorso).unlink()
+    ripubblicata = r("varianti", "varianti_csv.zip", "2026-02-01T00:00:00")
+    with pytest.raises(ArchivioNonIntegro, match="la copia archiviata manca"):
+        archivia(FonteFinta(b"versione-1"), ripubblicata, imp, p, manifest, {})
+    quarantena = list((imp.tmp / "quarantena").glob("varianti_csv__*.zip"))
+    assert [f.read_bytes() for f in quarantena] == [b"versione-1"]
+    assert len(leggi_manifest(imp.manifest_file)) == 1
+
+
+def test_archivia_con_destinazione_esistente_verifica_il_contenuto(tmp_path: Path):
+    imp, p, manifest, risorsa, voce = archivia_v1(tmp_path)
+    # Stessi byte e stesso nome di archivio, ma un URL diverso: il file di destinazione esiste già e coincide.
+    altro_url = replace(risorsa, url=risorsa.url + "?copia=1")
+    riusata, _ = archivia(FonteFinta(b"versione-1"), altro_url, imp, p, manifest, {})
+    assert riusata.percorso == voce.percorso
+    assert not list((imp.tmp / "download").glob("*"))
+    # Se la destinazione è stata alterata, il download non si butta.
+    (tmp_path / voce.percorso).write_bytes(b"alterata")
+    ancora_un_url = replace(risorsa, url=risorsa.url + "?copia=2")
+    with pytest.raises(ArchivioNonIntegro, match="ha un contenuto diverso"):
+        archivia(FonteFinta(b"versione-1"), ancora_un_url, imp, p, manifest, {})
+    assert [f.read_bytes() for f in (imp.tmp / "quarantena").glob("*.zip")] == [b"versione-1"]

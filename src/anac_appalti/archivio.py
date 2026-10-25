@@ -28,6 +28,10 @@ class SpazioInsufficiente(RuntimeError):
     """Spazio libero sotto la soglia configurata."""
 
 
+class ArchivioNonIntegro(RuntimeError):
+    """Un file archiviato manca o non ha più lo SHA-256 registrato nel manifest."""
+
+
 @dataclass(frozen=True)
 class VoceManifest:
     pacchetto: str
@@ -120,6 +124,20 @@ def sha256_file(percorso: Path) -> str:
     return h.hexdigest()
 
 
+def verifica_voce(imp: Impostazioni, voce: VoceManifest) -> str:
+    """Ricalcola lo SHA-256 del file archiviato e lo confronta con il manifest; restituisce quello ricalcolato."""
+    percorso = imp.area / voce.percorso
+    if not percorso.is_file():
+        raise ArchivioNonIntegro(f"{voce.risorsa}: il file archiviato manca ({voce.percorso})")
+    calcolato = sha256_file(percorso)
+    if calcolato != voce.sha256:
+        raise ArchivioNonIntegro(
+            f"{voce.risorsa}: lo SHA-256 di {voce.percorso} non corrisponde al manifest "
+            f"(manifest {voce.sha256[:12]}, file {calcolato[:12]})"
+        )
+    return calcolato
+
+
 def controlla_spazio(cartella: Path, soglia_gb: float) -> None:
     cartella.mkdir(parents=True, exist_ok=True)
     libero = shutil.disk_usage(cartella).free / 1e9
@@ -153,6 +171,7 @@ def righe_attese_tabella(imp: Impostazioni, tabella: str, manifest: list[VoceMan
             ultimi[voce.risorsa] = voce
     conteggi: dict[str, int] = {}
     for voce in ultimi.values():
+        verifica_voce(imp, voce)
         conteggi.update(
             righe_attese_da_log((imp.area / voce.percorso).read_text(encoding="utf-8", errors="replace"))
         )
@@ -162,6 +181,19 @@ def righe_attese_tabella(imp: Impostazioni, tabella: str, manifest: list[VoceMan
 def nome_archivio(risorsa: Risorsa, sha: str) -> str:
     p = Path(risorsa.file)
     return f"{p.stem}__{risorsa.last_modified:%Y%m%dT%H%M}__{sha[:8]}{p.suffix}"
+
+
+def _controlla_copia(imp: Impostazioni, copia: Path, sha: str, temporaneo: Path, risorsa: Risorsa) -> None:
+    """Se la copia archiviata manca o differisce dal download, tiene il download in quarantena e solleva."""
+    if copia.is_file() and sha256_file(copia) == sha:
+        return
+    motivo = "manca" if not copia.is_file() else "ha un contenuto diverso dal download"
+    quarantena = imp.tmp / "quarantena" / f"{Path(risorsa.file).stem}__{sha[:8]}{Path(risorsa.file).suffix}"
+    quarantena.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(temporaneo, quarantena)
+    raise ArchivioNonIntegro(
+        f"{risorsa.file}: la copia archiviata {motivo} ({copia}); il download è conservato in {quarantena}"
+    )
 
 
 def archivia(
@@ -178,12 +210,16 @@ def archivia(
     sha = sha256_file(temporaneo)
     gia_presenti = [v for v in manifest if v.url == risorsa.url and v.sha256 == sha]
     if gia_presenti:
-        percorso = gia_presenti[-1].percorso
+        # Il download fresco si cancella solo se la copia archiviata esiste ed è davvero identica.
+        precedente = gia_presenti[-1]
+        _controlla_copia(imp, imp.area / precedente.percorso, sha, temporaneo, risorsa)
+        percorso = precedente.percorso
         temporaneo.unlink()
     else:
         destinazione = imp.raw / "anac" / risorsa.pacchetto / nome_archivio(risorsa, sha)
         destinazione.parent.mkdir(parents=True, exist_ok=True)
         if destinazione.exists():
+            _controlla_copia(imp, destinazione, sha, temporaneo, risorsa)
             temporaneo.unlink()
         else:
             shutil.move(temporaneo, destinazione)

@@ -50,6 +50,15 @@ giorni_scadenza_tasso = 180
 freschezza_warn_giorni = 40
 freschezza_error_giorni = 75
 
+[duckdb]
+# Limiti del landing (CSV da ~1 GB -> Parquet). Picco misurato nella review del Task 3 su CSV sintetici da 1 GB,
+# stessa SQL, host con 66 GB: circa 1,9 GB (8 M righe) e 3,2 GB (12 M righe) con le impostazioni predefinite,
+# circa 0,6 GB con memory_limit = 2GB e threads = 4, con l'ordine delle righe preservato.
+# Dopo l'aggiunta dell'ordinale di riga e della classe del codice fiscale (SQL attuale, partecipanti sintetico da
+# 8 M righe e 562 MB di CSV, Windows): picco 0,82 GB con questi limiti, 10 s; a 2 GB di tetto resta largo margine.
+memory_limit = "2GB"
+threads = 4
+
 [fixture]
 anni = [2025]
 data_riferimento = "2026-10-25"

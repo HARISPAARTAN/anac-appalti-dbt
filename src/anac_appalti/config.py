@@ -35,6 +35,12 @@ class Soglie:
 
 
 @dataclass(frozen=True)
+class ImpostazioniDuckdb:
+    memory_limit: str
+    threads: int
+
+
+@dataclass(frozen=True)
 class Impostazioni:
     radice: Path
     area: Path
@@ -45,6 +51,7 @@ class Impostazioni:
     tentativi: int
     user_agent: str
     soglie: Soglie
+    duckdb: ImpostazioniDuckdb
     fixtures: bool
     mese: int
     data_riferimento: str
@@ -60,6 +67,11 @@ class Impostazioni:
     @property
     def tmp(self) -> Path:
         return self.area / "data" / "tmp"
+
+    @property
+    def tmp_duckdb(self) -> Path:
+        """Spill di DuckDB: dentro l'area di lavoro, non nella cartella corrente."""
+        return self.tmp / "duckdb"
 
     @property
     def warehouse_file(self) -> Path:
@@ -153,6 +165,9 @@ def carica_impostazioni(
             giorni_scadenza_tasso=int(s["giorni_scadenza_tasso"]),
             freschezza_warn_giorni=int(s["freschezza_warn_giorni"]),
             freschezza_error_giorni=int(s["freschezza_error_giorni"]),
+        ),
+        duckdb=ImpostazioniDuckdb(
+            memory_limit=str(dati["duckdb"]["memory_limit"]), threads=int(dati["duckdb"]["threads"])
         ),
         fixtures=fixtures,
         mese=mese,

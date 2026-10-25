@@ -84,11 +84,13 @@ def test_atterraggio_riconciliazione_e_idempotenza(tmp_path: Path):
         "denominazione",
         "tipo_soggetto",
         "id_aggiudicazione",
+        "_classe_cf",
         "_risorsa",
         "_data_snapshot",
         "_caricato_il",
         "_sha256",
         "_hash_riga",
+        "_ordinale_riga",
     ]
     assert hash_righe == 2
     assert atterra_pacchetto(imp, P, CONTRATTI["aggiudicatari"]).saltati == 1
@@ -269,6 +271,7 @@ def test_hash_riga_non_deriva_dai_dati_personali(tmp_path: Path):
     con = duckdb.connect()
     impronta = con.execute(f"select _hash_riga from read_parquet('{percorso}')").fetchone()[0]
     con.close()
+    # Valori già ripuliti, più l'ordinale di riga perché un identificativo è stato annullato.
     pulita = chr(31).join(
         [
             "FX00000001",
@@ -277,6 +280,7 @@ def test_hash_riga_non_deriva_dai_dati_personali(tmp_path: Path):
             chr(30),
             "IMPRESA INDIVIDUALE",
             "5000001",
+            "1",
         ]
     )
     assert impronta == hashlib.md5(pulita.encode()).hexdigest()

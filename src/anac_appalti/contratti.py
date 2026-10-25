@@ -23,7 +23,20 @@ COLONNE_META: tuple[tuple[str, str], ...] = (
     ),
     ("_caricato_il", "Istante di atterraggio del file in Parquet."),
     ("_sha256", "SHA-256 dello zip originale nell'archivio raw."),
-    ("_hash_riga", "MD5 del contenuto completo della riga, per riconoscere i duplicati esatti."),
+    (
+        "_hash_riga",
+        "MD5 del contenuto (già ripulito) della riga, per riconoscere i duplicati esatti nello stesso file. "
+        "Se un identificativo personale è stato annullato, nell'impronta entra anche `_ordinale_riga`: "
+        "quelle righe non sono mai duplicati esatti e persone diverse restano righe diverse.",
+    ),
+    (
+        "_ordinale_riga",
+        "Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.",
+    ),
+)
+DESCRIZIONE_CLASSE = (
+    "Classe del codice fiscale di `{sorgente}` prima dell'annullamento: persona_giuridica (11 cifre), persona_fisica "
+    "(16 caratteri), non_verificabile o assente. Non identifica nessuno: il valore originale non è nel landing."
 )
 
 
@@ -56,6 +69,24 @@ class Contratto:
     @property
     def sorgenti(self) -> list[str]:
         return [c.sorgente for c in self.colonne]
+
+
+def e_codice_fiscale(colonna: Colonna) -> bool:
+    """Colonna che contiene un codice fiscale (`codice_fiscale`, `cf`, `cf_*`)."""
+    nome = colonna.sorgente.lower()
+    return nome in ("codice_fiscale", "cf") or nome.startswith("cf_")
+
+
+def colonne_classe(contratto: Contratto) -> list[tuple[Colonna, str]]:
+    """Colonne-codice-fiscale personali del contratto e nome della colonna `_classe_*` che il landing aggiunge.
+
+    `codice_fiscale` -> `_classe_cf`; le altre (per esempio `cf_subappaltante`) -> `_classe_{sorgente}`.
+    """
+    return [
+        (c, "_classe_cf" if c.sorgente == "codice_fiscale" else f"_classe_{c.sorgente}")
+        for c in contratto.colonne
+        if c.dato_personale and e_codice_fiscale(c)
+    ]
 
 
 def _valida(contratto: Contratto, origine: str) -> None:
@@ -137,13 +168,20 @@ def genera_sources_yml(contratti: dict[str, Contratto], warn_giorni: int, error_
                 "warn_after": {"count": warn_giorni, "period": "day"},
                 "error_after": {"count": error_giorni, "period": "day"},
             }
-        voce["columns"] = [
-            {
-                "name": col.nome,
-                "description": col.descrizione + (NOTA_PERSONALE if col.dato_personale else ""),
-            }
-            for col in c.tenute
-        ] + [{"name": nome, "description": descrizione} for nome, descrizione in COLONNE_META]
+        voce["columns"] = (
+            [
+                {
+                    "name": col.nome,
+                    "description": col.descrizione + (NOTA_PERSONALE if col.dato_personale else ""),
+                }
+                for col in c.tenute
+            ]
+            + [
+                {"name": nome, "description": DESCRIZIONE_CLASSE.format(sorgente=col.sorgente)}
+                for col, nome in colonne_classe(c)
+            ]
+            + [{"name": nome, "description": descrizione} for nome, descrizione in COLONNE_META]
+        )
         tabelle.append(voce)
     documento = {
         "version": 2,
