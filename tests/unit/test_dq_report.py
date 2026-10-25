@@ -75,3 +75,4 @@ def test_report_della_fixture_e_marcato_come_tale():
     reale = componi_report(indicatori, "2026-10-25")
     assert reale.splitlines()[0] == "# Qualità dei dati"
     assert "fixture" not in reale.lower()
+    assert "affidamenti diretti" in reale and "affidamenti diretti" not in fixture

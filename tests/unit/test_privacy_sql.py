@@ -2,7 +2,12 @@ import duckdb
 import jinja2
 
 from anac_appalti.config import carica_impostazioni
-from anac_appalti.privacy import MODELLO_CF_PERSONA, MODELLO_PIVA, classifica_codice_fiscale
+from anac_appalti.privacy import (
+    MODELLO_CF_PERSONA,
+    MODELLO_PIVA,
+    cerca_cf_personali,
+    classifica_codice_fiscale,
+)
 
 MACRO = (carica_impostazioni().dbt_dir / "macros" / "privacy.sql").read_text(encoding="utf-8")
 CODICI = [
@@ -54,3 +59,23 @@ def test_classe_privacy_usa_il_codice_presente_poi_il_landing():
         presente = classifica_codice_fiscale(codice)
         atteso = presente if presente != "assente" else (classe or "assente")
         assert risultati[n] == atteso, (codice, classe)
+
+
+def test_macro_contiene_cf_persona_come_il_python():
+    testi = [
+        None,
+        "",
+        "IMPRESA ESEMPIO S.R.L.",
+        "RSSMRA80A01H501U",
+        "ditta rssmra80a01h501u di esempio",
+        "XRSSMRA80A01H501UX",
+        "10000104729",
+    ]
+    espressione = jinja2.Environment().from_string(MACRO + "{{ contiene_cf_persona('t') }}").render()
+    con = duckdb.connect()
+    con.execute("create table x (n integer, t varchar)")
+    con.executemany("insert into x values (?, ?)", list(enumerate(testi)))
+    risultati = dict(con.execute(f"select n, {espressione} from x").fetchall())
+    con.close()
+    for n, testo in enumerate(testi):
+        assert risultati[n] == bool(cerca_cf_personali(testo or "")), repr(testo)

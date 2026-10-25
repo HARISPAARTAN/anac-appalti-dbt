@@ -53,7 +53,7 @@ MODELLI_ATTESI = frozenset(
 def test_dimensioni_e_fatti(magazzino_mese1):
     imp = magazzino_mese1
     assert uno(imp, "select count(*) from core.dim_data") == (date(2031, 1, 1) - date(2007, 1, 1)).days
-    assert uno(imp, "select count(*) from core.dim_territorio") == 112
+    assert uno(imp, "select count(*) from core.dim_territorio") == 120
     assert uno(imp, "select count(*) from core.dim_procedure") == 7
     assert uno(imp, "select count(*) from core.dim_cpv") == 6
     assert uno(imp, "select count(*) from core.dim_stazioni_appaltanti") == 13

@@ -18,7 +18,8 @@ select
     {{ codice('cig') }} as cig,
     {{ codice('ruolo') }} as ruolo,
     case when classe_codice_presente = 'persona_giuridica' then trim(codice_fiscale) end as codice_fiscale,
-    case when classe_codice_presente = 'persona_giuridica' then {{ testo('denominazione') }} end as denominazione,
+    case when classe_codice_presente = 'persona_giuridica' and not {{ contiene_cf_persona('denominazione') }}
+        then {{ testo('denominazione') }} end as denominazione,
     {{ codice('tipo_soggetto') }} as tipo_soggetto,
     tipo_soggetto_privacy,
     nullif({{ parse_intero('id_aggiudicazione') }}, -1) as id_aggiudicazione,

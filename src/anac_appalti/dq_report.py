@@ -244,6 +244,16 @@ def componi_report(
         f"non leggibili {_numero(i['importi_non_leggibili'])} "
         "(un lotto può avere più flag).",
         "",
+        *(
+            []
+            if fixtures
+            else [
+                'Date impossibili sui dati reali: la regola "scadenza prima della pubblicazione" scatta soprattutto '
+                "sugli affidamenti diretti, dove la data di scadenza dell'offerta può precedere la pubblicazione "
+                "senza che ci sia un errore; il controllo è informativo e non esclude lotti dai mart.",
+                "",
+            ]
+        ),
         "Regole sulle somme: gli importi si sommano solo sui lotti non derivati da accordo quadro, non anomali e "
         "non cancellati, così un accordo quadro e i suoi contratti attuativi non sono contati due volte. "
         "I lotti esclusi restano nei conteggi.",

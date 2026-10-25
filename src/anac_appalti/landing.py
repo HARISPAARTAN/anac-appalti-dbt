@@ -61,8 +61,11 @@ ESITI_VALIDI = {"atterrato", "letto_con_scarti"}
 TOLLERANZA_DIFFERENZE = 0
 # Gli spazi che `str.strip()` toglie nel classificatore Python (privacy.classifica_codice_fiscale).
 SPAZI_SQL = "' ' || chr(9) || chr(10) || chr(11) || chr(12) || chr(13)"
+# I file ANAC scrivono le virgolette dentro un valore con il backslash (`\"`), non raddoppiandole: con
+# `escape = '"'` una di queste righe fa assorbire le righe seguenti (verificato sui file reali 2026-10-25, 87 righe
+# perse in un solo file di aggiudicatari). Con il backslash le righe lette coincidono con quelle dichiarate nel logCsv.
 OPZIONI_CSV = (
-    "delim = ';', quote = '\"', escape = '\"', header = true, all_varchar = true, strict_mode = false"
+    "delim = ';', quote = '\"', escape = '\\', header = true, all_varchar = true, strict_mode = false"
 )
 
 
@@ -126,6 +129,12 @@ def _e_persona_giuridica(riferimento: str) -> str:
     return f"regexp_full_match({_normalizzato(riferimento)}, {_letterale(MODELLO_PIVA)})"
 
 
+def _contiene_cf_persona(riferimento: str) -> str:
+    """Vero se il testo contiene un codice fiscale di persona fisica (gemello di `privacy.RE_CF_IN_TESTO`)."""
+    modello = f"(^|[^A-Z0-9]){MODELLO_CF_PERSONA}([^A-Z0-9]|$)"
+    return f"regexp_matches(upper({riferimento}), {_letterale(modello)})"
+
+
 def espressione_classe(riferimento: str) -> str:
     """Espressione SQL gemella di `privacy.classifica_codice_fiscale`."""
     valore = f"nullif({_normalizzato(riferimento)}, '')"
@@ -142,7 +151,9 @@ def espressione_privacy(contratto: Contratto, colonna: Colonna) -> str:
 
     Un codice fiscale (o una partita IVA) resta solo se, ripulito, è di 11 cifre (`persona_giuridica`); altrimenti è
     NULL. Le altre colonne personali (la denominazione) restano solo se il codice fiscale della stessa riga è di
-    11 cifre; se il contratto non ha un `codice_fiscale` da cui dipendere sono sempre NULL.
+    11 cifre e non contengono a loro volta un codice fiscale di persona fisica (nei dati reali alcune ditte individuali
+    riportano come denominazione il codice fiscale del titolare); se il contratto non ha un `codice_fiscale` da cui
+    dipendere sono sempre NULL.
     """
     riferimento = f"b.{_quota(colonna.sorgente)}"
     if not colonna.dato_personale:
@@ -154,7 +165,10 @@ def espressione_privacy(contratto: Contratto, colonna: Colonna) -> str:
     )
     if garante is None:
         return "NULL"
-    return f"CASE WHEN {_e_persona_giuridica(f'b.{_quota(garante.sorgente)}')} THEN {riferimento} END"
+    return (
+        f"CASE WHEN {_e_persona_giuridica(f'b.{_quota(garante.sorgente)}')} "
+        f"AND NOT coalesce({_contiene_cf_persona(riferimento)}, false) THEN {riferimento} END"
+    )
 
 
 def sql_landing(

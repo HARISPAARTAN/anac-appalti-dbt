@@ -265,3 +265,47 @@ def test_contratto_senza_codice_fiscale_annulla_la_denominazione(tmp_path: Path)
         con.close()
     assert righe == [("1", None, 1), ("2", None, 2)]
     assert distinte == 2
+
+
+def test_denominazione_che_e_un_codice_fiscale_personale_viene_annullata(tmp_path: Path):
+    """Dati reali: una ditta individuale con partita IVA riporta come denominazione il codice fiscale del titolare."""
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    registra_csv(
+        imp,
+        "aggiudicatari",
+        [
+            agg(codice_fiscale=PIVA_1, denominazione=CF_A, tipo_soggetto="IMPRESA INDIVIDUALE"),
+            agg(codice_fiscale=PIVA_2, denominazione=f"DITTA {CF_B.lower()} DI ESEMPIO"),
+            agg(
+                codice_fiscale=PIVA_1, denominazione="IMPRESA ESEMPIO 01 S.R.L.", id_aggiudicazione="5000002"
+            ),
+        ],
+    )
+    _, voce = atterra(imp, "aggiudicatari")
+    righe = leggi_parquet(imp, voce)
+    assert [r["codice_fiscale"] for r in righe] == [PIVA_1, PIVA_2, PIVA_1]
+    assert [r["denominazione"] for r in righe] == [None, None, "IMPRESA ESEMPIO 01 S.R.L."]
+    assert len({r["_hash_riga"] for r in righe}) == 3
+    assert not any(CF_A.lower() in str(v).lower() for r in righe for v in r.values() if v is not None)
+
+
+def test_virgolette_con_backslash_non_assorbono_le_righe_seguenti(tmp_path: Path):
+    """Dati reali: ANAC scrive `\\"` dentro un valore. Con escape = '"' la riga assorbiva quelle successive."""
+    imp = carica_impostazioni(fixtures=True, area=tmp_path)
+    righe_csv = [
+        agg(
+            codice_fiscale=PIVA_1,
+            denominazione='FONDAZIONE \\"CIRCOLO ESEMPIO\\" ETS',
+            id_aggiudicazione="5000001",
+        ),
+        agg(codice_fiscale=PIVA_2, denominazione='ASSOCIAZIONE \\"FRANCESCO', id_aggiudicazione="5000002"),
+        agg(codice_fiscale=PIVA_1, denominazione="IMPRESA ESEMPIO 01 S.R.L.", id_aggiudicazione="5000003"),
+        agg(codice_fiscale=PIVA_2, denominazione="IMPRESA ESEMPIO 02 S.R.L.", id_aggiudicazione="5000004"),
+    ]
+    registra_csv(imp, "aggiudicatari", righe_csv)
+    riepilogo, voce = atterra(imp, "aggiudicatari")
+    assert riepilogo.errori == []
+    assert voce.righe == "4"
+    righe = leggi_parquet(imp, voce)
+    assert [r["id_aggiudicazione"] for r in righe] == ["5000001", "5000002", "5000003", "5000004"]
+    assert righe[0]["denominazione"] == 'FONDAZIONE "CIRCOLO ESEMPIO" ETS'

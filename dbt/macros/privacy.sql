@@ -19,3 +19,10 @@ case
     else coalesce(nullif(trim({{ classe_landing }}), ''), 'assente')
 end
 {%- endmacro %}
+
+{#- Vero se il testo contiene un codice fiscale di persona fisica (gemello di privacy.RE_CF_IN_TESTO). Nei dati reali
+    alcune ditte individuali riportano come denominazione il codice fiscale del titolare: quella denominazione va
+    annullata anche se il codice fiscale della riga è una partita IVA di 11 cifre. -#}
+{% macro contiene_cf_persona(colonna) -%}
+coalesce(regexp_matches(upper({{ colonna }}), '(^|[^A-Z0-9])[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]([^A-Z0-9]|$)'), false)
+{%- endmacro %}

@@ -30,7 +30,8 @@ select
     {{ codice('cod_cpv') }} as cod_cpv,
     {{ testo('descrizione_cpv') }} as descrizione_cpv,
     case when classe_codice_presente = 'persona_giuridica' then trim(codice_fiscale) end as codice_fiscale,
-    case when classe_codice_presente = 'persona_giuridica' then {{ testo('denominazione') }} end as denominazione,
+    case when classe_codice_presente = 'persona_giuridica' and not {{ contiene_cf_persona('denominazione') }}
+        then {{ testo('denominazione') }} end as denominazione,
     {{ codice('ruolo') }} as ruolo,
     {{ codice('tipo_soggetto') }} as tipo_soggetto,
     tipo_soggetto_privacy,
