@@ -10,6 +10,8 @@ models:
           - not_null:
               config:
                 severity: warn
+      - name: flag_amministrazione_persona_fisica
+        description: "Vero se l'amministrazione appaltante del lotto è una persona fisica (codice fiscale di 16 caratteri o codice fiscale personale nella denominazione): in quel caso cf_amministrazione_appaltante è NULL e la denominazione è la dicitura anonima."
       - name: importo_lotto
         description: "Importo del lotto in euro, decimal(18,2). NULL se il testo non si legge (formato sconosciuto, oltre decimal(18,2)): in quel caso importo_lotto_raw è non vuoto e int_lotti__qualita segnala il lotto."
       - name: importo_lotto_raw
@@ -134,8 +136,12 @@ models:
         description: "Posizione della riga nel file di origine; vale solo dentro lo stesso file."
 
   - name: stg_anac__stazioni_appaltanti
-    description: "Anagrafe delle stazioni appaltanti (AUSA), enti pubblici."
+    description: "Anagrafe delle stazioni appaltanti (AUSA): enti pubblici, società, ma anche ditte individuali e professionisti. Se la stazione è una persona fisica (codice fiscale di 16 caratteri o forma giuridica individuale) codice fiscale, partita IVA, comune e denominazione sono annullati (denominazione: dicitura anonima) e flag_persona_fisica è vero."
     columns:
+      - name: flag_persona_fisica
+        description: "Vero se la stazione è una persona fisica (macro stazione_persona_fisica)."
+        data_tests:
+          - not_null
       - name: codice_ausa
         description: "Codice AUSA della stazione appaltante."
       - name: codice_provincia

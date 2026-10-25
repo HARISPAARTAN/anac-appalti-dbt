@@ -133,7 +133,7 @@ Il progetto dbt ha 40 modelli (più 3 seed):
 | `mart_concorrenza` | Offerte medie e quota di lotti con un'offerta sola per divisione CPV, regione e anno |
 | `mart_ribassi` | Ribasso mediano, 10° e 90° percentile per famiglia di procedura e oggetto del contratto |
 | `mart_varianti_subappalti` | Quota di lotti con variante, varianti per lotto e quota con subappalto per regione e anno |
-| `mart_stazioni_appaltanti` | Lotti, importi, affidamenti diretti e offerta unica per stazione appaltante (enti pubblici) |
+| `mart_stazioni_appaltanti` | Lotti, importi, affidamenti diretti e offerta unica per stazione appaltante e anno; le stazioni che sono persone fisiche sono un solo membro anonimo |
 
 ## Qualità dei dati
 

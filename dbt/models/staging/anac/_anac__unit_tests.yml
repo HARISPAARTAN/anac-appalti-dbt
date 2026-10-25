@@ -17,6 +17,10 @@ unit_tests:
           ('ABC0000005', '1,234', '-1.000,00', '', '', '', '', '', '', '', '', '', ''),
           ('ABC0000006', '12.345', '1.234', '', '', '', '', '', '', '', '', '', '')
           ) as v(cig, importo_complessivo_gara, importo_lotto, data_pubblicazione, data_scadenza_offerta, cod_tipo_scelta_contraente, cod_modalita_realizzazione, flag_prevalente, flag_urgenza, n_lotti_componenti, durata_prevista, cod_esito, data_cancellazione)
+      - input: source('anac', 'stazioni_appaltanti')
+        format: sql
+        rows: |
+          select cast(null as varchar) as codice_ausa, cast(null as varchar) as codice_fiscale, cast(null as varchar) as natura_giuridica_codice, cast(null as varchar) as natura_giuridica_descrizione where false
     expect:
       rows:
         - {cig: ABC0000001, importo_complessivo_gara: 2500000.50, importo_complessivo_gara_raw: "2.500.000,50", importo_lotto: 1234.56, importo_lotto_raw: "1.234,56", data_pubblicazione: "2025-12-03", data_scadenza_offerta: "2025-12-20", cod_tipo_scelta_contraente: "27", cod_modalita_realizzazione: "11", flag_prevalente: true, flag_urgenza: false, n_lotti_componenti: 3, durata_prevista: 365, cod_esito: 1, data_cancellazione: "2025-01-05"}
@@ -25,6 +29,36 @@ unit_tests:
         - {cig: ABC0000004, importo_complessivo_gara: null, importo_complessivo_gara_raw: "n.d.", importo_lotto: null, importo_lotto_raw: "12345678901234567.00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: "24", cod_modalita_realizzazione: "3", flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
         - {cig: ABC0000005, importo_complessivo_gara: null, importo_complessivo_gara_raw: "1,234", importo_lotto: -1000.00, importo_lotto_raw: "-1.000,00", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: null, cod_modalita_realizzazione: null, flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
         - {cig: ABC0000006, importo_complessivo_gara: 12.35, importo_complessivo_gara_raw: "12.345", importo_lotto: 1.23, importo_lotto_raw: "1.234", data_pubblicazione: null, data_scadenza_offerta: null, cod_tipo_scelta_contraente: null, cod_modalita_realizzazione: null, flag_prevalente: null, flag_urgenza: null, n_lotti_componenti: null, durata_prevista: null, cod_esito: null, data_cancellazione: null}
+
+  - name: test_amministrazione_persona_fisica_nel_lotto
+    description: "Il lotto di una stazione che l'anagrafe dichiara persona fisica (anche con partita IVA), con codice fiscale di 16 caratteri o con un codice fiscale personale nella denominazione perde codice fiscale e nome dell'amministrazione e prende il flag; le altre amministrazioni restano intatte."
+    model: stg_anac__cig
+    given:
+      - input: source('anac', 'cig')
+        format: sql
+        rows: |
+          select v.*, cast(null as varchar) as cig_accordo_quadro, cast(null as varchar) as numero_gara, cast(null as varchar) as oggetto_gara, cast(null as varchar) as oggetto_lotto, cast(null as varchar) as oggetto_principale_contratto, cast(null as varchar) as stato, cast(null as varchar) as settore, cast(null as varchar) as luogo_istat, cast(null as varchar) as provincia, cast(null as varchar) as tipo_scelta_contraente, cast(null as varchar) as modalita_realizzazione, cast(null as varchar) as sezione_regionale, cast(null as varchar) as cod_cpv, cast(null as varchar) as descrizione_cpv, cast(null as varchar) as cod_motivo_cancellazione, cast(null as varchar) as motivo_cancellazione, cast(null as varchar) as data_ultimo_perfezionamento, cast(null as varchar) as importo_sicurezza, cast(null as varchar) as esito, cast(null as varchar) as data_comunicazione_esito, cast(null as varchar) as flag_pnrr_pnc, cast(null as varchar) as _risorsa, cast(null as varchar) as _sha256, cast(null as varchar) as _hash_riga, cast(null as varchar) as importo_complessivo_gara, cast(null as varchar) as importo_lotto, cast(null as varchar) as data_pubblicazione, cast(null as varchar) as data_scadenza_offerta, cast(null as varchar) as cod_tipo_scelta_contraente, cast(null as varchar) as cod_modalita_realizzazione, cast(null as varchar) as flag_prevalente, cast(null as varchar) as flag_urgenza, cast(null as varchar) as n_lotti_componenti, cast(null as varchar) as durata_prevista, cast(null as varchar) as cod_esito, cast(null as varchar) as data_cancellazione, date '2026-01-15' as _data_snapshot, timestamp '2026-01-15 10:00:00' as _caricato_il
+          from (values
+          ('FXP0000001', 'A1', '80000000001', 'COMUNE DI ESEMPIO'),
+          ('FXP0000002', 'A2', '12345678901', 'ESEMPIO PAOLO'),
+          ('FXP0000003', 'A3', 'RSSMRA80A01H501U', 'ESEMPIO LAURA'),
+          ('FXP0000004', 'A4', '11111111111', 'DITTA RSSMRA80A01H501U'),
+          ('FXP0000005', null, null, null)
+          ) as v(cig, codice_ausa, cf_amministrazione_appaltante, denominazione_amministrazione_appaltante)
+      - input: source('anac', 'stazioni_appaltanti')
+        format: sql
+        rows: |
+          select * from (values
+          (' a2 ', '12345678901', '60.0', 'DITTE INDIVIDUALI'),
+          ('A1', '80000000001', '1', 'AMMINISTRAZIONI COMUNALI')
+          ) as s(codice_ausa, codice_fiscale, natura_giuridica_codice, natura_giuridica_descrizione)
+    expect:
+      rows:
+        - {cig: FXP0000001, codice_ausa: A1, cf_amministrazione_appaltante: "80000000001", denominazione_amministrazione_appaltante: COMUNE DI ESEMPIO, flag_amministrazione_persona_fisica: false}
+        - {cig: FXP0000002, codice_ausa: A2, cf_amministrazione_appaltante: null, denominazione_amministrazione_appaltante: Persona fisica (identità non pubblicata), flag_amministrazione_persona_fisica: true}
+        - {cig: FXP0000003, codice_ausa: A3, cf_amministrazione_appaltante: null, denominazione_amministrazione_appaltante: Persona fisica (identità non pubblicata), flag_amministrazione_persona_fisica: true}
+        - {cig: FXP0000004, codice_ausa: A4, cf_amministrazione_appaltante: null, denominazione_amministrazione_appaltante: Persona fisica (identità non pubblicata), flag_amministrazione_persona_fisica: true}
+        - {cig: FXP0000005, codice_ausa: null, cf_amministrazione_appaltante: null, denominazione_amministrazione_appaltante: null, flag_amministrazione_persona_fisica: false}
 
   - name: test_formati_aggiudicazioni
     description: "Importo e ribasso con virgola decimale, un solo punto o una sola virgola con tre cifre (ribasso decimale, importo con virgola ambiguo e quindi NULL), offerte ammesse diverse dalle escluse, id '27.0', perdite di lettura con testo originale conservato."

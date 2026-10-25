@@ -1,5 +1,25 @@
-with sorgente as (
-    select * from {{ source('anac', 'cig') }}
+-- Regola persone fisiche per l'amministrazione appaltante: se l'anagrafe dichiara persona fisica la stazione del
+-- lotto (macro ausa_stazioni_personali), se il suo codice fiscale è di 16 caratteri o se la denominazione contiene
+-- un codice fiscale personale, il codice fiscale diventa NULL, la denominazione la dicitura anonima e
+-- `flag_amministrazione_persona_fisica` resta. Il nome di una persona non entra nei modelli neppure dai lotti.
+with personali as (
+    {{ ausa_stazioni_personali() }}
+),
+
+sorgente as (
+    select
+        c.*,
+        p.codice_ausa is not null
+        or coalesce(
+            regexp_full_match(
+                {{ codice('c.cf_amministrazione_appaltante') }},
+                '[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]'
+            ),
+            false
+        )
+        or {{ contiene_cf_persona('c.denominazione_amministrazione_appaltante') }} as _amministrazione_persona_fisica
+    from {{ source('anac', 'cig') }} as c
+    left join personali as p on upper(trim(c.codice_ausa)) = p.codice_ausa
 )
 
 select
@@ -28,8 +48,13 @@ select
     {{ codice_numerico('cod_modalita_realizzazione') }} as cod_modalita_realizzazione,
     {{ codice('modalita_realizzazione') }} as modalita_realizzazione,
     {{ codice('codice_ausa') }} as codice_ausa,
-    {{ codice('cf_amministrazione_appaltante') }} as cf_amministrazione_appaltante,
-    {{ testo('denominazione_amministrazione_appaltante') }} as denominazione_amministrazione_appaltante,
+    case when not _amministrazione_persona_fisica then {{ codice('cf_amministrazione_appaltante') }} end
+        as cf_amministrazione_appaltante,
+    case
+        when _amministrazione_persona_fisica then 'Persona fisica (identità non pubblicata)'
+        else {{ testo('denominazione_amministrazione_appaltante') }}
+    end as denominazione_amministrazione_appaltante,
+    _amministrazione_persona_fisica as flag_amministrazione_persona_fisica,
     {{ codice('sezione_regionale') }} as sezione_regionale,
     {{ codice('cod_cpv') }} as cod_cpv,
     case

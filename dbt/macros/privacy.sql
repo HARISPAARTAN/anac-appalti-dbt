@@ -26,3 +26,36 @@ end
 {% macro contiene_cf_persona(colonna) -%}
 coalesce(regexp_matches(upper({{ colonna }}), '(^|[^A-Z0-9])[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]([^A-Z0-9]|$)'), false)
 {%- endmacro %}
+
+{#- Vero se la stazione appaltante è una persona fisica: codice fiscale personale (16 caratteri) oppure forma giuridica
+    individuale dell'anagrafe (ditta individuale, libero professionista, lavoratore autonomo). Gemello di
+    privacy.e_stazione_persona_fisica, verificato da tests/unit/test_privacy_sql.py. Le tre colonne sono già
+    normalizzate dallo staging (maiuscole, senza spazi ai bordi). -#}
+{% macro stazione_persona_fisica(codice_fiscale, natura_codice, natura_descrizione) -%}
+(
+    coalesce(regexp_full_match({{ codice_fiscale }}, '[A-Z]{6}[0-9LMNPQRSTUV]{2}[ABCDEHLMPRST][0-9LMNPQRSTUV]{2}[A-Z][0-9LMNPQRSTUV]{3}[A-Z]'), false)
+    or coalesce({{ natura_codice }} in ('56', '58', '59', '60', '61', 'A070'), false)
+    or coalesce(upper({{ natura_descrizione }}) in (
+        'ALTRI LAVORATORI AUTONOMI',
+        'DITTE INDIVIDUALI',
+        'IMPRESE INDIVIDUALI ARTIGIANE',
+        'IMPRESE INDIVIDUALI COMMERCIALI',
+        'LAVORATORI AUTONOMI - PROFESSIONISTI',
+        'LIBERO PROFESSIONISTA'
+    ), false)
+)
+{%- endmacro %}
+
+{#- Codici AUSA delle stazioni che l'anagrafe dichiara persone fisiche (codice fiscale di 16 caratteri o forma giuridica
+    individuale), letti dalla sorgente. Servono a togliere il nome anche dalle righe dei lotti (stg_anac__cig) e al test
+    che confronta le chiavi dei mart con l'anagrafe (assert_nessuna_stazione_personale_nei_mart). -#}
+{% macro ausa_stazioni_personali() -%}
+select distinct upper(trim(codice_ausa)) as codice_ausa
+from {{ source('anac', 'stazioni_appaltanti') }}
+where upper(trim(codice_ausa)) is not null
+    and {{ stazione_persona_fisica(
+        "upper(trim(codice_fiscale))",
+        "regexp_replace(upper(trim(natura_giuridica_codice)), '\\.0+$', '')",
+        "trim(natura_giuridica_descrizione)"
+    ) }}
+{%- endmacro %}

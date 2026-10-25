@@ -1,7 +1,7 @@
 tabella: stazioni_appaltanti
 pacchetto: stazioni-appaltanti
 freschezza: false
-descrizione: "Anagrafe delle stazioni appaltanti (enti pubblici), aggiornamento annuale."
+descrizione: "Anagrafe delle stazioni appaltanti (enti pubblici e società, ma anche ditte individuali e professionisti), aggiornamento annuale. Il landing la conserva come ANAC la pubblica; le stazioni che sono persone fisiche (codice fiscale di 16 caratteri o forma giuridica individuale) perdono codice fiscale, partita IVA e nome in staging."
 colonne:
   - {nome: codice_fiscale, sorgente: "codice_fiscale", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice fiscale dell'ente."}
   - {nome: partita_iva, sorgente: "partita_iva", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Partita IVA dell'ente."}

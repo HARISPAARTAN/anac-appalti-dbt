@@ -23,7 +23,7 @@ colonne:
   - {nome: cod_modalita_realizzazione, sorgente: "cod_modalita_realizzazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice della modalità di realizzazione."}
   - {nome: modalita_realizzazione, sorgente: "modalita_realizzazione", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Modalità di realizzazione (contratto d'appalto, accordo quadro, discendente da accordo quadro...)."}
   - {nome: codice_ausa, sorgente: "codice_ausa", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice AUSA della stazione appaltante."}
-  - {nome: cf_amministrazione_appaltante, sorgente: "cf_amministrazione_appaltante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice fiscale dell'amministrazione appaltante (ente pubblico)."}
+  - {nome: cf_amministrazione_appaltante, sorgente: "cf_amministrazione_appaltante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Codice fiscale dell'amministrazione appaltante (se è di 16 caratteri, cioè una persona fisica, in staging è annullato)."}
   - {nome: denominazione_amministrazione_appaltante, sorgente: "denominazione_amministrazione_appaltante", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Denominazione dell'amministrazione appaltante."}
   - {nome: sezione_regionale, sorgente: "sezione_regionale", tipo: varchar, tenere: true, dato_personale: false, descrizione: "Sezione regionale dell'Osservatorio ANAC."}
   - {nome: id_centro_costo, sorgente: "id_centro_costo", tipo: varchar, tenere: false, dato_personale: false, descrizione: "Identificativo del centro di costo."}

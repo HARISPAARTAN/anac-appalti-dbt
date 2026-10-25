@@ -26,13 +26,13 @@ models:
           - not_null
 
   - name: dim_stazioni_appaltanti
-    description: "Stazioni appaltanti (enti pubblici) dall'anagrafe AUSA, più quelle presenti nei lotti ma non in anagrafe (flag_in_anagrafe falso) e il membro 'ND'."
+    description: "Stazioni appaltanti dall'anagrafe AUSA (enti pubblici, società, ma anche ditte individuali e professionisti), più quelle presenti nei lotti ma non in anagrafe (flag_in_anagrafe falso), il membro 'ND' e il membro anonimo 'PERSONA_FISICA' che raccoglie le stazioni che sono persone fisiche (codice fiscale di 16 caratteri o forma giuridica individuale) senza codice AUSA, codice fiscale o nome."
     config:
       meta:
         chiave: stazione_key
     columns:
       - name: stazione_key
-        description: "Codice AUSA o 'ND'."
+        description: "Codice AUSA, 'ND' o 'PERSONA_FISICA'."
         data_tests:
           - unique
           - not_null

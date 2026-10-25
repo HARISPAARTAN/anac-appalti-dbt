@@ -5,8 +5,11 @@ from anac_appalti.config import carica_impostazioni
 from anac_appalti.privacy import (
     MODELLO_CF_PERSONA,
     MODELLO_PIVA,
+    NATURE_GIURIDICHE_INDIVIDUALI_CODICI,
+    NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI,
     cerca_cf_personali,
     classifica_codice_fiscale,
+    e_stazione_persona_fisica,
 )
 
 MACRO = (carica_impostazioni().dbt_dir / "macros" / "privacy.sql").read_text(encoding="utf-8")
@@ -79,3 +82,48 @@ def test_macro_contiene_cf_persona_come_il_python():
     con.close()
     for n, testo in enumerate(testi):
         assert risultati[n] == bool(cerca_cf_personali(testo or "")), repr(testo)
+
+
+STAZIONI = [
+    # (codice fiscale, codice natura giuridica, descrizione natura giuridica)
+    ("80000000001", "1", "AMMINISTRAZIONI COMUNALI"),
+    ("RSSMRA80A01H501U", "1", "AMMINISTRAZIONI COMUNALI"),  # codice fiscale personale
+    ("12345678901", "60", "DITTE INDIVIDUALI"),  # individuale con partita IVA
+    ("12345678901", "A070", None),  # solo il codice
+    ("12345678901", None, "LIBERO PROFESSIONISTA"),  # solo la descrizione
+    ("12345678901", "59", "IMPRESE INDIVIDUALI COMMERCIALI"),
+    ("12345678901", "58", "IMPRESE INDIVIDUALI ARTIGIANE"),
+    ("12345678901", "61", "LAVORATORI AUTONOMI - PROFESSIONISTI"),
+    ("12345678901", "56", "ALTRI LAVORATORI AUTONOMI"),
+    ("12345678901", "27", "ASSOCIAZIONI TRA PROFESSIONISTI"),  # un'associazione non è un individuo
+    ("12345678901", "SC", None),
+    (None, None, None),
+    ("", "", ""),
+    ("STTLII66TAZ129T", None, None),  # non verificabile, non personale
+]
+
+
+def test_stazione_persona_fisica_come_il_python():
+    espressione = (
+        jinja2.Environment()
+        .from_string(
+            MACRO
+            + "{{ stazione_persona_fisica('upper(trim(cf))', 'upper(trim(cod))', 'upper(trim(descr))') }}"
+        )
+        .render()
+    )
+    con = duckdb.connect()
+    con.execute("create table s (n integer, cf varchar, cod varchar, descr varchar)")
+    con.executemany("insert into s values (?, ?, ?, ?)", [(n, *riga) for n, riga in enumerate(STAZIONI)])
+    risultati = dict(con.execute(f"select n, {espressione} from s").fetchall())
+    con.close()
+    for n, (cf, codice, descrizione) in enumerate(STAZIONI):
+        assert risultati[n] == e_stazione_persona_fisica(cf, codice, descrizione), (cf, codice, descrizione)
+    assert sum(risultati.values()) == 8
+
+
+def test_stesse_forme_giuridiche_del_python():
+    for codice in NATURE_GIURIDICHE_INDIVIDUALI_CODICI:
+        assert f"'{codice}'" in MACRO
+    for descrizione in NATURE_GIURIDICHE_INDIVIDUALI_DESCRIZIONI:
+        assert f"'{descrizione}'" in MACRO

@@ -189,3 +189,26 @@ unit_tests:
         - {cig: AAA, id_aggiudicazione: 1, _risorsa: a_02, _hash_riga: h2, codice_fiscale: "10000000002"}
         - {cig: AAA, id_aggiudicazione: 2, _risorsa: a_01, _hash_riga: h3, codice_fiscale: "10000000003"}
         - {cig: BBB, id_aggiudicazione: null, _risorsa: b_02, _hash_riga: h5, codice_fiscale: "10000000005"}
+
+  - name: test_stazioni_persone_fisiche
+    description: "Le stazioni che sono persone fisiche (dall'anagrafe o, se assenti dall'anagrafe, dal codice fiscale del lotto) hanno chiave PERSONA_FISICA, la dicitura anonima e nessun attributo, anche se lo staging avesse lasciato un nome; le altre tengono codice AUSA e nome; i lotti senza anagrafe restano con flag_in_anagrafe falso."
+    model: int_stazioni
+    given:
+      - input: ref('stg_anac__stazioni_appaltanti')
+        rows:
+          - {codice_ausa: A1, codice_fiscale: "80000000001", denominazione: Comune di Esempio, natura_giuridica_descrizione: AMMINISTRAZIONI COMUNALI, codice_provincia: "072", flag_persona_fisica: false, stato: ATTIVO, data_inizio: "2020-01-01", _hash_riga: h1}
+          - {codice_ausa: A2, codice_fiscale: "RSSMRA80A01H501U", denominazione: Persona Esempio, natura_giuridica_descrizione: DITTE INDIVIDUALI, codice_provincia: "072", flag_persona_fisica: true, stato: ATTIVO, data_inizio: "2020-01-01", _hash_riga: h2}
+          - {codice_ausa: A3, codice_fiscale: null, denominazione: Persona fisica (identità non pubblicata), natura_giuridica_descrizione: LIBERO PROFESSIONISTA, codice_provincia: "015", flag_persona_fisica: true, stato: ATTIVO, data_inizio: "2020-01-01", _hash_riga: h3}
+      - input: ref('int_cig__corrente')
+        rows:
+          - {cig: C1, codice_ausa: A1, cf_amministrazione_appaltante: "80000000001", denominazione_amministrazione_appaltante: Comune di Esempio, flag_amministrazione_persona_fisica: false, data_pubblicazione: "2025-01-01"}
+          - {cig: C2, codice_ausa: A8, cf_amministrazione_appaltante: "11111111111", denominazione_amministrazione_appaltante: Impresa Esempio S.R.L., flag_amministrazione_persona_fisica: false, data_pubblicazione: "2025-01-01"}
+          - {cig: C3, codice_ausa: A9, cf_amministrazione_appaltante: null, denominazione_amministrazione_appaltante: Persona fisica (identità non pubblicata), flag_amministrazione_persona_fisica: true, data_pubblicazione: "2025-01-01"}
+          - {cig: C4, codice_ausa: A2, cf_amministrazione_appaltante: null, denominazione_amministrazione_appaltante: Persona fisica (identità non pubblicata), flag_amministrazione_persona_fisica: true, data_pubblicazione: "2025-01-01"}
+    expect:
+      rows:
+        - {stazione_key: A1, codice_ausa: A1, codice_fiscale: "80000000001", denominazione: Comune di Esempio, codice_provincia: "072", flag_persona_fisica: false, flag_in_anagrafe: true}
+        - {stazione_key: PERSONA_FISICA, codice_ausa: A2, codice_fiscale: null, denominazione: Persona fisica (identità non pubblicata), codice_provincia: null, flag_persona_fisica: true, flag_in_anagrafe: true}
+        - {stazione_key: PERSONA_FISICA, codice_ausa: A3, codice_fiscale: null, denominazione: Persona fisica (identità non pubblicata), codice_provincia: null, flag_persona_fisica: true, flag_in_anagrafe: true}
+        - {stazione_key: A8, codice_ausa: A8, codice_fiscale: "11111111111", denominazione: Impresa Esempio S.R.L., codice_provincia: null, flag_persona_fisica: false, flag_in_anagrafe: false}
+        - {stazione_key: PERSONA_FISICA, codice_ausa: A9, codice_fiscale: null, denominazione: Persona fisica (identità non pubblicata), codice_provincia: null, flag_persona_fisica: true, flag_in_anagrafe: false}

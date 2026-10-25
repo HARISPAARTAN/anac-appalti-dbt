@@ -21,7 +21,7 @@ base as (
     select
         l.cig,
         {{ chiave_data('l.data_pubblicazione') }} as data_pubblicazione_key,
-        coalesce(l.codice_ausa, 'ND') as stazione_key,
+        coalesce(st.stazione_key, 'ND') as stazione_key,
         coalesce(p.codice_provincia, 'ND') as territorio_key,
         coalesce(l.cod_cpv, 'ND') as cpv_key,
         coalesce(l.cod_tipo_scelta_contraente, 'ND') as procedura_key,
@@ -54,6 +54,7 @@ base as (
     inner join qualita as q on l.cig = q.cig
     left join accordi_quadro as a on l.cig = a.cig
     left join province as p on l.codice_provincia = p.codice_provincia
+    left join {{ ref('int_stazioni') }} as st on l.codice_ausa = st.codice_ausa
 )
 
 select

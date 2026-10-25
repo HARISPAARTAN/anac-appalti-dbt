@@ -187,7 +187,7 @@ sources:
     - name: codice_ausa
       description: Codice AUSA della stazione appaltante.
     - name: cf_amministrazione_appaltante
-      description: Codice fiscale dell'amministrazione appaltante (ente pubblico).
+      description: Codice fiscale dell'amministrazione appaltante (se è di 16 caratteri, cioè una persona fisica, in staging è annullato).
     - name: denominazione_amministrazione_appaltante
       description: Denominazione dell'amministrazione appaltante.
     - name: sezione_regionale
@@ -273,7 +273,7 @@ sources:
     - name: _ordinale_riga
       description: Posizione della riga nel file di origine (parte da 1). Vale solo dentro lo stesso file.
   - name: stazioni_appaltanti
-    description: Anagrafe delle stazioni appaltanti (enti pubblici), aggiornamento annuale.
+    description: Anagrafe delle stazioni appaltanti (enti pubblici e società, ma anche ditte individuali e professionisti), aggiornamento annuale. Il landing la conserva come ANAC la pubblica; le stazioni che sono persone fisiche (codice fiscale di 16 caratteri o forma giuridica individuale) perdono codice fiscale, partita IVA e nome in staging.
     meta:
       external_location: read_parquet('{{ env_var('APPALTI_LANDING', 'data/landing') }}/stazioni_appaltanti/*.parquet', union_by_name = true)
       dagster:

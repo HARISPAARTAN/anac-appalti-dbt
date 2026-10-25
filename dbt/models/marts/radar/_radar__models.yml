@@ -145,7 +145,7 @@ models:
       - {name: quota_subappalto, data_type: double, description: "Quota di lotti con almeno un subappalto autorizzato (0–1)."}
 
   - name: mart_stazioni_appaltanti
-    description: "Indicatori per stazione appaltante (ente pubblico) e anno, base per la sicurezza a livello di riga per ente in Power BI."
+    description: "Indicatori per stazione appaltante e anno, base per la sicurezza a livello di riga per ente in Power BI. Le stazioni che sono persone fisiche (ditte individuali, professionisti) sono un solo membro anonimo, PERSONA_FISICA."
     config:
       meta:
         chiave: [stazione_key, anno]
@@ -154,9 +154,9 @@ models:
           arguments:
             combination_of_columns: [stazione_key, anno]
     columns:
-      - {name: stazione_key, data_type: varchar, description: "Codice AUSA o 'ND'.", data_tests: [not_null]}
-      - {name: codice_ausa, data_type: varchar, description: "Codice AUSA."}
-      - {name: denominazione, data_type: varchar, description: "Denominazione dell'ente."}
+      - {name: stazione_key, data_type: varchar, description: "Codice AUSA, 'ND' o 'PERSONA_FISICA'.", data_tests: [not_null]}
+      - {name: codice_ausa, data_type: varchar, description: "Codice AUSA (NULL per ND e PERSONA_FISICA)."}
+      - {name: denominazione, data_type: varchar, description: "Denominazione della stazione; 'Persona fisica (identità non pubblicata)' per le persone fisiche."}
       - {name: regione, data_type: varchar, description: "Regione della sede dell'ente."}
       - {name: anno, data_type: integer, description: "Anno di pubblicazione.", data_tests: [not_null]}
       - {name: n_lotti, data_type: bigint, description: "Numero di lotti."}

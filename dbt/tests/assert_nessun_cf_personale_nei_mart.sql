@@ -7,6 +7,10 @@
     ('fct_partecipazioni', 'operatore_key'),
     ('fct_subappalti', 'operatore_key'),
     ('fct_subappalti', 'subappaltante_key'),
+    ('dim_stazioni_appaltanti', 'stazione_key'),
+    ('dim_stazioni_appaltanti', 'codice_fiscale'),
+    ('dim_stazioni_appaltanti', 'denominazione'),
+    ('mart_stazioni_appaltanti', 'stazione_key'),
     ('mart_stazioni_appaltanti', 'codice_ausa'),
     ('mart_stazioni_appaltanti', 'denominazione'),
 ] %}

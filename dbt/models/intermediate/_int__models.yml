@@ -43,6 +43,26 @@ models:
           - unique
           - not_null
 
+  - name: int_stazioni
+    description: "Una riga per codice AUSA: stazioni dell'anagrafe più quelle presenti solo nei lotti. Le persone fisiche (codice fiscale di 16 caratteri o forma giuridica individuale) hanno stazione_key 'PERSONA_FISICA', la dicitura anonima al posto del nome e nessun attributo identificativo; il codice AUSA resta solo qui, per collegare i lotti."
+    config:
+      meta:
+        chiave: codice_ausa
+    columns:
+      - name: stazione_key
+        description: "Codice AUSA, oppure 'PERSONA_FISICA' per le persone fisiche."
+        data_tests:
+          - not_null
+      - name: codice_ausa
+        description: "Codice AUSA (unico per riga)."
+        data_tests:
+          - unique
+          - not_null
+      - name: flag_persona_fisica
+        description: "Vero se la stazione è una persona fisica."
+        data_tests:
+          - not_null
+
   - name: int_aggiudicatari__corrente
     description: "Aggiudicatari correnti: righe del file più recente per CIG e aggiudicazione, senza duplicati esatti."
     config:

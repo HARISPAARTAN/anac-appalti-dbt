@@ -128,7 +128,7 @@ The dbt project has 40 models (plus 3 seeds):
 | `mart_concorrenza` | Average bids and share of single-bid lots by CPV division, region and year |
 | `mart_ribassi` | Median, 10th and 90th percentile award discount by procedure family and contract type |
 | `mart_varianti_subappalti` | Share of lots with a modification, modifications per lot and subcontract share by region and year |
-| `mart_stazioni_appaltanti` | Lots, amounts, direct awards and single bids per contracting authority (public bodies) |
+| `mart_stazioni_appaltanti` | Lots, amounts, direct awards and single bids per contracting authority and year; authorities that are natural persons are one anonymous member |
 
 ## Data quality
 

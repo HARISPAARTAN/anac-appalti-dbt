@@ -166,12 +166,22 @@ def report(fixtures: bool = OPZIONE_FIXTURE, mese: int = OPZIONE_MESE) -> None:
 
 @app.command()
 def export(fixtures: bool = OPZIONE_FIXTURE, mese: int = OPZIONE_MESE) -> None:
-    """Esporta i nove mart Radar in build/export/*.parquet con l'attribuzione CC BY-SA."""
-    from anac_appalti.export import esporta_mart
+    """Esporta i nove mart Radar in build/export/ con ATTRIBUTION.md e SHA256SUMS, dopo la scansione di privacy."""
+    from anac_appalti.export import ScansionePrivacyFallita, esporta_per_release
+    from anac_appalti.log_esecuzioni import leggi_ultimo_log
 
     imp = carica_impostazioni(fixtures=fixtures, mese=mese)
-    for percorso in esporta_mart(imp):
+    record = leggi_ultimo_log(imp)
+    try:
+        file = esporta_per_release(imp, record["run_id"] if record else "non disponibile")
+    except ScansionePrivacyFallita as exc:
+        typer.echo(f"Esportazione annullata: {exc}", err=True)
+        raise typer.Exit(1) from exc
+    for percorso in file:
         typer.echo(f"Scritto {percorso}")
+    typer.echo(
+        "Scansione di privacy superata (codici fiscali personali e nomi): ATTRIBUTION.md e SHA256SUMS scritti."
+    )
 
 
 @app.command("copertura-test")
