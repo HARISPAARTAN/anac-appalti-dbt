@@ -1,0 +1,32 @@
+{
+ "help": "fixture sintetica anac-appalti-dbt",
+ "success": true,
+ "result": {
+  "name": "aggiudicatari",
+  "license_id": "CC-BY-SA-4.0",
+  "metadata_modified": "2026-01-23T00:00:00.000000",
+  "resources": [
+   {
+    "name": "aggiudicatari_csv",
+    "format": "CSV",
+    "size": 134371,
+    "last_modified": "2026-01-23T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicatari/filesystem/aggiudicatari_csv.zip"
+   },
+   {
+    "name": "aggiudicatari_csv_logCsv",
+    "format": "CSV",
+    "size": 173,
+    "last_modified": "2026-01-23T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicatari/filesystem/aggiudicatari_csv_logCsv.csv"
+   },
+   {
+    "name": "aggiudicatari_json",
+    "format": "JSON",
+    "size": 1,
+    "last_modified": "2026-01-23T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/aggiudicatari/filesystem/aggiudicatari_json.zip"
+   }
+  ]
+ }
+}

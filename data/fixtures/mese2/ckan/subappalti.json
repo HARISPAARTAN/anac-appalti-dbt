@@ -1,0 +1,32 @@
+{
+ "help": "fixture sintetica anac-appalti-dbt",
+ "success": true,
+ "result": {
+  "name": "subappalti",
+  "license_id": "CC-BY-SA-4.0",
+  "metadata_modified": "2026-01-15T00:00:00.000000",
+  "resources": [
+   {
+    "name": "subappalti_csv",
+    "format": "CSV",
+    "size": 8469,
+    "last_modified": "2026-01-15T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/subappalti/filesystem/subappalti_csv.zip"
+   },
+   {
+    "name": "subappalti_csv_logCsv",
+    "format": "CSV",
+    "size": 162,
+    "last_modified": "2026-01-15T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/subappalti/filesystem/subappalti_csv_logCsv.csv"
+   },
+   {
+    "name": "subappalti_json",
+    "format": "JSON",
+    "size": 1,
+    "last_modified": "2026-01-15T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/subappalti/filesystem/subappalti_json.zip"
+   }
+  ]
+ }
+}

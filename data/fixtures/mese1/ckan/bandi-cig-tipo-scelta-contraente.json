@@ -1,0 +1,32 @@
+{
+ "help": "fixture sintetica anac-appalti-dbt",
+ "success": true,
+ "result": {
+  "name": "bandi-cig-tipo-scelta-contraente",
+  "license_id": "CC-BY-SA-4.0",
+  "metadata_modified": "2026-10-13T00:00:00.000000",
+  "resources": [
+   {
+    "name": "bandi-cig-tipo-scelta-contraente_csv",
+    "format": "CSV",
+    "size": 316,
+    "last_modified": "2026-10-13T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/bandi-cig-tipo-scelta-contraente/filesystem/bandi-cig-tipo-scelta-contraente_csv.zip"
+   },
+   {
+    "name": "bandi-cig-tipo-scelta-contraente_csv_logCsv",
+    "format": "CSV",
+    "size": 227,
+    "last_modified": "2026-10-13T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/bandi-cig-tipo-scelta-contraente/filesystem/bandi-cig-tipo-scelta-contraente_csv_logCsv.csv"
+   },
+   {
+    "name": "bandi-cig-tipo-scelta-contraente_json",
+    "format": "JSON",
+    "size": 1,
+    "last_modified": "2026-10-13T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/bandi-cig-tipo-scelta-contraente/filesystem/bandi-cig-tipo-scelta-contraente_json.zip"
+   }
+  ]
+ }
+}

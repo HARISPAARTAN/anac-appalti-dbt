@@ -1,0 +1,25 @@
+{
+ "help": "fixture sintetica anac-appalti-dbt",
+ "success": true,
+ "result": {
+  "name": "cig",
+  "license_id": "CC-BY-SA-4.0",
+  "metadata_modified": "2025-09-02T00:00:00.000000",
+  "resources": [
+   {
+    "name": "cig_csv_logCsv",
+    "format": "CSV",
+    "size": 154,
+    "last_modified": "2025-09-02T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/cig/filesystem/cig_csv_logCsv.csv"
+   },
+   {
+    "name": "cig_json",
+    "format": "JSON",
+    "size": 1,
+    "last_modified": "2025-09-02T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/cig/filesystem/cig_json.zip"
+   }
+  ]
+ }
+}

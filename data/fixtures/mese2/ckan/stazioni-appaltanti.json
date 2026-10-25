@@ -1,0 +1,32 @@
+{
+ "help": "fixture sintetica anac-appalti-dbt",
+ "success": true,
+ "result": {
+  "name": "stazioni-appaltanti",
+  "license_id": "CC-BY-SA-4.0",
+  "metadata_modified": "2026-10-13T00:00:00.000000",
+  "resources": [
+   {
+    "name": "stazioni-appaltanti_csv",
+    "format": "CSV",
+    "size": 3072,
+    "last_modified": "2026-10-13T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/stazioni-appaltanti/filesystem/stazioni-appaltanti_csv.zip"
+   },
+   {
+    "name": "stazioni-appaltanti_csv_logCsv",
+    "format": "CSV",
+    "size": 189,
+    "last_modified": "2026-10-13T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/stazioni-appaltanti/filesystem/stazioni-appaltanti_csv_logCsv.csv"
+   },
+   {
+    "name": "stazioni-appaltanti_json",
+    "format": "JSON",
+    "size": 1,
+    "last_modified": "2026-10-13T00:00:00",
+    "url": "https://dati.anticorruzione.it/opendata/download/dataset/stazioni-appaltanti/filesystem/stazioni-appaltanti_json.zip"
+   }
+  ]
+ }
+}
